@@ -722,3 +722,4 @@ one_fm.patches.v15_0.backfill_employee_schedule_relief_type
 one_fm.patches.v15_0.return_empty_attendance_amendments_to_draft
 one_fm.patches.v15_0.add_sales_invoice_item_margin_fields #WI-004512 2026-11-14
 one_fm.patches.v15_0.move_poc_check_lifecycle_to_processa
+one_fm.patches.v15_0.create_hr_enquiry_workflow_states #2026-11-12 states the HR Enquiry Lifecycle process sets
