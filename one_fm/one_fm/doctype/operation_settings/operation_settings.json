@@ -12,7 +12,9 @@
   "dsot_approver",
   "operation_admin",
   "section_break_kzb5e",
-  "exclude_project"
+  "exclude_project",
+  "subcontractor_attendance_section",
+  "subcontractor_attendance_submission_start_day"
  ],
  "fields": [
   {
@@ -50,12 +52,25 @@
   {
    "fieldname": "section_break_kzb5e",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "subcontractor_attendance_section",
+   "fieldtype": "Section Break",
+   "label": "Subcontractor Attendance"
+  },
+  {
+   "default": "1",
+   "description": "Day of the month (1 to 28) from which subcontractors can submit the previous month's attendance. For example, 5 means January attendance can be submitted from 5 February.",
+   "fieldname": "subcontractor_attendance_submission_start_day",
+   "fieldtype": "Int",
+   "label": "Subcontractor Attendance Submission Start Day",
+   "non_negative": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-04 10:00:00.000000",
+ "modified": "2026-11-11 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Operation Settings",
