@@ -232,21 +232,67 @@ function render_grouped_preview(frm, items, ot_items, year, month_idx, days_in_m
         return decimals !== undefined ? n.toFixed(decimals) : String(n);
     };
 
-    // ---- Group rows by sale_item ----
-    let groups = {};
-    let group_order = [];
-
-    for (let row of items) {
-        let key = row.sale_item || __("(No Sale Item)");
-        if (!groups[key]) {
-            groups[key] = [];
-            group_order.push(key);
+    // ---- Optional grouping by site: only when Group By Site is set and no Site is selected ----
+    const group_by_site = !!frm.doc.group_by_site && !frm.doc.site;
+    const new_totals = () => ({ employees: 0, working: 0, off: 0, hours: 0 });
+    const totals_text = (t) => {
+        let parts = [
+            `${t.employees} ${__("employee(s)")}`,
+            `${__("Working Days")}: ${is_hours_mode ? format_num(t.working, 2) : format_num(t.working)}`,
+            `${__("Days Off")}: ${t.off}`
+        ];
+        if (is_hours_mode) {
+            parts.push(`${__("Total Hours")}: ${format_num(t.hours, 2)}`);
         }
-        groups[key].push(row);
-    }
+        return parts.join(" | ");
+    };
+
+    // Renders the sale-item blocks for a row list. With grouping off this is exactly
+    // the sale-item blocks; with grouping on, each site gets a header, its own blocks
+    // and a site total, followed by a project grand total.
+    const render_site_sections = (rows, render_blocks) => {
+        if (!group_by_site) {
+            return render_blocks(rows, new_totals());
+        }
+        if (!rows.length) return "";
+
+        let site_rows_map = {};
+        let site_order = [];
+        for (let row of rows) {
+            let key = row.site || __("(No Site)");
+            if (!site_rows_map[key]) {
+                site_rows_map[key] = [];
+                site_order.push(key);
+            }
+            site_rows_map[key].push(row);
+        }
+
+        let grand = new_totals();
+        let html = "";
+        for (let site of site_order) {
+            let site_rows = site_rows_map[site];
+            let site_totals = new_totals();
+            html += `<div class="site-header-bar"><strong>${__("Site")}:</strong> ${frappe.utils.escape_html(site)}
+                <span class="site-header-count">${site_rows.length} ${__("employee(s)")}</span></div>`;
+            html += render_blocks(site_rows, site_totals);
+            html += `<div class="site-total-row"><strong>${__("Site Total")}:</strong> ${frappe.utils.escape_html(site)} — ${totals_text(site_totals)}</div>`;
+            grand.employees += site_totals.employees;
+            grand.working += site_totals.working;
+            grand.off += site_totals.off;
+            grand.hours += site_totals.hours;
+        }
+        html += `<div class="grand-total-row"><strong>${__("Project Grand Total")}:</strong> ${totals_text(grand)}</div>`;
+        return html;
+    };
 
     // ---- Build HTML for each group ----
-    let full_html = "";
+    // The style block lives at the start of full_html so it reaches both the dialog and the PDF.
+    let full_html = !group_by_site ? "" : `<style>
+        .site-header-bar { margin: 20px 0 8px; padding: 8px 14px; background: #D5D5D5; color: #222; border-radius: 6px; font-size: 14px; font-weight: bold; page-break-after: avoid; }
+        .site-header-count { float: right; font-weight: normal; opacity: 0.85; }
+        .site-total-row { margin: 0 0 16px; padding: 6px 12px; background: #EBEBEB; color: #333; border-radius: 6px; font-size: 12px; }
+        .grand-total-row { margin: 8px 0 16px; padding: 8px 14px; background: #BDBDBD; color: #111; border-radius: 6px; font-size: 13px; font-weight: bold; }
+    </style>`;
 
     // Attendance abbreviation legend
     full_html += `<div style="margin-bottom: 12px; padding: 8px 12px; background: #f8f9fa; border-radius: 6px; font-size: 11px; border: 1px solid #e2e8f0;">
@@ -256,6 +302,21 @@ function render_grouped_preview(frm, items, ot_items, year, month_idx, days_in_m
         FA = ${__("Fingerprint Appt")}, MA = ${__("Medical Appt")}, H = ${__("Holiday")}, OH = ${__("On Hold")}
     </div>`;
 
+    const render_sale_item_blocks = (rows, totals) => {
+    // ---- Group rows by sale_item ----
+    let groups = {};
+    let group_order = [];
+
+    for (let row of rows) {
+        let key = row.sale_item || __("(No Sale Item)");
+        if (!groups[key]) {
+            groups[key] = [];
+            group_order.push(key);
+        }
+        groups[key].push(row);
+    }
+
+    let html = "";
     for (let sale_item of group_order) {
         let group_rows = groups[sale_item];
 
@@ -402,8 +463,16 @@ function render_grouped_preview(frm, items, ot_items, year, month_idx, days_in_m
         table_html += `</tr>`;
 
         table_html += `</tbody></table></div>`;
-        full_html += table_html;
+        html += table_html;
+        totals.employees += group_rows.length;
+        totals.working += group_total_working;
+        totals.off += group_total_off;
+        totals.hours += group_total_hours;
     }
+    return html;
+    };
+
+    full_html += render_site_sections(items, render_sale_item_blocks);
 
     // ============================================================
     // Overtime Details Section
@@ -413,10 +482,11 @@ function render_grouped_preview(frm, items, ot_items, year, month_idx, days_in_m
             <i class="fa fa-clock-o" style="margin-right: 6px;"></i>${__("Overtime Details")}
         </div>`;
 
+        const render_ot_sale_item_blocks = (rows, totals) => {
         // Group OT rows by sale_item
         let ot_groups = {};
         let ot_group_order = [];
-        for (let row of ot_items) {
+        for (let row of rows) {
             let key = row.sale_item || __("(No Sale Item)");
             if (!ot_groups[key]) {
                 ot_groups[key] = [];
@@ -425,6 +495,7 @@ function render_grouped_preview(frm, items, ot_items, year, month_idx, days_in_m
             ot_groups[key].push(row);
         }
 
+        let html = "";
         for (let sale_item of ot_group_order) {
             let group_rows = ot_groups[sale_item];
 
@@ -565,8 +636,16 @@ function render_grouped_preview(frm, items, ot_items, year, month_idx, days_in_m
             table_html += `</tr>`;
 
             table_html += `</tbody></table></div>`;
-            full_html += table_html;
+            html += table_html;
+            totals.employees += group_rows.length;
+            totals.working += group_total_working;
+            totals.off += group_total_off;
+            totals.hours += group_total_hours;
         }
+        return html;
+        };
+
+        full_html += render_site_sections(ot_items, render_ot_sale_item_blocks);
     }
 
     // ---- Create dialog ----
