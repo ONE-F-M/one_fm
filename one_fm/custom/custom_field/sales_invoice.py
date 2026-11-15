@@ -134,8 +134,8 @@ def get_sales_invoice_custom_fields():
                 "fieldname": "custom_attendance_amendment",
                 "fieldtype": "Link",
                 "insert_after": "amended_from",
-                "label": "Attendance Amendment",
-                "options": "Attendance Amendment",
+                "label": "Attendance Approval",
+                "options": "Attendance Approval",
                 "read_only": 1
             },
             {

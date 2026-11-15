@@ -39,7 +39,7 @@ class AccommodationLeaveMovement(Document):
 
 	def before_cancel(self):
 		# The lifecycle maps end at submit, so a cancel happens outside them; record it,
-		# because one_bpmn's indicator shows workflow_state on this doctype.
+		# because processa's indicator shows workflow_state on this doctype.
 		self.workflow_state = "Cancelled"
 
 	def on_cancel(self):
