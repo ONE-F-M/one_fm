@@ -11,6 +11,15 @@ from frappe import _
 class AttendanceAmendment(Document):
 	def validate(self):
 		self.recalculate_working_days()
+		self.validate_attendance_details_present()
+
+	def validate_attendance_details_present(self):
+		if self.workflow_state == "Pending Approval" and not self.attendance_details:
+			frappe.throw(
+				_(
+					"Attendance Details are empty. Select Attendance Record Based On and click Fetch Attendance Record before submitting for review."
+				)
+			)
 
 	def recalculate_working_days(self):
 		for row in self.get("attendance_details") + self.get("overtime_details"):
@@ -52,7 +61,7 @@ class AttendanceAmendment(Document):
 		if data:
 			self.update_attendance_records(data)
 		else:
-			frappe.msgprint(_("No attendance records found."), alert=True, indicator="orange")
+			frappe.msgprint(_("No attendance found for the selected criteria."), alert=True, indicator="orange")
 
 		if self.ot_data_required:
 			ot_attendance_map = get_ot_attendance_map(filters, self.attendance_based_on)
