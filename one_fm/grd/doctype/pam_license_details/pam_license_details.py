@@ -33,7 +33,7 @@ def recount_rules():
 	The rules live only in that Server Script. Returns None, after logging it, when the
 	script is missing, so the save that asked for a recount is never failed by it.
 	"""
-	from one_bpmn.one_bpmn.engine import _check_script_permissions
+	from processa.processa_engine.engine import _check_script_permissions
 
 	script = frappe.db.get_value("Server Script", RECOUNT_SCRIPT, "script")
 	if script is None:
