@@ -7,6 +7,17 @@ from frappe.desk.form.assign_to import close_all_assignments
 from frappe.model.document import Document
 
 CLOSED_STATES = ("Approved", "Rejected")
+# Every approval step a withdrawal can be rejected from, and the field naming the
+# one user entitled to act on it. The workflow's own "allowed" role is too coarse
+# to gate on -- the supervisor and line manager steps are open to "Employee",
+# which every requester holds, including the one who raised the withdrawal.
+STATE_APPROVER_FIELD = {
+	"Pending Line Manager": "supervisor",
+	"Pending Supervisor": "supervisor",
+	"Pending T4 Admin": "t4_admin",
+	"Pending Project Manager": "project_manager",
+}
+REJECTABLE_STATES = tuple(STATE_APPROVER_FIELD)
 
 
 class EmployeeResignationWithdrawal(Document):
@@ -173,17 +184,25 @@ class EmployeeResignationWithdrawal(Document):
 			)
 
 	def validate_rejection_reason(self):
-		if not self.is_new():
-			old_doc = self.get_doc_before_save()
-			if (
-				old_doc
-				and old_doc.workflow_state in [
-					"Pending Line Manager", "Pending Supervisor", "Pending T4 Admin", "Pending Project Manager",
-				]
-				and self.workflow_state == "Rejected"
-			):
-				if not getattr(self, "reason_for_rejection", None):
-					frappe.throw(_("Please provide Reason for Rejection"))
+		if self.is_new():
+			return
+
+		old_doc = self.get_doc_before_save()
+		if (
+			not old_doc
+			or old_doc.workflow_state not in REJECTABLE_STATES
+			or self.workflow_state != "Rejected"
+		):
+			return
+
+		if not getattr(self, "reason_for_rejection", None):
+			frappe.throw(_("Please provide Reason for Rejection"))
+
+		# Enforced on the transition itself, not only in set_rejection_reason:
+		# one_fm.overrides.workflow.apply_workflow builds the document straight
+		# from the payload the browser sends, so a reason can reach the server
+		# without passing through that method at all.
+		check_is_current_approver(old_doc)
 
 	def set_approver(self):
 		if not self.employee and self.employee_resignation:
@@ -219,3 +238,58 @@ class EmployeeResignationWithdrawal(Document):
 			if om_users:
 				self.offboarding_officer = om_users[0]
 
+
+
+@frappe.whitelist(methods=["POST"])
+def set_rejection_reason(name: str, reason_for_rejection: str) -> dict:
+	"""Persist only the Reason for Rejection, ahead of the Reject workflow action.
+
+	frappe.model.workflow.apply_workflow() calls doc.load_from_db() before it
+	runs the transition, which replaces every in-memory value with the stored
+	row. A reason set on the client is therefore discarded, and
+	validate_rejection_reason() then blocks the rejection. Writing the single
+	field first means load_from_db() reads it back instead of wiping it.
+
+	Deliberately a narrow db_set rather than a save: the approver is answering a
+	prompt about one field, and a full save would re-run validation unrelated to
+	the rejection they are trying to record.
+	"""
+	reason_for_rejection = (reason_for_rejection or "").strip()
+	if not reason_for_rejection:
+		frappe.throw(_("Please provide Reason for Rejection"))
+
+	doc = frappe.get_doc("Employee Resignation Withdrawal", name)
+	doc.check_permission("write")
+
+	if doc.workflow_state not in REJECTABLE_STATES:
+		frappe.throw(
+			_("A Reason for Rejection can only be recorded while the withdrawal is awaiting approval."),
+			title=_("Not Awaiting Approval"),
+		)
+
+	check_is_current_approver(doc)
+
+	doc.db_set("reason_for_rejection", reason_for_rejection)
+
+	# one_fm.overrides.workflow.apply_workflow does not reload the document
+	# before saving it, so the browser's copy -- still carrying the timestamp
+	# from before this write -- would fail the modified check on the very next
+	# call. Hand back the new one for the form to adopt.
+	return {"modified": frappe.db.get_value("Employee Resignation Withdrawal", name, "modified")}
+
+
+def check_is_current_approver(doc) -> None:
+	"""Only the user a withdrawal is sitting with may reject it.
+
+	The workflow's own "allowed" role is too coarse to rely on: the supervisor
+	and line manager steps are open to "Employee", which the requester holds
+	too, and the DocType grants that role write. System Manager keeps an escape
+	hatch for data fixes.
+	"""
+	approver = doc.get(STATE_APPROVER_FIELD[doc.workflow_state])
+	if frappe.session.user != approver and "System Manager" not in frappe.get_roles():
+		frappe.throw(
+			_("Only the approver this withdrawal is currently with can reject it."),
+			frappe.PermissionError,
+			title=_("Not the Current Approver"),
+		)

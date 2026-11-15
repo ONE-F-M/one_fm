@@ -1175,8 +1175,15 @@ def remind_annual_leave_employees_to_helpdesk_user():
     """
         Send a reminder email to helpdesk user with the list of employees whose leave ends soon.
     """
-    helpdesk_email = frappe.db.get_single_value("HR Settings", "helpdesk_email")
-    if not helpdesk_email:
+    # Every address configured in HR Settings, in the order the table lists them.
+    # Nobody configured still means no email rather than a broadcast to nobody.
+    recipients = list(frappe.get_all(
+        "Helpdesk Notification Email",
+        filters={"parenttype": "HR Settings", "parentfield": "helpdesk_notification_emails"},
+        pluck="email_id",
+        order_by="idx asc",
+    ))
+    if not recipients:
         return
 
     employees_on_leave = get_employees_whose_leave_ends_in(leave_ends_in=6)
@@ -1186,7 +1193,7 @@ def remind_annual_leave_employees_to_helpdesk_user():
 
     message = frappe.render_template("one_fm/templates/emails/reminder_employees_on_annual_leave.html", {"employees": employees_on_leave})
     sendemail(
-        recipients=[helpdesk_email],
+        recipients=recipients,
         subject="Reminder: Employees' Leave Ending in 7 Days",
         message=message,
         is_external_mail=True
