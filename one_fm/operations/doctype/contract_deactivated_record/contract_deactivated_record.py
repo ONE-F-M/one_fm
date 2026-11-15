@@ -4,5 +4,5 @@
 from frappe.model.document import Document
 
 
-class PathfinderLogChangeRequest(Document):
+class ContractDeactivatedRecord(Document):
 	pass

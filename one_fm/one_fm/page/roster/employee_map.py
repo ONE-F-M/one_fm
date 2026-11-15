@@ -103,6 +103,10 @@ def is_relief_shift(schedule):
 	if schedule.get("employee_availability") != "Working":
 		return 0
 
+	# Annual leave relief has its own border (is_al_relief_shift).
+	if cint(schedule.get("is_annual_leave_reliever")):
+		return 0
+
 	if schedule.get("active_rambo_assignment"):
 		return 1
 
@@ -306,7 +310,7 @@ class CreateMap:
 				es.day_off_ot, es.project, es.site, emp.project as actual_project,
 				emp.site as actual_site, emp.shift as actual_shift, es.event_location, es.client_event,
 				es.on_the_job_training, es.reference_doctype, es.reference_docname, {get_workflow_state_select()},
-				es.is_rambo_schedule, es.is_relieving_schedule, ra.name as active_rambo_assignment,
+				es.is_rambo_schedule, es.is_relieving_schedule, es.is_annual_leave_reliever, ra.name as active_rambo_assignment,
 				emp.custom_is_reliever, emp.custom_is_weekend_reliever
 			FROM `tabEmployee Schedule` es 
 			JOIN `tabEmployee` emp
@@ -359,6 +363,9 @@ class CreateMap:
 		# Normalize date and datetime fields to string for Pandas compatibility
 		for schedule in self.schedule_records_raw:
 			schedule['is_relief_shift'] = is_relief_shift(schedule)
+			schedule['is_al_relief_shift'] = int(
+				schedule.get('employee_availability') == "Working" and cint(schedule.get('is_annual_leave_reliever'))
+			)
 			if isinstance(schedule.get('date'), (datetime.date, datetime.datetime)):
 				schedule['date'] = str(schedule['date'])
 			if isinstance(schedule.get('start_datetime'), (datetime.date, datetime.datetime)):
@@ -491,6 +498,7 @@ class CreateMap:
 						'actual_shift': attendance.get('actual_shift'),
 						# Relief flag inherited from the matched schedule so the border survives attendance.
 						'is_relief_shift': matched_schedule.get('is_relief_shift') or 0,
+						'is_al_relief_shift': matched_schedule.get('is_al_relief_shift') or 0,
 						# Rambo reliever flag so the roster grid can treat this row as a reliever (NR logic).
 						'custom_is_rambo_reliever': self.employee_period_details[employee_id].get('custom_is_rambo_reliever')
 					})
