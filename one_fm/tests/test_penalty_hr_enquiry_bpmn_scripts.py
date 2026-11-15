@@ -602,6 +602,16 @@ class TestTheDiagrams(FrappeTestCase):
 				join = default.get("targetRef")
 				self.assertEqual(next(f for f in flows.values() if f.get("sourceRef") == join).get("targetRef"), reopened)
 
+	def test_penalty_applied_saves_the_already_submitted_investigation(self):
+		# With no Frappe Workflow, docStatus="1" on a submitted doc skips the save.
+		task = next(
+			e
+			for e in self.root(LEGAL_INVESTIGATION_PROCESS).iter(BPMN + "serviceTask")
+			if e.get("id") == "task_set_penalty_applied"
+		)
+		self.assertEqual(task.get(SPIFF + "workflowState"), "Penalty Applied")
+		self.assertIsNone(task.get(SPIFF + "docStatus"))
+
 	def test_investigation_tasks_go_to_the_lead_user(self):
 		fields = {
 			e.get(SPIFF + "assigneeDocfield") for e in self.root(LEGAL_INVESTIGATION_PROCESS).iter(BPMN + "userTask")
