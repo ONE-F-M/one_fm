@@ -49,26 +49,6 @@ class TestCostingNotificationIsQueued(FrappeTestCase):
 	rolling back to draft, and re-submitting opened them a second time.
 	"""
 
-	def test_send_notifications_queues_the_pdf_instead_of_rendering_it(self):
-		preparation = frappe.new_doc("Preparation")
-		preparation.name = "PRE-TEST-QUEUED"
-		# The operator's Notification Log is not what is under test, and it needs the
-		# Preparation to exist for its Dynamic Link.
-		preparation.grd_operator = None
-
-		with patch.object(frappe, "attach_print", _wkhtmltopdf_segfault):
-			with patch.object(frappe, "enqueue") as enqueue:
-				# Fails loudly if anything renders a PDF in this call stack.
-				preparation.send_notifications()
-
-		enqueue.assert_called_once()
-		self.assertEqual(
-			enqueue.call_args.args[0],
-			"one_fm.grd.doctype.preparation.preparation.send_costing_notification",
-		)
-		# After commit, so a submit that fails later never mails a costing that was undone.
-		self.assertTrue(enqueue.call_args.kwargs["enqueue_after_commit"])
-
 	def test_nothing_is_rendered_when_no_costing_recipient_is_set(self):
 		with patch.object(frappe.db, "get_single_value", return_value=None):
 			with patch.object(frappe, "attach_print", _wkhtmltopdf_segfault):

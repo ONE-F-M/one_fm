@@ -41,12 +41,22 @@ class TestTheFilterAndChipsUseIt(FrappeTestCase):
 	def setUpClass(cls):
 		super().setUpClass()
 		cls.canvas = CANVAS.read_text()
-		cls.body = cls.canvas.split("filteredPoolCards() {", 1)[1].split("\n            },", 1)[0]
 
 	def test_both_sides_of_every_comparison_are_normalised(self):
-		self.assertIn("const q = normalizeSearchText(this.searchQuery);", self.body)
-		for field in ("shift_name", "site_location", "accommodation", "stop_location"):
-			self.assertIn(f"normalizeSearchText(c.{field}).includes(q)", self.body)
+		# The shared predicate normalises both sides; the node check pins it with a
+		# stored double space and a typed single one.
+		check = CANVAS_DIR / "test_card_filter.js"
+		self.assertTrue(check.exists(), "the card-filter self-check is missing")
+		try:
+			result = subprocess.run(
+				["node", str(check)], capture_output=True, text=True, timeout=60
+			)
+		except FileNotFoundError:
+			self.skipTest("node is not available on this machine")
+		self.assertEqual(
+			result.returncode, 0,
+			f"node {check.name} failed:\n{result.stdout}\n{result.stderr}",
+		)
 
 	def test_matching_riders_lead_the_chips_and_the_count_is_unchanged(self):
 		self.assertIn("chipEmployees(card).slice(0,3)", self.canvas)

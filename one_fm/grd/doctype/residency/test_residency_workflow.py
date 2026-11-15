@@ -95,7 +95,8 @@ class TestResidencyWorkflow(FrappeTestCase):
 		rule = get_assignment_rule_json_file("residency_gr_operator.json")
 		self.assertEqual(rule["name"], "Residency - GR Operator")
 		self.assertEqual(rule["field"], "owner")
-		self.assertEqual(rule["disabled"], 0)
+		# Retired: the Residency Lifecycle process assigns every task.
+		self.assertEqual(rule["disabled"], 1)
 		self.assertIn("Draft", rule["assign_condition"])
 		self.assertIn(PENDING_GRO, rule["assign_condition"])
 

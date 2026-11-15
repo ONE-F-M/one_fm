@@ -76,53 +76,16 @@ var set_status = function(frm)
         frm.set_value('paci_status',"Under-Process");
     }
 };
-// WI-001830 AC3/AC4: a rejection has to say why, and a rejected application can be
+// WI-001830 AC4: a rejected application can be
 // raised again without re-entering the candidate. The states either side of this are
 // PACI's own - Pending by PACI rejects to Rejected, and Rejected is where Reapply lives.
-const PACI_REJECTING_STATE = 'Pending by PACI';
 const PACI_REJECTED_STATE = 'Rejected';
 
 frappe.ui.form.on('PACI', {
 	refresh: function(frm) {
 		add_reapply_button(frm);
-	},
-
-	before_workflow_action: function(frm) {
-		if (frm.selected_workflow_action !== 'Reject') return;
-		if (frm.doc.workflow_state !== PACI_REJECTING_STATE) return;
-
-		return ask_for_paci_rejection_reason(frm);
 	}
 });
-
-function ask_for_paci_rejection_reason(frm) {
-	// Options come from the field itself rather than a list kept here, which would only
-	// drift from what the field will accept on save.
-	const df = frappe.meta.get_docfield('PACI', 'paci_rejection_reason', frm.doc.name);
-	const options = (df && df.options ? df.options : '').split('\n').filter(o => o);
-
-	return new Promise((resolve, reject) => {
-		frappe.prompt(
-			[{
-				label: __('PACI Rejection Reason'),
-				fieldname: 'reason',
-				fieldtype: 'Select',
-				options: options.join('\n'),
-				reqd: 1
-			}],
-			(values) => {
-				frm.set_value('paci_rejection_reason', values.reason);
-				frm.save().then(resolve).catch(reject);
-			},
-			__('PACI Rejection Reason'),
-			__('Reject')
-		);
-
-		// Frappe freezes the form for a workflow action; the prompt is unusable until it
-		// is released.
-		frappe.dom.unfreeze();
-	});
-}
 
 function add_reapply_button(frm) {
 	if (frm.is_new() || frm.doc.workflow_state !== PACI_REJECTED_STATE) return;

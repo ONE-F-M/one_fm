@@ -7,15 +7,14 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import nowdate
 
 from one_fm import hooks
-from one_fm.grd.doctype.residency import residency
 from one_fm.grd.doctype.preparation.preparation import (
 	SUB_DOCUMENT_SEQUENCE,
-	create_documents_for_row,
 	create_preparation_record,
 	current_stage,
 	refresh_row_stage,
 	update_row_reference,
 )
+from one_fm.grd.doctype.preparation.test_preparation_processa_scripts import open_row_documents
 
 HANDLER = "one_fm.grd.doctype.preparation.preparation.update_row_reference"
 
@@ -133,7 +132,7 @@ class TestPreparationRowSummary(FrappeTestCase):
 	def test_opening_the_documents_points_the_row_at_the_first_unfinished_one(self):
 		preparation = self._a_preparation()
 
-		create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		open_row_documents(preparation)
 
 		row = self._row(preparation)
 		self.assertEqual(row.ref_doctype, "Work Permit")
@@ -142,7 +141,7 @@ class TestPreparationRowSummary(FrappeTestCase):
 
 	def test_the_status_is_the_document_s_own_state(self):
 		preparation = self._a_preparation()
-		create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		open_row_documents(preparation)
 
 		row = self._row(preparation)
 		state = frappe.db.get_value(row.ref_doctype, row.ref_name, "workflow_state")
@@ -150,9 +149,10 @@ class TestPreparationRowSummary(FrappeTestCase):
 
 	def test_an_extension_row_starts_at_residency(self):
 		preparation = self._a_preparation(action="Extension", category="Renewal")
-		residency.create_moi_record(
-			frappe.get_doc("Employee", self.employee), "Extension", preparation.name
-		)
+		frappe.get_doc({
+			"doctype": "Residency", "employee": self.employee, "preparation": preparation.name,
+			"renewal_or_extend": "Extension", "category": "Extend", "date_of_application": nowdate(),
+		}).insert()
 
 		refresh_row_stage(preparation.name, self.employee)
 
@@ -162,7 +162,7 @@ class TestPreparationRowSummary(FrappeTestCase):
 
 	def test_a_completed_work_permit_moves_the_row_to_medical_insurance(self):
 		preparation = self._a_preparation()
-		create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		open_row_documents(preparation)
 
 		work_permit = frappe.get_last_doc("Work Permit", filters={"preparation": preparation.name})
 		work_permit.db_set("workflow_state", "Completed")
@@ -178,7 +178,7 @@ class TestPreparationRowSummary(FrappeTestCase):
 
 	def test_a_row_follows_the_document_when_it_is_cancelled(self):
 		preparation = self._a_preparation()
-		create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		open_row_documents(preparation)
 
 		work_permit = frappe.get_last_doc("Work Permit", filters={"preparation": preparation.name})
 		frappe.db.set_value("Work Permit", work_permit.name, "docstatus", 2)
@@ -199,7 +199,7 @@ class TestPreparationRowSummary(FrappeTestCase):
 	def test_a_document_with_no_preparation_touches_nothing(self):
 		"""Most of these documents are raised outside a Preparation entirely."""
 		preparation = self._a_preparation()
-		create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		open_row_documents(preparation)
 		before = self._row(preparation).ref_doctype_status
 
 		orphan = frappe.get_last_doc("PACI", filters={"preparation": preparation.name})

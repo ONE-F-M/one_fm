@@ -17,7 +17,8 @@
   "grd_supervisor",
   "submitted_by",
   "submitted_on",
-  "amended_from"
+  "amended_from",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -108,11 +109,20 @@
    "options": "\nOnboarding\nOffboarding\nRenewal",
    "reqd": 1,
    "set_only_once": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-20 12:00:00.000000",
+ "modified": "2026-11-08 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Preparation",

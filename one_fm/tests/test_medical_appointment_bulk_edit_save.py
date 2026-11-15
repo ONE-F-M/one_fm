@@ -6,7 +6,6 @@ and PRO User must still save when only one of them is set, while leaving Draft s
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.grd.doctype.medical_appointment.medical_appointment import create_medical_appointment
 
 
 class TestMedicalAppointmentBulkEditSave(FrappeTestCase):
@@ -14,7 +13,10 @@ class TestMedicalAppointmentBulkEditSave(FrappeTestCase):
 		employee = frappe.db.get_value("Employee", {"status": "Active"}, "name")
 		if not employee:
 			self.skipTest("No active Employee on this site")
-		self.appointment = create_medical_appointment(frappe.get_doc("Employee", employee), "First Time")
+		self.appointment = frappe.get_doc({
+			"doctype": "Medical Appointment", "employee": employee, "medical_appointment_type": "First Time",
+			"date_of_application": frappe.utils.today(),
+		}).insert(ignore_mandatory=True)
 		self.appointment.db_set("employee_supervisor", "Administrator")
 		self.appointment.reload()
 

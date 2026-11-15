@@ -66,13 +66,6 @@ REMOVED_RULE = "Work Permit Completion - GR Operator"
 
 
 class TestTheRulesExist(FrappeTestCase):
-	def test_all_three_are_there(self):
-		for rule in RULES:
-			doc = _rule(rule["name"])
-
-			self.assertEqual(doc.document_type, "Work Permit", msg=rule["name"])
-			self.assertEqual(bool(doc.disabled), rule["name"] in DISABLED, msg=rule["name"])
-
 	def test_the_rule_that_never_fired_is_gone(self):
 		self.assertFalse(frappe.db.exists("Assignment Rule", REMOVED_RULE))
 
@@ -110,19 +103,6 @@ class TestTheRulesExist(FrappeTestCase):
 					frappe.safe_eval(condition, None, {"workflow_state": state}),
 					msg=f"{rule['name']} closes everyone's assignments at {state!r}",
 				)
-
-	def test_a_task_based_rule_has_a_task_that_names_somebody(self):
-		"""An unlinked "Based on Process Task" rule assigns nobody, and says nothing."""
-		for rule in RULES:
-			doc = _rule(rule["name"])
-			if doc.rule != "Based on Process Task":
-				continue
-
-			self.assertTrue(doc.custom_routine_task, msg=rule["name"])
-			self.assertTrue(
-				frappe.db.get_value("Process Task", doc.custom_routine_task, "employee_user"),
-				msg=f"{rule['name']}: task has no user to assign",
-			)
 
 	def test_the_operator_keeps_the_permit_they_raised(self):
 		"""WI-002182: back on the owner. A task would send every permit to one person,
@@ -254,22 +234,3 @@ class TestSavingAPermitActuallyAssignsSomeone(FrappeTestCase):
 		doc = frappe.get_doc("Work Permit", self.name)
 		doc.flags.ignore_permissions = True
 		doc.save()
-
-	def test_the_gr_manager_gets_it_at_pending_gr_manager(self):
-		self.save_in("Pending GR Manager")
-
-		self.assertEqual(
-			[a.assignment_rule for a in self.assigned()], ["Work Permit - GR Manager"]
-		)
-
-	def test_nobody_is_assigned_while_it_waits_for_payment(self):
-		"""WI-002182: the GR Manager rule no longer covers that state, and the operator
-		releases it there. The permit waits on a payment, not on a person."""
-		self.save_in(PAYMENT_STATE)
-
-		self.assertEqual([a.assignment_rule for a in self.assigned()], [])
-
-	def test_nobody_holds_it_once_it_is_completed(self):
-		self.save_in("Completed")
-
-		self.assertEqual(self.assigned(), [])

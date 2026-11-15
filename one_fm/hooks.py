@@ -245,29 +245,21 @@ doc_events = {
 	# Each of these carries the Preparation that opened it. Its own save, cancel and delete
 	# refresh the Current Stage column on that Preparation's row.
 	"Work Permit": {
-		# WI-002096: no step completes before the one in front of it.
-		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
 		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
 		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
 		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Medical Insurance": {
-		# WI-002096: no step completes before the one in front of it.
-		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
 		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
 		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
 		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Residency": {
-		# WI-002096: no step completes before the one in front of it.
-		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
 		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
 		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
 		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"PACI": {
-		# WI-002096: no step completes before the one in front of it.
-		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
 		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
 		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
 		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
@@ -678,7 +670,6 @@ scheduler_events = {
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
 		'one_fm.tasks.execute.daily',
 		"one_fm.one_fm.doctype.candidate_country_process.candidate_country_process.refresh_open_ccp_live_plans",
-		'one_fm.one_fm.doctype.maintenance_schedule_entry.maintenance_schedule_entry.generate_due_work_orders',
 		"one_fm.one_fm.utils.attach_abbreviation_to_roles",
   		"one_fm.api.v2.zenquotes.set_cached_quote",
 		"one_fm.operations.doctype.contracts.contracts.send_contract_reminders",
@@ -695,12 +686,8 @@ scheduler_events = {
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task',
 		'one_fm.fleet_management.vehicle_branding_expiry.notify_vehicle_branding_expiry',
 		'one_fm.one_fm.doctype.employee_resignation.employee_resignation.hand_over_in_process_approvals',
-		# WI-002449: a week's notice before a PAM Licence letter of guarantee expires.
-		'one_fm.grd.lg_expiry.notify_lg_expiry',
 		# WI-002431: raise a cancellation for every visa that has reached its expiry.
 		'one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request.cancel_expired_visas',
-		# HD-1898774: name any submitted Preparation whose rows never got their documents.
-		'one_fm.grd.doctype.preparation.preparation.notify_preparations_with_missing_documents',
 		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
 		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.deactivate_expired_shipments',
 		'one_fm.one_fm.doctype.transportation_manifest.manifest_compiler.compile_daily_manifests'
@@ -744,9 +731,6 @@ scheduler_events = {
 		],
 		"15 4 1 * *": [# “At 04:15 on day-of-month 1.”
 			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record',
-		],
-		"30 4 1 * *": [# “At 04:30 on day-of-month 1.” Assess the billing month that just ended.
-			'one_fm.one_fm.doctype.maintenance_kpi_assessment.maintenance_kpi_assessment.create_monthly_assessments',
 		],
 		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
 			# 'one_fm.api.tasks.process_attendance',

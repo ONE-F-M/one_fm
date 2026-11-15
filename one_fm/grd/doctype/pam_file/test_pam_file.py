@@ -4,12 +4,11 @@
 """PAM File: validation and the derived active / inactive licence counts."""
 
 import json
-from unittest import mock
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.grd.doctype.pam_license_details import pam_license_details as license_module
+from one_fm.grd.doctype.pam_license_details.test_pam_license_details_processa_scripts import rules
 
 PAM_FILE_NAME = "_Test PAM File"
 LICENSE_A = "_Test PAM A"
@@ -126,16 +125,18 @@ class TestSetLicenseCounts(FrappeTestCase):
 
 class TestLicenseCountsEndToEnd(FrappeTestCase):
 	def setUp(self):
-		# A licence counts its employees on every save, off Employee.pam_file. That headcount
-		# is not what is under test, and it is stubbed so these tests do not depend on the
-		# Employee table carrying the column.
-		patcher = mock.patch.object(license_module, "count_license_employees", return_value=0)
-		patcher.start()
-		self.addCleanup(patcher.stop)
+		# The headcount drives the licence status, so it is stubbed per licence: A carries
+		# employees and B carries none.
+		self.counts = {LICENSE_A: 5, LICENSE_B: 0}
+		self.rules = rules()
+		self.rules["count_license_employees"] = lambda name: self.counts.get(name, 0)
 
 		self._cleanup()
-		self.license_a = self._make_license(LICENSE_A, "_TEST-PAM-A", "Active")
-		self.license_b = self._make_license(LICENSE_B, "_TEST-PAM-B", "Inactive")
+		self.license_a = self._make_license(LICENSE_A, "_TEST-PAM-A")
+		self.license_b = self._make_license(LICENSE_B, "_TEST-PAM-B")
+		for license in (self.license_a, self.license_b):
+			self.rules["recount_license"](license.name)
+			license.reload()
 
 		self.pam_file = new_file(
 			licence_row("", self.license_a.name), licence_row("", self.license_b.name)
@@ -152,17 +153,30 @@ class TestLicenseCountsEndToEnd(FrappeTestCase):
 			if frappe.db.exists("PAM License Details", name):
 				frappe.delete_doc("PAM License Details", name, force=True)
 
-	def _make_license(self, label, civil_id, status):
+	def _make_license(self, label, civil_id):
 		return frappe.get_doc(
 			{
 				"doctype": "PAM License Details",
 				"label_name": label,
 				"civil_id_number_for_licensing": civil_id,
-				"status": status,
 			}
 		).insert()
 
+	def _assert_a_went_inactive(self):
+		self.pam_file.reload()
+		self.assertEqual(self.pam_file.number_of_active_licenses, "0")
+		self.assertEqual(self.pam_file.number_of_inactive_licenses, "2")
+		row = next(
+			r
+			for r in self.pam_file.pam_licenses
+			if r.civil_id_number_for_licensing == self.license_a.name
+		)
+		self.assertEqual(row.status, "Inactive")
+		self.assertEqual(self.pam_file.file_status, "Inactive")
+
 	def test_one_active_and_one_inactive_licence(self):
+		self.assertEqual(self.license_a.status, "Active")
+		self.assertEqual(self.license_b.status, "Inactive")
 		self.pam_file.reload()
 		self.assertEqual(self.pam_file.number_of_active_licenses, "1")
 		self.assertEqual(self.pam_file.number_of_inactive_licenses, "1")
@@ -179,20 +193,24 @@ class TestLicenseCountsEndToEnd(FrappeTestCase):
 		self.assertEqual(self.pam_file.number_of_inactive_licenses, "0")
 
 	def test_a_licence_going_inactive_is_pushed_to_the_file(self):
+		self.counts[LICENSE_A] = 0
 		self.license_a.reload()
-		self.license_a.status = "Inactive"
 		self.license_a.save()
+		self.rules["recount_license"](LICENSE_A)
+		self.license_a.reload()
 
-		self.pam_file.reload()
-		self.assertEqual(self.pam_file.number_of_active_licenses, "0")
-		self.assertEqual(self.pam_file.number_of_inactive_licenses, "2")
-		row = next(
-			r
-			for r in self.pam_file.pam_licenses
-			if r.civil_id_number_for_licensing == self.license_a.name
+		self.assertEqual(self.license_a.status, "Inactive")
+		self._assert_a_went_inactive()
+
+	def test_an_employee_recount_emptying_a_licence_is_pushed_to_the_file(self):
+		"""The path an Employee save takes: a db write, no licence save."""
+		self.counts[LICENSE_A] = 0
+		self.rules["recount_license_total"](LICENSE_A)
+
+		self.assertEqual(
+			frappe.db.get_value("PAM License Details", LICENSE_A, "status"), "Inactive"
 		)
-		self.assertEqual(row.status, "Inactive")
-		self.assertEqual(self.pam_file.file_status, "Inactive")
+		self._assert_a_went_inactive()
 
 
 class TestFieldsAreReadOnly(FrappeTestCase):

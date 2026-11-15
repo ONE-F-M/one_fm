@@ -1,10 +1,18 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
+"""A client's maintenance service levels.
+
+The Maintenance Service Level Agreement Lifecycle map submits it, and the Maintenance SLA
+Expiration Warning timer tells the Maintenance Manager 30 days before it ends.
+"""
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import add_days, formatdate, getdate, get_url_to_form, today
+from frappe.utils import getdate
+
+from one_fm.one_fm.processa_rules import run_rule
 
 
 class MaintenanceServiceLevelAgreement(Document):
@@ -12,7 +20,7 @@ class MaintenanceServiceLevelAgreement(Document):
 		self.validate_single_enabled_sla_per_client()
 		self.validate_date_range()
 		self.validate_default_priority()
-		self.set_default_priority()
+		run_rule("Set SLA Default Priority", "set_default_priority", self)
 		self.validate_priority_fields()
 
 	def validate_single_enabled_sla_per_client(self):
@@ -67,13 +75,6 @@ class MaintenanceServiceLevelAgreement(Document):
 				)
 			)
 
-	def set_default_priority(self):
-		"""Auto-populate the parent default_priority field from the marked row."""
-		for d in self.priorities:
-			if d.default_priority:
-				self.default_priority = d.priority
-				break
-
 	def validate_priority_fields(self):
 		"""Validate that mandatory fields in priority rows are properly filled.
 
@@ -95,81 +96,3 @@ class MaintenanceServiceLevelAgreement(Document):
 					_("Row {0}: Maintenance Hours To is mandatory in the Priorities table").format(idx)
 				)
 
-
-def send_sla_expiration_warnings():
-	"""Daily scheduler: alert the Maintenance Manager 30 days before an SLA expires.
-
-	Runs as part of the daily operational check. For every enabled, submitted
-	Maintenance Service Level Agreement whose End Date is exactly 30 calendar days
-	from today, a high-priority email is sent to the Maintenance Manager user
-	configured in Maintenance Settings.
-	"""
-	target_date = add_days(today(), 30)
-
-	# get_all is appropriate here: background scheduler job, no user context.
-	agreements = frappe.get_all(
-		"Maintenance Service Level Agreement",
-		filters={
-			"enabled": 1,
-			"docstatus": 1,
-			"end_date": target_date,
-		},
-		fields=["name", "entity_type", "entity", "end_date"],
-	)
-
-	if not agreements:
-		return
-
-	maintenance_manager = frappe.db.get_single_value(
-		"Maintenance Settings", "maintenance_manager_user"
-	)
-
-	if not maintenance_manager:
-		frappe.log_error(
-			title=_("SLA Expiration Warning Skipped"),
-			message=_(
-				"No Maintenance Manager User is set in Maintenance Settings; "
-				"{0} SLA expiration warning(s) could not be sent."
-			).format(len(agreements)),
-		)
-		return
-
-	for agreement in agreements:
-		try:
-			send_single_sla_expiration_warning(agreement, maintenance_manager)
-		except Exception:
-			frappe.log_error(
-				title=_("SLA Expiration Warning Error"),
-				message=frappe.get_traceback(),
-			)
-
-
-def send_single_sla_expiration_warning(agreement, recipient):
-	"""Render and send the expiration warning email for a single SLA."""
-	# "Client Name" is the linked Customer entity; non-Customer SLAs show entity as-is.
-	client_name = agreement.entity if agreement.entity_type == "Customer" else (agreement.entity or "")
-
-	context = {
-		"doc": agreement,
-		"client_name": client_name,
-		"end_date": formatdate(agreement.end_date),
-		"sla_url": get_url_to_form("Maintenance Service Level Agreement", agreement.name),
-	}
-
-	message = frappe.render_template(
-		"one_fm/templates/emails/sla_expiration_warning.html",
-		context,
-	)
-
-	subject = _("SLA Expiration Warning: {0} for {1} expires in 30 Days").format(
-		agreement.name, client_name
-	)
-
-	from one_fm.processor import sendemail
-
-	sendemail(
-		recipients=[recipient],
-		subject=subject,
-		header=[_("SLA Expiration Warning")],
-		message=message,
-	)

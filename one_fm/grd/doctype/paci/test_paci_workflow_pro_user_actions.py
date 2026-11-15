@@ -7,7 +7,7 @@ from frappe.model.workflow import is_transition_condition_satisfied
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.custom.workflow.workflow import get_workflow_json_file
-from one_fm.grd.doctype.paci.paci import PENDING_GR_OPERATOR
+PENDING_GR_OPERATOR = "Pending by GR Operator"
 from one_fm.patches.v15_0 import paci_update_actions_follow_pro_user
 
 DIRECT = ("Update Address", "Update Photo")

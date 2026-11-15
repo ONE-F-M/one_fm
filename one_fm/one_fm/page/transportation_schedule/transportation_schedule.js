@@ -50,6 +50,152 @@ function matrixMatches(row, filters) {
 }
 // ── End traceability matrix filter ──────────────────────────────────────────
 
+// ── Matrix card summary ─────────────────────────────────────────────────────
+// What the Manage Card dialog reports for the ticked riders on the chosen legs.
+// test_matrix_filter.js reads this block out of the file by these two banners.
+function matrixCardSummary(riders, ticked, legs) {
+    const onLegs = (riders || []).filter(r => (r.legs || []).some(l => legs.includes(l)));
+    const going = onLegs.filter(r => ticked.has(r.id));
+    return {
+        employees: going.map(r => r.id),
+        removing: going.length,
+        staying: onLegs.length - going.length,
+        seatsFreed: going.reduce((n, r) => n + r.legs.filter(l => legs.includes(l)).length, 0),
+        activeLeaving: going.filter(r => !r.stale).length,
+        allTicked: onLegs.length > 0 && going.length === onLegs.length,
+    };
+}
+// ── End matrix card summary ─────────────────────────────────────────────────
+
+// Reasons offered when a rider is removed from a card or a card is cancelled.
+const MATRIX_REMOVAL_REASONS = [
+    'Checked out of accommodation', 'Resigned / Left', 'On leave', 'Moved to another card', 'Other',
+];
+
+// ── Grid navigation ──────────────────────────────────────────────────────────────
+// The pure arithmetic behind the floating navigation pad. test_grid_navigation.js
+// reads this block out of the file by these two banners, so keep it free of anything
+// else. All times are epoch milliseconds.
+const NAV_HOUR_MS = 3600000;
+
+// Shift a window by frac x its own duration, clamped into [minMs, maxMs] WITHOUT
+// changing the duration (the wheel refuses a pan that would cross a bound; this slides
+// to the bound instead). A window wider than the range can only be the whole range.
+function panWindow(startMs, endMs, minMs, maxMs, frac) {
+    const dur = endMs - startMs;
+    if (dur >= maxMs - minMs) return { start: minMs, end: maxMs };
+    const start = Math.min(Math.max(startMs + frac * dur, minMs), maxMs - dur);
+    return { start, end: start + dur };
+}
+
+// Where a vertical scroll of one screen lands. Going down: the last row top that is
+// within one viewport ahead; going up: the first row top within one viewport behind.
+// With nothing in reach it takes the nearest row in that direction, and at the first or
+// last row it stays where it is.
+function snapScrollTop(rowTops, scrollTop, viewport, dir) {
+    const tops = rowTops.slice().sort((a, b) => a - b);
+    if (dir > 0) {
+        const ahead = tops.filter(t => t > scrollTop);
+        if (!ahead.length) return scrollTop;
+        const fit = ahead.filter(t => t <= scrollTop + viewport);
+        return fit.length ? fit[fit.length - 1] : ahead[0];
+    }
+    const behind = tops.filter(t => t < scrollTop);
+    if (!behind.length) return scrollTop;
+    const fit = behind.filter(t => t >= scrollTop - viewport);
+    return fit.length ? fit[0] : behind[behind.length - 1];
+}
+
+// The toolbar's Work window, 05:00-19:00 Kuwait. planStart is 21:00 Kuwait the evening
+// before, so the day itself starts 3 h after it - the same anchor the plan load uses.
+function workWindow(planStartMs) {
+    const day = planStartMs + 3 * NAV_HOUR_MS;
+    return { start: day + 5 * NAV_HOUR_MS, end: day + 19 * NAV_HOUR_MS };
+}
+// ── End grid navigation ──────────────────────────────────────────────────────────
+
+// ── Card filter ──────────────────────────────────────────────────────────
+// One predicate for the unassigned pool AND the schedule blocks, so the two always
+// agree. test_card_filter.js reads this block out of the file by these two banners
+// and needs normalizeSearchText above, so keep it free of anything else.
+// f = { q, emp, shift, shiftExact, shiftStart, shiftEnd }; every set criterion must pass.
+function cardMatchesFilters(card, f) {
+    const c = card || {};
+    const x = f || {};
+    if (x.shiftStart && c.shift_start !== x.shiftStart) return false;
+    if (x.shiftEnd && c.shift_end !== x.shiftEnd) return false;
+    // A shift picked from the list is an exact name; half-typed text narrows by contains.
+    const shift = String(x.shift || '').trim();
+    if (shift) {
+        const name = c.shift_name || '';
+        if (x.shiftExact ? name !== shift
+                         : !normalizeSearchText(name).includes(normalizeSearchText(shift))) return false;
+    }
+    // Both sides are flattened: a stored "Samir  Basnet" matches a typed "samir basnet".
+    const emp = normalizeSearchText(x.emp);
+    if (emp && !(c.employees || []).some(e =>
+        normalizeSearchText(e && e.name).includes(emp))) return false;
+    const q = normalizeSearchText(x.q);
+    if (!q) return true;
+    return [c.shift_name, c.site_location, c.accommodation, c.stop_location, c.direction]
+        .some(v => normalizeSearchText(v).includes(q));
+}
+
+// A drawn block matches when any one of its cards (or their riders) matches.
+function blockMatchesFilters(cards, f) {
+    return (cards || []).some(c => cardMatchesFilters(c, f));
+}
+// ── End card filter ──────────────────────────────────────────────────────────
+
+// ── Lane grouping ──────────────────────────────────────────────────────────
+// The pure rule behind the "Group by" control on the timeline. mode '' keeps the
+// lanes flat, in the order they arrive; 'location' buckets by the printed
+// accommodation (falling back to the raw location) and 'type' by vehicle type. A
+// blank (or the server's '—') bucket sorts last. Every vehicle lands in exactly one
+// bucket, in its original order. test_lane_grouping.js reads this block out of the
+// file by these two banners, so keep it free of anything else.
+function groupLaneRows(vehicles, mode, tripsByVehicle) {
+    const list = vehicles || [];
+    const trips = tripsByVehicle || {};
+    if (mode !== 'location' && mode !== 'type') {
+        return list.map(vehicle => ({ type: 'lane', vehicle }));
+    }
+    const clean = (v) => {
+        const s = String(v == null ? '' : v).trim();
+        return s === '\u2014' ? '' : s;
+    };
+    const keyOf = (vehicle) => (mode === 'location'
+        ? (clean(vehicle.accommodation) || clean(vehicle.location))
+        : clean(vehicle.type));
+    const blankName = mode === 'location' ? 'No location' : 'No vehicle type';
+
+    const buckets = new Map();
+    list.forEach(vehicle => {
+        const key = keyOf(vehicle);
+        if (!buckets.has(key)) buckets.set(key, []);
+        buckets.get(key).push(vehicle);
+    });
+    const keys = Array.from(buckets.keys()).sort((a, b) => {
+        if (a === '' || b === '') return a === b ? 0 : (a === '' ? 1 : -1);
+        return a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true });
+    });
+
+    const rows = [];
+    keys.forEach(key => {
+        const members = buckets.get(key);
+        rows.push({
+            type: 'group',
+            key,
+            name: key === '' ? blankName : key,
+            vehicleCount: members.length,
+            tripCount: members.reduce((n, v) => n + (trips[v.id] || 0), 0),
+        });
+        members.forEach(vehicle => rows.push({ type: 'lane', vehicle }));
+    });
+    return rows;
+}
+// ── End lane grouping ──────────────────────────────────────────────────────
+
 frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     injectRPLoadingStyles();
     $(wrapper).html(`
@@ -136,6 +282,9 @@ function mountRoutePlannerApp(wrapper, data) {
                 selectedStopIds: new Set(),
                 draggingCard: null,        // card being dragged from pool
                 isDraggingBlock: false,       // block being moved on lane
+                navIdle: false,               // navigation pad faded after 2 s without movement
+                lanesScrollTop: 0,            // #rp-lanes-area scrollTop, for the edge flags
+                lanesScrollMax: 0,            // scrollHeight - clientHeight
                 selectedPoolCard: null,    // mobile: tap-to-select card for assignment
                 searchQuery: '',
                 shiftStartFilter: '',         // WI-001683: selected shift start time, '' = all
@@ -143,7 +292,13 @@ function mountRoutePlannerApp(wrapper, data) {
                 employeeQuery: '',            // partial, case-insensitive, over the riders
                 shiftFilter: '',              // Operation Shift, typed or picked
                 shiftEndFilter: '',           // selected shift end time, '' = all
+                // What the three text boxes held 300 ms after typing stopped. The
+                // filters read these, so typing does not re-filter on every key.
+                appliedText: { q: '', emp: '', shift: '' },
                 collapsedGroups: {},          // { [accommodation]: boolean }
+                // Timeline "Group by": '' (None), 'location' or 'type'. Deliberately not
+                // persisted, so every load starts flat.
+                laneGroupBy: '',
                 canSave: false,
                 isGenerating: false,          // shipment generation in progress
                 stopDragSourceIndex: null,  // drag-reorder: source stop index
@@ -191,6 +346,29 @@ function mountRoutePlannerApp(wrapper, data) {
                 return this.windowEnd - this.windowStart;
             },
 
+            // Navigation pad: a button is off when the grid is already at that edge.
+            navAtLeft() {
+                return this.windowStart.getTime() <= this.planStart.getTime();
+            },
+            navAtRight() {
+                return this.windowEnd.getTime() >= this.planEnd.getTime();
+            },
+            navAtTop() {
+                return this.lanesScrollTop <= 0;
+            },
+            navAtBottom() {
+                return this.lanesScrollTop >= this.lanesScrollMax - 1;
+            },
+            // Centre with nothing selected goes to the Work window start and the first lane.
+            navAtHome() {
+                if (this.selectedItem) return false;
+                const dur = this.windowEnd.getTime() - this.windowStart.getTime();
+                const w = workWindow(this.planStart.getTime());
+                const home = panWindow(w.start, w.start + dur,
+                    this.planStart.getTime(), this.planEnd.getTime(), 0).start;
+                return Math.abs(this.windowStart.getTime() - home) < 1000 && this.lanesScrollTop <= 0;
+            },
+
             // Vehicle ids whose lane is held by an active multi-day lock today —
             // used to grey the lane and warn the dispatcher (TR-8). Only spans of
             // more than one day (lockTo > lockFrom) count as a block-out.
@@ -226,49 +404,51 @@ function mountRoutePlannerApp(wrapper, data) {
             // before it left, so a dispatcher can say "this shift, this person, ending at
             // 11:00" and get the cards that satisfy all three rather than any of them.
             filteredPoolCards() {
-                const q = normalizeSearchText(this.searchQuery);
-                const emp = normalizeSearchText(this.employeeQuery);
-                const shift = this.shiftFilter.trim();
-                const shiftLower = normalizeSearchText(shift);
-                // A shift picked from the list is an exact name and filters exactly
-                // (AC2). A half-typed one has not picked anything yet, so it narrows by
-                // what has been typed rather than matching nothing at all.
-                const shiftIsExact = shift && this.poolShiftOptions.includes(shift);
+                return this.unassignedPoolCards.filter(c => cardMatchesFilters(c, this.activeFilters));
+            },
 
-                return this.planData.shipment_cards.filter(c => {
-                    // Card is assigned when its specific ID is in assignedCards
-                    if (this.assignedCards.has(c.id)) return false;
+            // The one filter object the pool and the schedule blocks both read: the
+            // debounced text plus the two time selects, which stay immediate.
+            activeFilters() {
+                const t = this.appliedText;
+                const shift = t.shift.trim();
+                return {
+                    q: t.q, emp: t.emp, shift,
+                    // Picked from the list = exact; half-typed = contains.
+                    shiftExact: !!shift && this.poolShiftOptions.includes(shift),
+                    shiftStart: this.shiftStartFilter,
+                    shiftEnd: this.shiftEndFilter,
+                };
+            },
 
-                    // shift start time filter, applied across every
-                    // accommodation group rather than within one.
-                    if (this.shiftStartFilter && c.shift_start !== this.shiftStartFilter) return false;
+            // Which drawn blocks match, keyed like the template :key. A block is one
+            // drawn block, so a chained trip counts once however many stops it has.
+            blockFilter() {
+                const f = this.activeFilters;
+                const active = this.anyPoolFilterActive;
+                const matched = new Set();
+                let total = 0;
+                const byVehicle = this.mergedItemsByVehicle;
+                Object.keys(byVehicle).forEach(vid => byVehicle[vid].forEach(entry => {
+                    total++;
+                    if (!active) return;
+                    const cards = entry.type === 'merged'
+                        ? entry.stops.map(s => this.bcard(s))
+                        : [this.bcard(entry.item)];
+                    if (blockMatchesFilters(cards, f)) matched.add(this.blockKey(entry));
+                }));
+                return { active, matched, total, count: active ? matched.size : total };
+            },
 
-                    // AC4: the same rule for the other end of the shift.
-                    if (this.shiftEndFilter && c.shift_end !== this.shiftEndFilter) return false;
+            blockCountLabel() {
+                return __('{0} of {1} blocks', [this.blockFilter.count, this.blockFilter.total]);
+            },
 
-                    if (shift) {
-                        const name = c.shift_name || '';
-                        if (shiftIsExact ? name !== shift
-                                         : !normalizeSearchText(name).includes(shiftLower)) return false;
-                    }
-
-                    // AC3: partial or exact, case-insensitive, against the people on the
-                    // card - which is how a dispatcher looks for one person rather than
-                    // knowing which site they are posted to.
-                    // Both sides are flattened: a stored "Samir  Basnet" has to match a
-                    // typed "samir basnet".
-                    if (emp && !(c.employees || []).some(e =>
-                        normalizeSearchText(e && e.name).includes(emp))) return false;
-
-                    if (!q) return true;
-                    return (
-                        normalizeSearchText(c.shift_name).includes(q) ||
-                        normalizeSearchText(c.site_location).includes(q) ||
-                        normalizeSearchText(c.accommodation).includes(q) ||
-                        normalizeSearchText(c.stop_location).includes(q) ||
-                        normalizeSearchText(c.direction).includes(q)
-                    );
-                });
+            poolCountLabel() {
+                const n = this.filteredPoolCards.length;
+                return this.anyPoolFilterActive
+                    ? __('{0} of {1}', [n, this.unassignedPoolCards.length])
+                    : __('{0} cards', [n]);
             },
 
             // Every card still in the pool, ignoring the filters - what "X of Y" counts
@@ -278,11 +458,11 @@ function mountRoutePlannerApp(wrapper, data) {
                 return this.planData.shipment_cards.filter(c => !this.assignedCards.has(c.id));
             },
 
-            // AC2: the shifts actually present on unassigned cards, so the list never
-            // offers a shift that would filter to nothing.
+            // AC2: every shift on any card, placed or not, so a shift that exists only
+            // on scheduled blocks can be picked and filtered exactly.
             poolShiftOptions() {
                 return [...new Set(
-                    this.unassignedPoolCards.map(c => c.shift_name).filter(Boolean)
+                    this.planData.shipment_cards.map(c => c.shift_name).filter(Boolean)
                 )].sort();
             },
 
@@ -314,6 +494,18 @@ function mountRoutePlannerApp(wrapper, data) {
                 return this.matrixFiltered.length + '/' + this.matrixRows.length;
             },
 
+            matrixStaleRows() {
+                return this.matrixRows.filter(r => r.status === 'Stale');
+            },
+
+            matrixDataGaps() {
+                return this.matrixRows.filter(r => r.status === 'Stale' || r.status === 'Missing').length;
+            },
+
+            matrixEligible() {
+                return this.matrixRows.filter(r => ['Assigned', 'Pool', 'Missing'].includes(r.status)).length;
+            },
+
             matrixSyncedLabel() {
                 if (!this.matrixSyncedMs) return __('Not synced yet');
                 const mins = Math.floor(Math.max(0, this.matrixNow - this.matrixSyncedMs) / 60000);
@@ -337,8 +529,9 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             anyPoolFilterActive() {
-                return !!(this.searchQuery || this.employeeQuery || this.shiftFilter
-                          || this.shiftStartFilter || this.shiftEndFilter);
+                const f = this.activeFilters;
+                return !!(normalizeSearchText(f.q) || normalizeSearchText(f.emp) || f.shift
+                          || f.shiftStart || f.shiftEnd);
             },
 
             poolShiftStartOptions() {
@@ -497,6 +690,18 @@ function mountRoutePlannerApp(wrapper, data) {
                 });
 
                 return map;
+            },
+
+            // Lane rows for the timeline: the vehicles in order, or - with a Group by
+            // chosen - each group's header followed by its lanes. laneIndex counts
+            // lanes only, so the alternate striping ignores the headers.
+            laneRows() {
+                const tripsByVehicle = {};
+                const merged = this.mergedItemsByVehicle;
+                Object.keys(merged).forEach(vid => { tripsByVehicle[vid] = merged[vid].length; });
+                let laneIndex = 0;
+                return groupLaneRows(this.planData.vehicles, this.laneGroupBy, tripsByVehicle)
+                    .map(row => (row.type === 'lane' ? { ...row, laneIndex: laneIndex++ } : row));
             },
 
             // Merged view: trip-chained items render as a single visual block
@@ -756,14 +961,80 @@ function mountRoutePlannerApp(wrapper, data) {
             },
         },
 
+        // The three text boxes apply 300 ms after typing stops; emptying one applies at once.
+        // Registered here rather than in a `watch:` option so another `watch:` key added
+        // to this object cannot silently replace it.
+        created() {
+            ['searchQuery', 'employeeQuery', 'shiftFilter'].forEach(key =>
+                this.$watch(key, v => this.queueAppliedText(!v)));
+        },
+
         // ── Methods ────────────────────────────────────────────────────────
+        // Regrouping only reorders lanes, so only the lanes' vertical scroll can move.
+        // windowStart/windowEnd (zoom and horizontal position) and selectedItem are
+        // never touched here. The watcher runs before the re-render, so the anchor is
+        // measured against the old layout.
+        watch: {
+            laneGroupBy() {
+                const area = this.$refs.lanesArea;
+                if (!area) return;
+                const areaTop = () => area.getBoundingClientRect().top;
+                const laneEl = (id) => Array.from(area.querySelectorAll('.rp-lane-row'))
+                    .find(el => el.getAttribute('data-vehicle-id') === String(id));
+                const selectedId = this.selectedItem ? this.selectedItem.vehicleId : null;
+                let anchorId = selectedId;
+                let anchorEl = selectedId ? laneEl(selectedId) : null;
+                if (!anchorEl) {
+                    anchorEl = Array.from(area.querySelectorAll('.rp-lane-row'))
+                        .find(el => el.getBoundingClientRect().top - areaTop() >= 0) || null;
+                    anchorId = anchorEl ? anchorEl.getAttribute('data-vehicle-id') : null;
+                }
+                if (!anchorEl) return;
+                const offset = anchorEl.getBoundingClientRect().top - areaTop();
+                this.$nextTick(() => {
+                    const el = laneEl(anchorId);
+                    if (!el) return;
+                    const maxTop = () => Math.max(0, area.scrollHeight - area.clientHeight);
+                    const clamp = (n) => Math.min(Math.max(0, n), maxTop());
+                    const shift = (el.getBoundingClientRect().top - areaTop()) - offset;
+                    area.scrollTop = clamp(area.scrollTop + shift);
+                    if (selectedId) {
+                        const rect = el.getBoundingClientRect();
+                        const box = area.getBoundingClientRect();
+                        if (rect.top < box.top) area.scrollTop = clamp(area.scrollTop - (box.top - rect.top));
+                        else if (rect.bottom > box.bottom) area.scrollTop = clamp(area.scrollTop + (rect.bottom - box.bottom));
+                    }
+                });
+            },
+        },
+
         methods: {
+            queueAppliedText(immediate) {
+                clearTimeout(this._filterTimer);
+                const apply = () => {
+                    this.appliedText = {
+                        q: this.searchQuery, emp: this.employeeQuery, shift: this.shiftFilter,
+                    };
+                };
+                if (immediate) apply();
+                else this._filterTimer = setTimeout(apply, 300);
+            },
+
+            blockKey(entry) {
+                return entry.type === 'merged' ? 'trip_' + entry.tripId : entry.item.id;
+            },
+
+            // True when a filter is on and this drawn block is not one it matched.
+            blockDim(entry) {
+                return this.blockFilter.active && !this.blockFilter.matched.has(this.blockKey(entry));
+            },
+
             // The chips show three riders, so with an employee query set the
             // riders it matched go first - otherwise a card found by name shows three
             // other people. The "+N more" count still reads card.employees.length.
             chipEmployees(card) {
                 const riders = card.employees || [];
-                const emp = normalizeSearchText(this.employeeQuery);
+                const emp = normalizeSearchText(this.appliedText.emp);
                 if (!emp) return riders;
                 const hit = e => normalizeSearchText(e && e.name).includes(emp);
                 return [...riders.filter(hit), ...riders.filter(e => !hit(e))];
@@ -887,28 +1158,187 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             show24h() {
-                // Show full 24h day: midnight to midnight (Kuwait time = UTC+3)
-                const today = new Date(this.planStart);
-                // Set to midnight UTC of the plan day, then offset for Kuwait TZ
-                const dayStart = new Date(today);
-                dayStart.setUTCHours(0, 0, 0, 0);
-                // Subtract 3h to get 00:00 Kuwait = 21:00 UTC previous day
-                const kwMidnightStart = new Date(dayStart.getTime() - (3 * 3600000));
-                const kwMidnightEnd = new Date(kwMidnightStart.getTime() + (24 * 3600000));
-                this.windowStart = kwMidnightStart;
-                this.windowEnd = kwMidnightEnd;
+                // Full 24h day, 00:00 to 24:00 Kuwait. planStart is 21:00 Kuwait the evening
+                // before, so the day starts at planStart + 3h. Rounding planStart down to UTC
+                // midnight landed on the previous day whenever planStart fell before 00:00 UTC.
+                const dayStart = this.planStart.getTime() + (3 * NAV_HOUR_MS);
+                this.windowStart = new Date(dayStart);
+                this.windowEnd = new Date(dayStart + (24 * NAV_HOUR_MS));
             },
 
             showWorkHours() {
                 // Snap to 05:00–19:00 Kuwait time (working hours window)
-                const today = new Date(this.planStart);
-                const dayStart = new Date(today);
-                dayStart.setUTCHours(0, 0, 0, 0);
-                // 05:00 Kuwait = 02:00 UTC, 19:00 Kuwait = 16:00 UTC
-                const workStart = new Date(dayStart.getTime() - (3 * 3600000) + (5 * 3600000));
-                const workEnd = new Date(dayStart.getTime() - (3 * 3600000) + (19 * 3600000));
-                this.windowStart = workStart;
-                this.windowEnd = workEnd;
+                const w = workWindow(this.planStart.getTime());
+                this.windowStart = new Date(w.start);
+                this.windowEnd = new Date(w.end);
+            },
+
+            // ── Grid navigation pad ── (named without "_": the template calls them)
+
+            navReducedMotion() {
+                return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+            },
+
+            navTweenCancel() {
+                if (this._navRaf) cancelAnimationFrame(this._navRaf);
+                this._navRaf = null;
+            },
+
+            // Ease-out over 200 ms, one tween at a time. Applied at once when the OS asks for
+            // reduced motion. Native smooth scrolling is not used: it has no duration cap.
+            navTween(from, to, apply) {
+                this.navTweenCancel();
+                if (this.navReducedMotion()) { apply(to); return; }
+                const t0 = performance.now();
+                const step = (now) => {
+                    const p = Math.min(1, (now - t0) / 200);
+                    apply(p < 1 ? from + (to - from) * (1 - Math.pow(1 - p, 3)) : to);
+                    this._navRaf = p < 1 ? requestAnimationFrame(step) : null;
+                };
+                this._navRaf = requestAnimationFrame(step);
+            },
+
+            navSetWindow(startMs, durMs) {
+                this.windowStart = new Date(startMs);
+                this.windowEnd = new Date(startMs + durMs);
+            },
+
+            // Top of an element inside #rp-lanes-area, in the area's own scroll coordinates.
+            navOffsetTop(area, el) {
+                return el.getBoundingClientRect().top - area.getBoundingClientRect().top + area.scrollTop;
+            },
+
+            navTops(area, selector) {
+                return Array.from(area.querySelectorAll(selector))
+                    .map(el => this.navOffsetTop(area, el)).sort((a, b) => a - b);
+            },
+
+            updateLanesScroll() {
+                const area = this.$refs.lanesArea;
+                if (!area) return;
+                this.lanesScrollTop = area.scrollTop;
+                this.lanesScrollMax = Math.max(0, area.scrollHeight - area.clientHeight);
+            },
+
+            // Pad visible on hover or movement, faded to 25% after 2 s (still clickable).
+            navWake() {
+                this.navIdle = false;
+                clearTimeout(this._navIdleTimer);
+                this._navIdleTimer = setTimeout(() => { this.navIdle = true; }, 2000);
+            },
+
+            navPan(dir) {
+                const s = this.windowStart.getTime();
+                const e = this.windowEnd.getTime();
+                const r = panWindow(s, e, this.planStart.getTime(), this.planEnd.getTime(), dir * 0.5);
+                if (r.start === s) return;
+                this.navTween(s, r.start, v => this.navSetWindow(v, e - s));
+            },
+
+            // pointerdown pans once; held past 350 ms it keeps panning at about one visible
+            // range per second until release, pointer leaving, or the edge.
+            navPanHoldStart(dir) {
+                this.navPanHoldStop();
+                this.navPan(dir);
+                this._navHoldTimer = setTimeout(() => {
+                    this._navHoldTimer = null;
+                    this.navTweenCancel();
+                    let last = performance.now();
+                    const step = (now) => {
+                        const s = this.windowStart.getTime();
+                        const e = this.windowEnd.getTime();
+                        const dt = now - last;
+                        last = now;
+                        const r = panWindow(s, e, this.planStart.getTime(),
+                            this.planEnd.getTime(), dir * dt / 1000);
+                        if (dt > 0 && r.start === s) { this._navHoldRaf = null; return; }
+                        this.navSetWindow(r.start, e - s);
+                        this._navHoldRaf = requestAnimationFrame(step);
+                    };
+                    this._navHoldRaf = requestAnimationFrame(step);
+                }, 350);
+            },
+
+            navPanHoldStop() {
+                clearTimeout(this._navHoldTimer);
+                this._navHoldTimer = null;
+                if (this._navHoldRaf) cancelAnimationFrame(this._navHoldRaf);
+                this._navHoldRaf = null;
+            },
+
+            // One screen of lanes, snapped to a lane boundary. Shift jumps to the previous or
+            // next group header; with no .rp-lane-group-header rows it acts like plain.
+            navVertical(dir, e) {
+                const area = this.$refs.lanesArea;
+                if (!area) return;
+                const top = area.scrollTop;
+                const max = Math.max(0, area.scrollHeight - area.clientHeight);
+                const headers = (e && e.shiftKey) ? this.navTops(area, '.rp-lane-group-header') : [];
+                let target;
+                if (headers.length) {
+                    target = dir > 0
+                        ? headers.find(t => t > top + 1)
+                        : headers.slice().reverse().find(t => t < top - 1);
+                    if (target === undefined) target = top;
+                } else {
+                    target = snapScrollTop(this.navTops(area, '.rp-lane-row, .rp-lane-group-header'),
+                        top, area.clientHeight, dir);
+                }
+                target = Math.min(max, Math.max(0, target));
+                if (target === top) return;
+                this.navTween(top, target, v => { area.scrollTop = v; });
+            },
+
+            // The selected block's extent and lane. A merged trip is found by vehicle + trip
+            // (the selection is one of its stops), anything else by item id.
+            navSelectedBlock() {
+                const sel = this.selectedItem;
+                if (!sel) return null;
+                const entries = this.mergedItemsByVehicle[sel.vehicleId] || [];
+                const entry = entries.find(en => en.type === 'merged'
+                    ? (sel.tripId && en.tripId === sel.tripId)
+                    : (en.item && en.item.id === sel.id));
+                if (!entry) return null;
+                const span = entry.type === 'merged' ? entry : entry.item;
+                return {
+                    vehicleId: sel.vehicleId,
+                    start: new Date(span.start).getTime(),
+                    end: new Date(span.end).getTime(),
+                };
+            },
+
+            // Selected block to the middle of the view on both axes; with none, the Work
+            // window start (current zoom kept) and the first lane.
+            navCenter() {
+                const area = this.$refs.lanesArea;
+                const planMin = this.planStart.getTime();
+                const planMax = this.planEnd.getTime();
+                const s = this.windowStart.getTime();
+                const dur = this.windowEnd.getTime() - s;
+                const block = this.navSelectedBlock();
+                const top0 = area ? area.scrollTop : 0;
+                let startTarget;
+                let topTarget = 0;
+                if (block) {
+                    const mid = (block.start + block.end) / 2;
+                    startTarget = panWindow(mid - dur / 2, mid + dur / 2, planMin, planMax, 0).start;
+                    const row = area ? Array.from(area.querySelectorAll('.rp-lane-row'))
+                        .find(r => r.dataset.vehicleId === String(block.vehicleId)) : null;
+                    topTarget = row
+                        ? this.navOffsetTop(area, row) + row.offsetHeight / 2 - area.clientHeight / 2
+                        : top0;
+                } else {
+                    const w = workWindow(planMin);
+                    startTarget = panWindow(w.start, w.start + dur, planMin, planMax, 0).start;
+                }
+                if (area) {
+                    topTarget = Math.min(Math.max(0, area.scrollHeight - area.clientHeight),
+                        Math.max(0, topTarget));
+                }
+                this.navTween(0, 1, p => {
+                    this.navSetWindow(s + (startTarget - s) * p, dur);
+                    if (area) area.scrollTop = top0 + (topTarget - top0) * p;
+                });
             },
 
             onSvgWheel(e) {
@@ -4965,6 +5395,291 @@ function mountRoutePlannerApp(wrapper, data) {
                 this._matrixLockScope(d, row);
             },
 
+            // ── Removing stale riders ──
+            matrixDeparted(row) {
+                const legs = row.legs || [];
+                return legs.length > 0 && legs.every(l => l.departed);
+            },
+
+            matrixDepartedTitle(row) {
+                return this.matrixDeparted(row) ? __('Trip has departed. Riders can no longer be removed.') : '';
+            },
+
+            _matrixReasonField(value) {
+                return {
+                    fieldname: 'reason', fieldtype: 'Select', label: __('Reason'), reqd: 1,
+                    options: [{ label: '', value: '' }].concat(MATRIX_REMOVAL_REASONS.map(r => ({ label: __(r), value: r }))),
+                    default: value || '',
+                };
+            },
+
+            // The reason the row's stale subtext already states.
+            _matrixReasonFor(row) {
+                const text = String(row.subtext || '');
+                if (text.startsWith('Inactive')) return 'Resigned / Left';
+                if (text.startsWith('Checked out') || text.startsWith('No accommodation')) return 'Checked out of accommodation';
+                return '';
+            },
+
+            // A block's cardId may carry a direction suffix; the server keys on the bare id.
+            _matrixCardKey(id) {
+                return String(id || '').replace(/_(OUTBOUND|RETURN|OUT|RET)$/, '');
+            },
+
+            // Placed blocks carry their own headcount and the next save writes it back, so
+            // they are patched here; cancelled cards leave the lane, which saves the plan.
+            _matrixApplyResult(m) {
+                const counts = m.headcounts || {};
+                const cancelled = new Set(m.cancelled || []);
+                let changed = false;
+                this.swimItems.forEach(item => {
+                    const key = this._matrixCardKey(item.cardId);
+                    if (key in counts && item.headcount !== counts[key]) {
+                        item.headcount = counts[key];
+                        changed = true;
+                    }
+                });
+                if (changed) this.swimItems = [...this.swimItems];
+                const going = this.swimItems.filter(i => cancelled.has(this._matrixCardKey(i.cardId))).map(i => i.id);
+                if (going.length) this._removeItems(going);
+                this.refreshCards();
+                this.loadMatrix();
+            },
+
+            // remove_from_cards. A card that would be left empty asks keep or cancel first.
+            _matrixRemove(employees, cards, reason, onEmpty) {
+                const self = this;
+                frappe.call({
+                    method: 'one_fm.one_fm.page.transportation_schedule.traceability_matrix.remove_from_cards',
+                    args: {
+                        employees: JSON.stringify(employees),
+                        cards: JSON.stringify(cards),
+                        reason,
+                        on_empty: onEmpty || '',
+                        plan: (this.currentPlan && this.currentPlan.name) || '',
+                    },
+                    freeze: true,
+                    callback(r) {
+                        const m = r && r.message;
+                        if (!m) return;
+                        if (m.needs_choice) {
+                            self._matrixAskEmpty(m.empty_cards, (choice) => self._matrixRemove(employees, cards, reason, choice));
+                            return;
+                        }
+                        self._matrixApplyResult(m);
+                        frappe.show_alert({
+                            message: m.cancelled.length
+                                ? __('{0} employee(s) removed. Cancelled {1}.', [m.removed, m.cancelled.join(', ')])
+                                : __('{0} employee(s) removed from the card.', [m.removed]),
+                            indicator: 'green',
+                        }, 5);
+                    },
+                });
+            },
+
+            _matrixAskEmpty(cards, choose) {
+                const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
+                const d = new frappe.ui.Dialog({
+                    title: __('Card Left Empty'),
+                    fields: [{
+                        fieldname: 'info', fieldtype: 'HTML',
+                        options: `<p class="small">${__('No riders will be left on {0}. Keep the empty card, or cancel it?', [esc(cards.join(', '))])}</p>`,
+                    }],
+                    primary_action_label: __('Cancel card'),
+                    primary_action() { d.hide(); choose('cancel'); },
+                    secondary_action_label: __('Keep empty card'),
+                    secondary_action() { d.hide(); choose('keep'); },
+                });
+                d.show();
+            },
+
+            matrixRemoveFromCard(row) {
+                const self = this;
+                const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
+                const legs = (row.legs || []).filter(l => !l.departed);
+                if (!legs.length) return;
+                const options = legs.map(l => ({ label: this.matrixLegDirection(l) + ' · ' + l.card, value: l.card }));
+                if (legs.length > 1) options.push({ label: __('Both'), value: 'Both' });
+                const d = new frappe.ui.Dialog({
+                    title: __('Remove {0} from Card', [row.name]),
+                    fields: [
+                        { fieldname: 'info', fieldtype: 'HTML',
+                          options: `<p class="small mb-0">${__('Card')}: <span class="font-weight-bold">${esc(legs.map(l => l.card).join(', '))}</span></p>` },
+                        { fieldname: 'leg', fieldtype: 'Select', label: __('Leg'), reqd: 1,
+                          options, default: options[options.length - 1].value },
+                        this._matrixReasonField(this._matrixReasonFor(row)),
+                    ],
+                    primary_action_label: __('Remove from Card'),
+                    primary_action(values) {
+                        d.hide();
+                        const cards = values.leg === 'Both' ? legs.map(l => l.card) : [values.leg];
+                        self._matrixRemove([row.id], cards, values.reason, '');
+                    },
+                });
+                d.show();
+            },
+
+            matrixManageCard(row) {
+                const leg = (row.legs || []).find(l => !l.departed);
+                if (!leg) return;
+                frappe.call({
+                    method: 'one_fm.one_fm.page.transportation_schedule.traceability_matrix.get_card_passengers',
+                    args: { card: leg.card },
+                    callback: (r) => { if (r && r.message) this._matrixManageDialog(r.message); },
+                });
+            },
+
+            // Every rider of the card and its pair twin. Stale riders start ticked; ticking
+            // everyone (or Cancel Entire Card) turns the confirm into a card cancel.
+            _matrixManageDialog(m) {
+                const self = this;
+                const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
+                const cards = (m.cards || []).filter(c => !c.departed);
+                if (!cards.length) {
+                    frappe.msgprint(__('Trip has departed. Riders can no longer be removed.'));
+                    return;
+                }
+                const riders = m.riders || [];
+                const ticked = new Set(riders.filter(r => r.stale).map(r => r.id));
+                let cancelClicked = false;
+                let wrapper = null;
+
+                const legOptions = cards.map(c => ({ label: this._matrixDirLabel(c.own_direction) + ' · ' + c.card, value: c.card }));
+                if (cards.length > 1) legOptions.push({ label: __('Both'), value: 'Both' });
+                const legsChosen = () => {
+                    const v = d.get_value('leg');
+                    return v === 'Both' ? cards.map(c => c.card) : [v];
+                };
+                const summary = () => matrixCardSummary(riders, ticked, legsChosen());
+                const cancelMode = (s) => s.allTicked && (s.activeLeaving > 0 || cancelClicked);
+                const update = () => {
+                    if (!wrapper) return;
+                    const s = summary();
+                    if (!s.allTicked) cancelClicked = false;
+                    const cancel = cancelMode(s);
+                    wrapper.find('.rp-manage-summary').text(
+                        __('Removing {0} · Staying on card {1} · Seats freed {2}', [s.removing, s.staying, s.seatsFreed]));
+                    wrapper.find('.rp-manage-warning').toggleClass('d-none', !cancel).text(
+                        __('{0} active employees will become Missing from Card', [s.activeLeaving]));
+                    const ok = s.removing > 0 && !!d.get_value('reason');
+                    d.get_primary_btn()
+                        .text(cancel ? __('Cancel Entire Card') : __('Remove Selected'))
+                        .prop('disabled', !ok).toggleClass('disabled', !ok);
+                };
+                const syncTicks = () => {
+                    wrapper.find('.rp-manage-tick').each((i, el) => { el.checked = ticked.has(el.dataset.id); });
+                    update();
+                };
+
+                const d = new frappe.ui.Dialog({
+                    title: __('Manage Card {0}', [cards.map(c => c.card).join(' / ')]),
+                    size: 'large',
+                    fields: [
+                        { fieldname: 'leg', fieldtype: 'Select', label: __('Leg'), reqd: 1,
+                          options: legOptions, default: legOptions[legOptions.length - 1].value, onchange: update },
+                        Object.assign(this._matrixReasonField((riders.find(r => r.stale) || {}).stale_reason), { onchange: update }),
+                        { fieldname: 'riders', fieldtype: 'HTML' },
+                    ],
+                    primary_action_label: __('Remove Selected'),
+                    primary_action(values) {
+                        const s = summary();
+                        if (!s.removing || !values.reason) return;
+                        d.hide();
+                        if (cancelMode(s)) self._matrixCancel(legsChosen(), values.reason);
+                        else self._matrixRemove(s.employees, legsChosen(), values.reason, '');
+                    },
+                });
+
+                const staleCount = riders.filter(r => r.stale).length;
+                const body = riders.map(r => `
+                    <tr>
+                      <td><input type="checkbox" class="rp-manage-tick" data-id="${esc(r.id)}"></td>
+                      <td>${esc(r.name)}<div class="text-muted">${esc(r.id)}</div></td>
+                      <td>${r.stale
+                          ? `<span class="indicator-pill red">${__('Stale')}</span>${r.stale_reason ? `<div class="text-muted">${esc(__(r.stale_reason))}</div>` : ''}`
+                          : `<span class="indicator-pill green">${__('Active')}</span>`}</td>
+                      <td>${esc((r.legs || []).join(', '))}</td>
+                    </tr>`).join('');
+                wrapper = d.fields_dict.riders.$wrapper;
+                wrapper.html(`
+                    <div class="d-flex align-items-center mb-2">
+                      ${staleCount > 1 ? `<a href="#" class="small rp-manage-all-stale">${__('Select all stale')}</a>` : ''}
+                      <button type="button" class="btn btn-xs btn-danger ml-auto rp-manage-cancel">${__('Cancel Entire Card')}</button>
+                    </div>
+                    <table class="table table-sm small mb-2">
+                      <thead><tr><th></th>${[__('Employee'), __('Status'), __('Card')].map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
+                      <tbody>${body}</tbody>
+                    </table>
+                    <div class="rp-manage-summary small font-weight-bold"></div>
+                    <div class="rp-manage-warning alert alert-warning small mt-2 mb-0 d-none"></div>`);
+                wrapper.on('change', '.rp-manage-tick', (e) => {
+                    if (e.target.checked) ticked.add(e.target.dataset.id);
+                    else ticked.delete(e.target.dataset.id);
+                    update();
+                });
+                wrapper.on('click', '.rp-manage-all-stale', (e) => {
+                    e.preventDefault();
+                    riders.filter(r => r.stale).forEach(r => ticked.add(r.id));
+                    syncTicks();
+                });
+                wrapper.on('click', '.rp-manage-cancel', () => {
+                    riders.forEach(r => ticked.add(r.id));
+                    cancelClicked = true;
+                    syncTicks();
+                });
+                d.show();
+                syncTicks();
+            },
+
+            _matrixCancel(cards, reason) {
+                frappe.call({
+                    method: 'one_fm.one_fm.page.transportation_schedule.traceability_matrix.cancel_cards',
+                    args: {
+                        cards: JSON.stringify(cards),
+                        reason,
+                        plan: (this.currentPlan && this.currentPlan.name) || '',
+                    },
+                    freeze: true,
+                    callback: (r) => {
+                        const m = r && r.message;
+                        if (!m) return;
+                        this._matrixApplyResult(m);
+                        frappe.show_alert({
+                            message: __('Cancelled {0}. {1} active employee(s) are now Missing from Card.', [m.cancelled.join(', '), m.missing.length]),
+                            indicator: 'orange',
+                        }, 7);
+                    },
+                });
+            },
+
+            matrixClearStale() {
+                const rows = this.matrixStaleRows;
+                if (!rows.length) return;
+                const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
+                const list = rows.map(r => `<li>${esc(r.name)} (${esc(r.id)})</li>`).join('');
+                frappe.confirm(
+                    `<p>${__('Remove {0} stale employee(s) from every card they are on? Cards are kept, even when left empty.', [rows.length])}</p>`
+                    + `<ul class="small mb-0">${list}</ul>`,
+                    () => frappe.call({
+                        method: 'one_fm.one_fm.page.transportation_schedule.traceability_matrix.clear_stale',
+                        args: { employees: JSON.stringify(rows.map(r => r.id)) },
+                        freeze: true,
+                        callback: (r) => {
+                            const m = r && r.message;
+                            if (!m) return;
+                            this._matrixApplyResult(m);
+                            const skipped = (m.skipped || []).length;
+                            frappe.show_alert({
+                                message: skipped
+                                    ? __('{0} stale employee(s) removed, {1} skipped.', [m.removed, skipped])
+                                    : __('{0} stale employee(s) removed.', [m.removed]),
+                                indicator: skipped ? 'orange' : 'green',
+                            }, 6);
+                        },
+                    })
+                );
+            },
+
             // ─ Manifest generation (ported verbatim from vis version) ───────
 
             generateShipments() {
@@ -4977,14 +5692,6 @@ function mountRoutePlannerApp(wrapper, data) {
                     method: 'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
                     callback: function (r) {
                         const s = r.message || {};
-                        // A placed card whose CREW changed is reported separately from
-                        // a pool card that was rewritten: the run stayed exactly where
-                        // the dispatcher put it and only its people moved, and saying
-                        // "updated" for both reads as though the plan was touched
-                        //.
-                        const crew = s.refreshed
-                            ? `, ${s.refreshed} assigned run(s) re-crewed`
-                            : '';
                         // The server refused to prune because it could not read any shift
                         // demand at all. Say so loudly and for longer: the pool is
                         // untouched, but nothing was rebuilt either, and a green
@@ -4997,23 +5704,62 @@ function mountRoutePlannerApp(wrapper, data) {
                             self.refreshCards();
                             return;
                         }
-                        const overflow = s.overflowed
-                            ? `, ${s.overflowed} overflow card(s) for joiners with no seat`
-                            : '';
-                        // Blocks whose card today's roster no longer produces. They are
-                        // outlined on the board and need removing by hand.
-                        const replan = s.flagged
-                            ? `, ${s.flagged} block(s) need re-planning`
-                            : '';
-                        frappe.show_alert({
-                            message: `Shipments: ${s.created || 0} created, ${s.updated || 0} updated, ${s.deleted || 0} removed${crew}${overflow}${replan}`,
-                            indicator: s.flagged ? 'orange' : 'green'
-                        }, s.flagged ? 10 : 6);
+                        self.showGenerateSummary(s);
                         self.refreshCards();
+                    },
+                    error: function (r) {
+                        let msg = (r && r.exception) || __('Unknown error');
+                        try {
+                            if (r && r._server_messages) {
+                                msg = JSON.parse(r._server_messages).map(m => JSON.parse(m).message).join(' ');
+                            }
+                        } catch (e) { /* keep the exception text */ }
+                        frappe.msgprint({
+                            title: __('Generate Shipments'),
+                            message: __('Generate Shipments failed: {0}', [frappe.utils.escape_html(msg)]),
+                            indicator: 'red',
+                        });
                     },
                     always: function () {
                         self.isGenerating = false;
                     }
+                });
+            },
+
+            // Counts plus every eligible employee the run left without a card, and why.
+            showGenerateSummary(s) {
+                const esc = frappe.utils.escape_html;
+                const rows = [
+                    ...(s.failed || []).map(r => [__('Failed'), r]),
+                    ...(s.skipped || []).map(r => [__('Skipped'), r]),
+                ];
+                const extra = [];
+                // A placed card whose crew changed is reported apart from a rewritten pool
+                // card: the run stayed where the dispatcher put it, only its people moved.
+                if (s.refreshed) extra.push(__('{0} assigned run(s) re-crewed', [s.refreshed]));
+                if (s.overflowed) extra.push(__('{0} overflow card(s) for joiners with no seat', [s.overflowed]));
+                // Blocks whose card today's roster no longer produces. They are outlined on
+                // the board and need removing by hand.
+                if (s.flagged) extra.push(__('{0} block(s) need re-planning', [s.flagged]));
+                const table = rows.length
+                    ? `<table class="table table-sm table-bordered mt-3 mb-0">
+                        <thead><tr>${[__('Result'), __('Employee'), __('Name'), __('Reason')].map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
+                        <tbody>${rows.map(([result, r]) => `<tr><td>${esc(result)}</td><td>${esc(r.employee || '')}</td><td>${esc(r.employee_name || '')}</td><td>${esc(r.reason || '')}</td></tr>`).join('')}</tbody>
+                       </table>`
+                    : '';
+                frappe.msgprint({
+                    title: __('Shipments Generated'),
+                    indicator: (rows.length || s.flagged) ? 'orange' : 'green',
+                    wide: rows.length > 0,
+                    message: `<div class="d-flex flex-wrap">
+                            <div class="mr-4"><span class="font-weight-bold">${s.generated || 0}</span> ${__('generated')}</div>
+                            <div class="mr-4"><span class="font-weight-bold">${s.updated || 0}</span> ${__('updated')}</div>
+                            <div class="mr-4"><span class="font-weight-bold">${(s.skipped || []).length}</span> ${__('skipped')}</div>
+                            <div class="mr-4"><span class="font-weight-bold">${s.deleted || 0}</span> ${__('deleted')}</div>
+                            <div class="mr-4"><span class="font-weight-bold">${(s.failed || []).length}</span> ${__('failed')}</div>
+                        </div>
+                        ${extra.length ? `<div class="text-muted small mt-2">${esc(extra.join(', '))}</div>` : ''}
+                        ${table}`,
                 });
             },
 
@@ -5215,9 +5961,19 @@ function mountRoutePlannerApp(wrapper, data) {
         mounted() {
             this.$nextTick(() => {
                 this.updateSvgWidth();
-                const ro = new ResizeObserver(() => this.updateSvgWidth());
+                const ro = new ResizeObserver(() => { this.updateSvgWidth(); this.updateLanesScroll(); });
                 if (this.$refs.axisWrap) ro.observe(this.$refs.axisWrap);
                 this._ro = ro;
+
+                // Navigation pad: keep the top/bottom edge flags in step with the lanes.
+                const area = this.$refs.lanesArea;
+                if (area) {
+                    this._onLanesScroll = () => this.updateLanesScroll();
+                    area.addEventListener('scroll', this._onLanesScroll, { passive: true });
+                    ro.observe(area);
+                    this.updateLanesScroll();
+                }
+                this.navWake();
 
                 // Apply saved theme
                 this.applyTheme();
@@ -5227,8 +5983,19 @@ function mountRoutePlannerApp(wrapper, data) {
             });
         },
 
+        // Rows added or removed change the scroll extent without a scroll or resize event.
+        updated() {
+            this.updateLanesScroll();
+        },
+
         beforeUnmount() {
             if (this._ro) this._ro.disconnect();
+            const area = this.$refs.lanesArea;
+            if (area && this._onLanesScroll) area.removeEventListener('scroll', this._onLanesScroll);
+            clearTimeout(this._navIdleTimer);
+            this.navPanHoldStop();
+            this.navTweenCancel();
+            clearTimeout(this._filterTimer);
             this.stopMatrixTimer();
         }
 
@@ -5368,8 +6135,7 @@ function injectRPVueTemplate() {
         <!-- AC5: what the filters left, out of everything still unplaced. A bare
              count could not say whether 4 cards meant a quiet day or a narrow filter. -->
         <div id="rp-pool-count">
-          <span v-if="anyPoolFilterActive">Showing {{ filteredPoolCards.length }} of {{ unassignedPoolCards.length }} cards</span>
-          <span v-else>{{ filteredPoolCards.length }} cards</span>
+          <span>{{ poolCountLabel }}</span>
         </div>
       </div>
 
@@ -5509,6 +6275,15 @@ function injectRPVueTemplate() {
           <button class="rp-btn-icon rp-btn-icon-label" title="Show full 24 hours" @click="show24h()">24h</button>
           <button class="rp-btn-icon rp-btn-icon-label" title="Show working hours (05:00–19:00)" @click="showWorkHours()"><span class="rp-icon" style="font-size:14px">schedule</span> Work</button>
         </div>
+        <span v-if="blockFilter.active" class="rp-block-count">{{ blockCountLabel }}</span>
+        <label class="rp-lane-groupby-wrap">
+          <span>{{ __('Group by') }}</span>
+          <select v-model="laneGroupBy" class="rp-filter-select rp-lane-groupby" :title="__('Group by')">
+            <option value="">{{ __('None') }}</option>
+            <option value="location">{{ __('Vehicle Location') }}</option>
+            <option value="type">{{ __('Vehicle Type') }}</option>
+          </select>
+        </label>
         <div class="rp-tb-hint">
           Drag cards to lanes &nbsp;&middot;&nbsp; Drag blocks to reposition &nbsp;&middot;&nbsp;
           Scroll to pan &nbsp;&middot;&nbsp; Ctrl + Scroll to zoom
@@ -5523,7 +6298,36 @@ function injectRPVueTemplate() {
       </div>
 
       <!-- Grid: axis row + scrollable lanes -->
-      <div id="rp-grid-container">
+      <div id="rp-grid-container"
+           @mousemove="navWake" @mouseenter="navWake" @touchstart.passive="navWake" @focusin="navWake">
+
+        <!-- Floating navigation pad -->
+        <div class="rp-navpad"
+             :class="{ 'rp-navpad-idle': navIdle, 'rp-navpad-dragging': draggingCard || isDraggingBlock }">
+          <button class="rp-btn-icon rp-navpad-up" :disabled="navAtTop"
+                  @click="navVertical(-1, $event)"
+                  :title="__('Scroll up one screen of lanes (Shift: previous group)')"
+                  :aria-label="__('Scroll up')">&#x25b2;</button>
+          <button class="rp-btn-icon rp-navpad-left" :disabled="navAtLeft"
+                  @pointerdown="navPanHoldStart(-1)" @pointerup="navPanHoldStop()"
+                  @pointerleave="navPanHoldStop()" @pointercancel="navPanHoldStop()"
+                  @click="$event.detail === 0 && navPan(-1)"
+                  :title="__('Pan left by half the visible time range (hold to keep scrolling)')"
+                  :aria-label="__('Pan left')">&#x25c0;</button>
+          <button class="rp-btn-icon rp-navpad-right" :disabled="navAtRight"
+                  @pointerdown="navPanHoldStart(1)" @pointerup="navPanHoldStop()"
+                  @pointerleave="navPanHoldStop()" @pointercancel="navPanHoldStop()"
+                  @click="$event.detail === 0 && navPan(1)"
+                  :title="__('Pan right by half the visible time range (hold to keep scrolling)')"
+                  :aria-label="__('Pan right')">&#x25b6;</button>
+          <button class="rp-btn-icon rp-navpad-down" :disabled="navAtBottom"
+                  @click="navVertical(1, $event)"
+                  :title="__('Scroll down one screen of lanes (Shift: next group)')"
+                  :aria-label="__('Scroll down')">&#x25bc;</button>
+          <button class="rp-btn-icon rp-navpad-center" :disabled="navAtHome"
+                  @click="navCenter()"
+                  :title="__('Centre the selected block, or return to the start of the Work window')">&#x25ce; {{ __('Center') }}</button>
+        </div>
 
         <!-- Sticky time axis -->
         <div id="rp-axis-row">
@@ -5549,9 +6353,18 @@ function injectRPVueTemplate() {
         </div>
 
         <!-- Scrollable vehicle rows -->
-        <div id="rp-lanes-area">
-          <div v-for="(vehicle, vi) in planData.vehicles" :key="vehicle.id"
-               :class="['rp-lane-row', vi % 2 === 1 ? 'rp-lane-alt' : '', lockedLaneIds.has(vehicle.id) ? 'rp-lane-locked' : '']"
+        <div id="rp-lanes-area" ref="lanesArea">
+          <template v-for="row in laneRows" :key="row.type === 'group' ? 'grp_' + row.key : row.vehicle.id">
+          <div v-if="row.type === 'group'" class="rp-lane-group-header" :data-group-key="row.key">
+            <div class="rp-lane-label rp-lane-group-label" :title="row.name">
+              <span class="rp-lane-group-name">{{ row.name }}</span>
+              <span class="rp-lane-group-counts">{{ __('{0} vehicles · {1} trips', [row.vehicleCount, row.tripCount]) }}</span>
+            </div>
+          </div>
+          <template v-else>
+          <template v-for="vehicle in [row.vehicle]" :key="vehicle.id">
+          <div
+               :class="['rp-lane-row', row.laneIndex % 2 === 1 ? 'rp-lane-alt' : '', lockedLaneIds.has(vehicle.id) ? 'rp-lane-locked' : '']"
                :data-vehicle-id="vehicle.id">
 
             <!-- Vehicle label column -->
@@ -5608,7 +6421,7 @@ function injectRPVueTemplate() {
 
                   <!-- ═══ Single (non-chained) block ═══ -->
                   <g v-if="entry.type === 'single'"
-                     :class="isDraggingBlock && bsel(entry.item) ? 'rp-block-grabbing' : 'rp-block-grab'"
+                     :class="[isDraggingBlock && bsel(entry.item) ? 'rp-block-grabbing' : 'rp-block-grab', blockDim(entry) ? 'rp-block-dim' : '']"
                      @mousedown="onBlockMouseDown($event, entry.item)"
                      @touchstart.prevent="onBlockTouchStart($event, entry.item)"
                      @mouseenter="showStopHover($event, [entry.item])"
@@ -5691,6 +6504,7 @@ function injectRPVueTemplate() {
                   <!-- ═══ Merged trip block ═══ -->
                   <g v-else
                      class="rp-block-grab"
+                     :class="{ 'rp-block-dim': blockDim(entry) }"
                      @mouseenter="showStopHover($event, entry.stops)"
                      @mousemove="moveStopHover($event)"
                      @mouseleave="hideStopHover()"
@@ -5785,6 +6599,9 @@ function injectRPVueTemplate() {
               </svg>
             </div>
           </div>
+          </template>
+          </template>
+          </template>
 
           <!-- Empty vehicles -->
           <div v-if="planData.vehicles.length === 0" class="rp-empty-state">
@@ -6270,7 +7087,12 @@ function injectRPVueTemplate() {
     <div class="rp-matrix-head">
       <div class="rp-matrix-title">{{ __('Employee Traceability Matrix') }}</div>
       <span class="rp-matrix-count" :title="__('Rows shown / total rows')">{{ matrixBadge }}</span>
+      <span class="rp-matrix-count" :title="__('Stale + Missing')">{{ __('Data Gaps') }}: {{ matrixDataGaps }}</span>
+      <span class="rp-matrix-count" :title="__('Assigned + Pool + Missing')">{{ __('Eligible Riders') }}: {{ matrixEligible }}</span>
       <span class="rp-matrix-synced" :title="matrixSyncedAt">{{ matrixSyncedLabel }}</span>
+      <button v-if="matrixStaleRows.length" class="rp-btn rp-btn-default" :disabled="matrixLoading" @click="matrixClearStale">
+        <span class="rp-icon">cleaning_services</span> {{ __('Clear All Stale Blocks') }}
+      </button>
       <button class="rp-btn rp-btn-default" :disabled="matrixLoading" @click="loadMatrix">
         <span class="rp-icon">sync</span> {{ __('Refresh') }}
       </button>
@@ -6355,6 +7177,16 @@ function injectRPVueTemplate() {
               <div v-if="matrixCanAdd(row)" class="rp-matrix-actions">
                 <button class="rp-btn rp-btn-default rp-matrix-act" @click="matrixAddToCard(row)">+ {{ __('Add to Card') }}</button>
                 <button class="rp-btn rp-btn-default rp-matrix-act" @click="matrixCreateCard(row)">{{ __('Create New Shipment Card') }}</button>
+              </div>
+              <div v-if="row.status === 'Stale'" class="rp-matrix-actions">
+                <span :title="matrixDepartedTitle(row)">
+                  <button class="rp-btn rp-btn-default rp-matrix-act" :disabled="matrixDeparted(row)"
+                          @click="matrixRemoveFromCard(row)">{{ __('Remove from Card') }}</button>
+                </span>
+                <span :title="matrixDepartedTitle(row)">
+                  <button class="rp-btn rp-btn-default rp-matrix-act" :disabled="matrixDeparted(row)"
+                          @click="matrixManageCard(row)">{{ __('Manage Card') }}</button>
+                </span>
               </div>
             </td>
           </tr>
@@ -6726,6 +7558,12 @@ function injectRPStyles() {
             text-overflow: ellipsis;
         }
         .rp-filter-select { flex: 1 1 0; min-width: 0; cursor: pointer; }
+        /* width:auto: the shared 100% resolves against this auto-width label and overflows. */
+        .rp-lane-groupby { flex: 0 0 auto; width: auto; }
+        .rp-lane-groupby-wrap {
+            display: flex; align-items: center; gap: 6px; flex: 0 0 auto; margin: 0 8px; white-space: nowrap;
+            font-size: 12px; color: var(--md-sys-color-on-surface-variant);
+        }
         .rp-filter-input:focus, .rp-filter-select:focus { border-color: var(--rp-color-accent); }
         /* Room for the clear button so typed text never runs underneath it. */
         .rp-filter-field .rp-filter-input,
@@ -6851,7 +7689,10 @@ function injectRPStyles() {
         .rp-btn-icon:hover { background: #cfdce5; border-color: #adb5bd; }
         .rp-btn-icon:focus-visible { outline: 2px solid var(--rp-color-accent); outline-offset: 2px; }
         .rp-btn-icon-label { font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 3px; }
-        .rp-tb-hint { font-size: 12px; color: var(--md-sys-color-outline); flex: 1; text-align: center; }
+        .rp-tb-hint {
+            font-size: 12px; color: var(--md-sys-color-outline); flex: 1; min-width: 0; text-align: center;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
         #rp-timeline-legend { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
         .rp-legend-item     { font-size: 11px; padding: 2px 9px; border-radius: 4px; font-weight: 600; }
         .rp-legend-out      { background: var(--rp-color-outbound-container); color: var(--rp-color-outbound); }
@@ -6902,7 +7743,38 @@ function injectRPStyles() {
         .rp-trip-builder-dialog { max-width: 95vw !important; width: 95vw !important; }
 
         /* ── Grid ── */
-        #rp-grid-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        #rp-grid-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+        /* Floating navigation pad, bottom-right of the grid */
+        /* right: 96px clears the desk chat button fixed at the viewport's bottom-right. */
+        .rp-navpad {
+            position: absolute; right: 96px; bottom: 16px; z-index: 5;
+            display: grid; grid-template-columns: repeat(3, auto); gap: 4px; padding: 6px;
+            border-radius: 10px; opacity: 1;
+            background: var(--md-sys-color-surface-bright);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+            transition: opacity 200ms ease-out;
+            touch-action: none; user-select: none;
+        }
+        .rp-navpad-idle { opacity: 0.25; }
+        .rp-navpad:hover, .rp-navpad:focus-within { opacity: 1; }
+        .rp-navpad .rp-btn-icon { text-align: center; }
+        .rp-navpad .rp-btn-icon:disabled { opacity: 0.4; cursor: not-allowed; }
+        .rp-navpad-up { grid-column: 2; grid-row: 1; }
+        .rp-navpad-left { grid-column: 1; grid-row: 2; }
+        .rp-navpad-right { grid-column: 3; grid-row: 2; }
+        .rp-navpad-down { grid-column: 2; grid-row: 2; }
+        .rp-navpad-center { grid-column: 1 / span 3; grid-row: 3; }
+        /* While a card or block is dragged the pad must not swallow the drop or hide the lane under it */
+        .rp-navpad.rp-navpad-dragging, .rp-navpad.rp-navpad-dragging .rp-btn-icon { pointer-events: none; opacity: 0; }
+        #rp-shell.rp-dark .rp-navpad {
+            background: var(--md-sys-color-surface); border-color: var(--md-sys-color-outline-variant);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .rp-navpad { transition: none; }
+        }
 
         /* Sticky axis */
         #rp-axis-row {
@@ -6921,6 +7793,19 @@ function injectRPStyles() {
 
         /* Scrollable lanes */
         #rp-lanes-area { flex: 1; overflow-y: auto; overflow-x: hidden; }
+        /* The header text sits in the label column only; the timeline part stays an empty band. */
+        .rp-lane-group-header {
+            display: flex; align-items: stretch; width: 100%; min-height: 40px;
+            box-sizing: border-box;
+            background: var(--md-sys-color-surface-container);
+            border-bottom: 1px solid var(--md-sys-color-surface-container-high);
+        }
+        .rp-lane-group-label { overflow: hidden; }
+        .rp-lane-group-name, .rp-lane-group-counts {
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .rp-lane-group-name { font-weight: 700; font-size: 13px; color: var(--md-sys-color-on-surface); }
+        .rp-lane-group-counts { font-size: 11px; color: var(--md-sys-color-on-surface-variant); }
         .rp-lane-row   {
             display: flex; align-items: stretch;
             border-bottom: 1px solid var(--md-sys-color-surface-container-high);
@@ -6941,6 +7826,10 @@ function injectRPStyles() {
 
         .rp-block-grab     { cursor: grab; }
         .rp-block-grabbing { cursor: grabbing; }
+        /* A block no filter matched dims but stays clickable and draggable. */
+        .rp-block-dim { opacity: 0.25; transition: opacity 0.15s; }
+        #rp-shell.rp-dark .rp-block-dim { opacity: 0.3; }
+        .rp-block-count { font-size: 12px; font-weight: 500; white-space: nowrap; padding: 2px 8px; border-radius: 10px; margin: 0 8px; color: var(--md-sys-color-on-surface-variant); background: var(--md-sys-color-surface-container-high); }
         .rp-empty-state    { padding: 48px; text-align: center; font-size: 14px; color: var(--md-sys-color-outline); }
 
         /* ── Drag time tooltip (5-min snap) ── */
@@ -7308,6 +8197,7 @@ function injectRPStyles() {
         #rp-shell.rp-dark .rp-tb-hint { color: var(--md-sys-color-outline); }
         #rp-shell.rp-dark #rp-axis-row { background: var(--md-sys-color-surface-container); border-color: var(--md-sys-color-outline-variant); }
         #rp-shell.rp-dark .rp-lane-row { border-color: var(--md-sys-color-surface-container); }
+        #rp-shell.rp-dark .rp-lane-group-header { background: var(--md-sys-color-surface-container-high); border-color: var(--md-sys-color-outline-variant); }
         #rp-shell.rp-dark .rp-lane-alt { background: rgba(255,255,255,0.02); }
         #rp-shell.rp-dark .rp-lane-label { border-color: var(--md-sys-color-outline-variant); }
         #rp-shell.rp-dark .rp-gv-plate { color: var(--md-sys-color-on-surface); }
