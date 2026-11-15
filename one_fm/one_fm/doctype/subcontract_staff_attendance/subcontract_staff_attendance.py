@@ -4,7 +4,10 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.query_builder import DocType
 from frappe.utils import getdate
+
+SUBMIT_TASK = "Submit Attendance"
 
 
 class SubcontractStaffAttendance(Document):
@@ -244,6 +247,13 @@ def api_fetch_subcontractor_staff(subcontractor_name, from_date, to_date, attend
 @frappe.whitelist()
 def save_attendance_records(subcontractor_name, from_date, to_date, based_on, rows_json, submit=0):
 	import json
+
+	supplier = frappe.db.get_value(
+		"User Permission", {"user": frappe.session.user, "allow": "Supplier"}, "for_value"
+	)
+	if subcontractor_name != supplier:
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+
 	rows = json.loads(rows_json)
 	
 	# payload rows: list of { employee, employee_name, days: { "1": { value, site, status, parent_doc, project } } }
@@ -335,29 +345,57 @@ def save_attendance_records(subcontractor_name, from_date, to_date, based_on, ro
 	# Commit the saved drafts first so we don't lose the user's edits
 	frappe.db.commit()
 
-	# If submit == 1, transition all Draft docs in this period stringently
 	if int(submit) == 1:
-		from frappe.model.workflow import apply_workflow
 		all_docs = frappe.get_all(
 			"Subcontract Staff Attendance",
 			filters={
 				"subcontractor_name": subcontractor_name,
 				"from_date": from_date,
 				"to_date": to_date,
-				"workflow_state": "Draft"
+				"workflow_state": "Draft",
 			},
-			fields=["name", "site"]
+			pluck="name",
 		)
-		
-		for d in all_docs:
-			doc_obj = frappe.get_doc("Subcontract Staff Attendance", d.name)
-			try:
-				# Mute messages to prevent "No permission to share" warnings from popping up
-				frappe.flags.mute_messages = True
-				apply_workflow(doc_obj, "Submit for Review")
-			except Exception as e:
-				frappe.log_error(message=str(e), title=f"Error Submitting Subcontract Attendance {d.name}")
-			finally:
-				frappe.flags.mute_messages = False
+		for name in all_docs:
+			submit_through_process(name)
 
 	return "Success"
+
+
+def submit_through_process(docname: str) -> None:
+	"""Complete the Submit Attendance task the Subcontract Staff Attendance process opened on insert.
+
+	Callers must have checked that the record belongs to the session user's Supplier.
+	"""
+	from one_bpmn.api.instance_api import complete_task
+
+	Instance = DocType("BPMN Process Instance")
+	Task = DocType("BPMN Active Task")
+	task = (
+		frappe.qb.from_(Instance)
+		.join(Task)
+		.on(Task.parent == Instance.name)
+		.select(Instance.name.as_("instance"), Task.task_id)
+		.where(Instance.context_doctype == "Subcontract Staff Attendance")
+		.where(Instance.context_docname == docname)
+		.where(Instance.status == "Active")
+		.where(Task.task_name == SUBMIT_TASK)
+		.where(Task.status == "Waiting")
+		.limit(1)
+	).run(as_dict=True)
+	if not task:
+		frappe.throw(
+			_("{0} is not waiting for submission. Save it again and retry.").format(docname)
+		)
+
+	# Subcontractors hold no role on BPMN Process Instance; share only this instance.
+	if not frappe.has_permission("BPMN Process Instance", "write", task[0].instance):
+		frappe.share.add_docshare(
+			"BPMN Process Instance",
+			task[0].instance,
+			frappe.session.user,
+			read=1,
+			write=1,
+			flags={"ignore_share_permission": True},
+		)
+	complete_task(task[0].instance, task[0].task_id, frappe.as_json({"action": "Submit"}))

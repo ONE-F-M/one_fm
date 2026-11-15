@@ -90,7 +90,10 @@ def submit_attendance(docname):
 	if doc.subcontractor_name != supplier:
 		frappe.throw("Not Permitted")
 
-	from frappe.model.workflow import apply_workflow
-	apply_workflow(doc, "Submit for Review")
+	from one_fm.one_fm.doctype.subcontract_staff_attendance.subcontract_staff_attendance import (
+		submit_through_process,
+	)
+
+	submit_through_process(doc.name)
 	return "Success"
 
