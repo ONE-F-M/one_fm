@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002028: the PCC Attestation record, its employee details, fees and receipt stamps."""
+"""WI-002028: the PCC Attestation record, its employee details, fees and payment dates."""
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -157,42 +157,45 @@ class TestPCCAttestation(FrappeTestCase):
 		self.assertFalse(pcc.needs_embassy_attestation)
 		self.assertFalse(pcc.needs_mofa_attestation)
 
-	def test_attaching_a_receipt_stamps_its_timestamp(self):
+	def test_a_payment_date_is_saved_and_kept(self):
+		pcc = self._pcc(upload_embassy_payment_receipt=A_RECEIPT, embassy_payment_date="2026-11-05 09:30:00")
+		pcc.reload()
+
+		self.assertEqual(str(pcc.embassy_payment_date), "2026-11-05 09:30:00")
+
+	def test_a_receipt_without_a_payment_date_saves(self):
 		pcc = self._pcc(upload_mofa_payment_receipt=A_RECEIPT)
-		self.assertTrue(pcc.upload_mofa_payment_receipt_on)
 
-	def test_removing_a_receipt_clears_its_timestamp(self):
-		pcc = self._pcc(upload_mofa_payment_receipt=A_RECEIPT)
-		self.assertTrue(pcc.upload_mofa_payment_receipt_on)
+		self.assertIsNone(pcc.mofa_payment_date)
 
-		pcc.upload_mofa_payment_receipt = None
-		pcc.save()
-
-		self.assertIsNone(pcc.upload_mofa_payment_receipt_on)
-
-	def test_each_receipt_stamps_only_its_own_timestamp(self):
-		pcc = self._pcc(upload_embassy_payment_receipt=A_RECEIPT)
-
-		self.assertTrue(pcc.upload_embassy_payment_receipt_on)
-		self.assertFalse(pcc.upload_mofa_payment_receipt_on)
-		self.assertFalse(pcc.upload_translation_payment_receipt_on)
-
-	def test_an_existing_stamp_is_not_overwritten_on_a_later_save(self):
-		pcc = self._pcc(upload_mofa_payment_receipt=A_RECEIPT)
-		stamped_at = pcc.upload_mofa_payment_receipt_on
-
-		pcc.category = "Overseas"
-		pcc.save()
-
-		self.assertEqual(pcc.upload_mofa_payment_receipt_on, stamped_at)
-
-	def test_every_stamped_pair_of_fields_exists(self):
-		from one_fm.grd.doctype.pcc_attestation.pcc_attestation import RECEIPT_TIMESTAMPS
-
+	def test_the_payment_dates_sit_beside_the_receipts(self):
 		meta = frappe.get_meta("PCC Attestation")
-		for receipt_field, timestamp_field in RECEIPT_TIMESTAMPS:
-			self.assertTrue(meta.get_field(receipt_field), f"no field {receipt_field}")
-			self.assertTrue(meta.get_field(timestamp_field), f"no field {timestamp_field}")
+		order = [df.fieldname for df in meta.fields]
+		start = order.index("column_break_34")
+
+		self.assertEqual(
+			order[start + 1 : start + 4],
+			["embassy_payment_date", "mofa_payment_date", "translation_payment_date"],
+		)
+		for fieldname, label in (
+			("embassy_payment_date", "Embassy Payment Date"),
+			("mofa_payment_date", "MOFA Payment Date"),
+			("translation_payment_date", "Translation Payment Date"),
+		):
+			field = meta.get_field(fieldname)
+			self.assertEqual(field.fieldtype, "Datetime")
+			self.assertEqual(field.label, label)
+			self.assertFalse(field.reqd)
+			self.assertFalse(field.read_only)
+
+	def test_the_receipt_stamps_are_gone(self):
+		meta = frappe.get_meta("PCC Attestation")
+		for fieldname in (
+			"upload_embassy_payment_receipt_on",
+			"upload_mofa_payment_receipt_on",
+			"upload_translation_payment_receipt_on",
+		):
+			self.assertIsNone(meta.get_field(fieldname))
 
 	def test_it_is_not_the_recruitment_side_pcc_record(self):
 		# PCC Clearance already exists and tracks obtaining the certificate for a candidate

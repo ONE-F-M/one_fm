@@ -261,51 +261,65 @@ def optimize_transportation_routes():
         frappe.log_error(frappe.get_traceback(), "Route Optimization API Error")
         return {"status": "error", "message": str(e)}
 
-def get_grouped_employees_by_accommodation() -> dict:
+def get_grouped_employees_by_accommodation(skipped: dict | None = None) -> dict:
+    """{camp key: {"lookup_id", "shifts": {shift: [employee]}}} for today's riders.
+
+    Demand comes from today's Working Employee Schedule rows, not the master Employee.shift.
+    ``skipped`` collects ``{employee: reason}`` for every Active employee dropped here.
+    """
+    def skip(emp_ids, reason):
+        if skipped is not None:
+            for emp in emp_ids:
+                skipped[emp] = reason
+
     # 1. Fetch all active Operations Shift entries
     active_shifts = frappe.get_all("Operations Shift", filters={"status": "Active"}, fields=["name", "site"])
-    if not active_shifts:
-        return {}
-
     shift_names = [s.name for s in active_shifts]
 
-    # 2. Find all employees with a shift allocation matching one of the active shifts
-    employees = frappe.get_all("Employee",
-        filters={"status": "Active", "shift": ["in", shift_names]},
-        fields=["name", "shift"]
-    )
-    if not employees:
+    # 2. Today's rostered shift per Active employee: Working rows only, Basic over Over-Time.
+    #    Day Off, leave and every other availability get no seat.
+    from one_fm.one_fm.page.transportation_schedule.traceability_matrix import _roster_row
+
+    active = set(shift_names)
+    rows_of = {}
+    for row in frappe.get_all("Employee Schedule",
+        filters={"date": frappe.utils.today(), "employee_availability": "Working"},
+        fields=["employee", "shift", "employee_availability", "roster_type"]
+    ):
+        rows_of.setdefault(row.employee, []).append(row)
+
+    emp_shift_map = {}
+    for emp in frappe.get_all("Employee", filters={"status": "Active"}, pluck="name"):
+        row = _roster_row(rows_of.get(emp, []))
+        if not row or not row.shift:
+            skip([emp], _("Not rostered to work today"))
+        elif row.shift not in active:
+            skip([emp], _("Rostered shift {0} is not Active").format(row.shift))
+        else:
+            emp_shift_map[emp] = row.shift
+
+    if not emp_shift_map:
         return {}
 
-    emp_shift_map = {e.name: e.shift for e in employees}
-
-    # Who is actually travelling today, not just whose post this is.
-    # Employee.shift is the MASTER allocation: an employee on approved leave keeps it and
-    # kept riding a bus they were not on, and a reliever covering someone else's post is
-    # filed under their own shift rather than the one they are working. The overlay drops
-    # the first and re-files the second. It is resolved per date and stored nowhere, so a
-    # leave range ending restores the original by itself (AC3).
+    # The overlay drops anyone on approved leave or being relieved, and files a reliever
+    # under the shift they cover. It is resolved per date and stored nowhere.
     emp_shift_map = apply_to_shift_map(emp_shift_map)
+    if skipped is not None:
+        for emp in emp_shift_map:
+            skipped.pop(emp, None)
     emp_ids = list(emp_shift_map)
     if not emp_ids:
         return {}
 
-    # 3. Bulk-fetch the latest IN checkin per employee (single query instead of N+1)
-    #    Uses a correlated subquery to pick the most recent checkin per employee.
-    checkin_rows = frappe.db.sql("""
-        SELECT c.employee, c.accommodation
-        FROM `tabAccommodation Checkin Checkout` c
-        INNER JOIN (
-            SELECT employee, MAX(creation) AS max_creation
-            FROM `tabAccommodation Checkin Checkout`
-            WHERE type = 'IN'
-              AND employee IS NOT NULL
-              AND employee != ''
-              AND employee IN %(emp_ids)s
-            GROUP BY employee
-        ) latest ON c.employee = latest.employee AND c.creation = latest.max_creation
-        WHERE c.type = 'IN'
-    """, {"emp_ids": emp_ids}, as_dict=True)
+    # 3. The latest IN row per employee, read the way the Traceability Matrix reads it.
+    #    A checked-out row means the employee has left the camp and needs no bus.
+    from one_fm.one_fm.page.transportation_schedule.traceability_matrix import _latest_checkins
+
+    checkin_rows = [
+        row for row in _latest_checkins(emp_ids).values() if row.accommodation and not row.checked_out
+    ]
+    housed = {row.employee for row in checkin_rows}
+    skip([e for e in emp_ids if e not in housed], _("No open accommodation check-in"))
 
     if not checkin_rows:
         # Log once instead of per-employee to avoid thousands of Error Log entries
@@ -326,6 +340,7 @@ def get_grouped_employees_by_accommodation() -> dict:
             acc_labels[row.name] = row.accommodation
 
     MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
+    mahboula_id = _mahboula_lookup_id(MAHBOULA_LABELS)
 
     # 5. Build accommodation → employees map
     accommodation_map = {}
@@ -333,13 +348,16 @@ def get_grouped_employees_by_accommodation() -> dict:
         acc_id = row.accommodation
         acc_label = acc_labels.get(acc_id)
         if not acc_label:
+            skip([row.employee], _("Accommodation {0} not found").format(acc_id))
             continue
 
-        acc_key = "Mahboula Camp" if acc_label in MAHBOULA_LABELS else acc_id
+        is_mahboula = acc_label in MAHBOULA_LABELS
+        acc_key = "Mahboula Camp" if is_mahboula else acc_id
 
         if acc_key not in accommodation_map:
             accommodation_map[acc_key] = {
-                "lookup_id": acc_id,
+                # Part of every Mahboula generation_key, so it must not follow row order.
+                "lookup_id": mahboula_id if is_mahboula else acc_id,
                 "employees": []
             }
 
@@ -363,6 +381,7 @@ def get_grouped_employees_by_accommodation() -> dict:
     for acc_key, data in accommodation_map.items():
         lookup_id = data["lookup_id"]
         if lookup_id not in acc_stop_map:
+            skip([e.name for e in data["employees"]], _("Camp {0} has no transport stop").format(lookup_id))
             continue
 
         nested_map[acc_key] = {
@@ -376,6 +395,35 @@ def get_grouped_employees_by_accommodation() -> dict:
             nested_map[acc_key]["shifts"][shift].append(emp.name)
 
     return nested_map
+
+
+def _mahboula_lookup_id(labels: set) -> str | None:
+    """The one accommodation every Mahboula camp is keyed under.
+
+    The id the live shift cards already carry in their generation_key, so a run never
+    re-keys them; the lowest name only when no card carries one.
+    """
+    from collections import Counter
+
+    ids = frappe.get_all("Accommodation", filters={"accommodation": ["in", list(labels)]}, pluck="name")
+    if not ids:
+        return None
+    counts = Counter()
+    for key in frappe.get_all(
+        "Transportation Shipment",
+        filters={
+            "source_doctype": "Operations Shift",
+            "status": ["in", ["Unassigned", "Assigned"]],
+            "generation_key": ["like", "OPS|%"],
+        },
+        pluck="generation_key",
+    ):
+        parts = key.split("|")
+        if len(parts) > 1 and parts[1] in ids:
+            counts[parts[1]] += 1
+    if counts:
+        return min(counts, key=lambda acc: (-counts[acc], acc))
+    return min(ids)
 
 
 def build_shipments_from_nested_map(nested_map: dict, config: object, global_bounds: tuple) -> tuple:
@@ -1277,7 +1325,9 @@ def _sync_shipment_statuses(items, previously_linked=None):
     for name in (previously_linked or set()):
         if not name or name in assigned or name in still_placed:
             continue
-        if frappe.db.exists("Transportation Shipment", name):
+        # A cancelled card stays cancelled when its block leaves the lane.
+        status = frappe.db.get_value("Transportation Shipment", name, "status")
+        if status and status != "Inactive":
             frappe.db.set_value("Transportation Shipment", name, "status", "Unassigned")
             # A card returning to the pool takes its own direction back with it. Being
             # merged is a property of the block it was in, not of the journey the shipment

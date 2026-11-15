@@ -8,9 +8,35 @@ from frappe import ValidationError
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, today
 
-from one_fm.one_fm.doctype.maintenance_service_level_agreement.maintenance_service_level_agreement import (
-	send_sla_expiration_warnings,
+from one_fm.one_fm.doctype.maintenance_service_level_agreement.test_maintenance_service_level_agreement_processa_scripts import (
+	NO_COMMIT,
+	install_scripts,
+	run,
 )
+
+
+def setUpModule():
+	NO_COMMIT.start()
+
+
+def tearDownModule():
+	NO_COMMIT.stop()
+
+
+def send_sla_expiration_warnings():
+	"""The Maintenance SLA Expiration Warning timer: find, then send when anything was found."""
+	found = run("Find Expiring Service Level Agreements")
+	if found["records_found"]:
+		run("Send SLA Expiration Warnings", agreements=found["agreements"])
+
+
+def engine_submit(doc):
+	"""Submit as the Processa engine does. A native submit is refused while a process runs the document."""
+	frappe.flags.bpmn_engine_action = True
+	try:
+		doc.submit()
+	finally:
+		frappe.flags.bpmn_engine_action = False
 
 
 def ensure_issue_priority(name):
@@ -26,6 +52,7 @@ def ensure_customer(name):
 			{
 				"doctype": "Customer",
 				"customer_name": name,
+				"customer_name_in_arabic": name,
 				"customer_group": "All Customer Groups",
 				"territory": "All Territories",
 			}
@@ -47,6 +74,9 @@ def ensure_holiday_list(name):
 
 
 class TestMaintenanceServiceLevelAgreement(FrappeTestCase):
+	def setUp(self):
+		install_scripts()
+
 	def make_sla(self, **overrides):
 		"""Build an insertable Maintenance Service Level Agreement.
 
@@ -254,7 +284,7 @@ class TestMaintenanceServiceLevelAgreement(FrappeTestCase):
 			end_date=end_date,
 		)
 		doc.insert(ignore_permissions=True)
-		doc.submit()
+		engine_submit(doc)
 		return doc
 
 	def test_sends_warning_for_sla_expiring_in_30_days(self):
@@ -332,4 +362,16 @@ class TestMaintenanceServiceLevelAgreement(FrappeTestCase):
 			send_sla_expiration_warnings()
 
 		# No recipient configured — nothing is sent (logged instead).
+		mock_sendemail.assert_not_called()
+
+	def test_the_default_priority_row_fills_the_default_priority(self):
+		ensure_issue_priority("Low")
+		doc = self.make_sla(holiday_list=ensure_holiday_list("_Test Maintenance Holiday List"))
+		doc.insert(ignore_permissions=True)
+		self.assertEqual(doc.default_priority, "Low")
+
+	def test_no_warning_email_when_nothing_expires(self):
+		with patch("one_fm.processor.sendemail") as mock_sendemail:
+			result = run("Send SLA Expiration Warnings", agreements=[])
+		self.assertEqual(result["warnings_sent"], 0)
 		mock_sendemail.assert_not_called()

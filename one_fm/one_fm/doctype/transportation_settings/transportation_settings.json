@@ -5,7 +5,8 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "restrict_reliever_search_to_rambo_employees_only"
+  "restrict_reliever_search_to_rambo_employees_only",
+  "shipment_alert_user"
  ],
  "fields": [
   {
@@ -14,12 +15,19 @@
    "fieldname": "restrict_reliever_search_to_rambo_employees_only",
    "fieldtype": "Check",
    "label": "Restrict Reliever Search to Rambo Employees Only"
+  },
+  {
+   "description": "Receives an email when the nightly shipment generation skips or fails on any employee, or fails entirely.",
+   "fieldname": "shipment_alert_user",
+   "fieldtype": "Link",
+   "label": "Shipment Alert Recipient",
+   "options": "User"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-05-01 09:00:00.000000",
+ "modified": "2026-11-04 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Transportation Settings",

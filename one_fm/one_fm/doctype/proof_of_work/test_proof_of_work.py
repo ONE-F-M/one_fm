@@ -13,16 +13,9 @@ from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
 	ATTENDANCE_ABBR,
 	DAY_OFF_ABBRS,
 	DEFAULT_GENERATION_BASIS,
-	_actual_hours,
 	_attendance_abbr,
 	_basis_for_rate_type,
-	_non_manpower_amount_by_category,
-	_populate_pow_items,
 	_safe_filename,
-	_uses_nominal_shift_hours,
-	_fmt_actual,
-	_fmt_contractual,
-	_fmt_staff_breakdown,
 	_shift_hours_from_item,
 	generate_proof_of_work,
 	get_eligible_contracts,
@@ -30,6 +23,29 @@ from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
 	pdf_file_name,
 	resolve_attendance_source,
 )
+from one_fm.one_fm.doctype.proof_of_work.test_proof_of_work_processa_scripts import (
+	NO_COMMIT,
+	install_scripts,
+	rules,
+)
+
+# The item tables are filled by the map's Populate Proof of Work Items script. These tests read
+# its functions from the reviewed copy.
+POP = rules("Populate Proof of Work Items")
+_fmt_actual = POP._fmt_actual
+_fmt_contractual = POP._fmt_contractual
+_fmt_staff_breakdown = POP._fmt_staff_breakdown
+_non_manpower_amount_by_category = POP._non_manpower_amount_by_category
+_populate_pow_items = POP._populate_pow_items
+_uses_nominal_shift_hours = POP._uses_nominal_shift_hours
+
+
+def setUpModule():
+	NO_COMMIT.start()
+
+
+def tearDownModule():
+	NO_COMMIT.stop()
 
 TEST_YEAR = 2025
 TEST_MONTH = 6
@@ -62,6 +78,7 @@ def _get_or_create_project(company):
 
 class TestProofofWork(FrappeTestCase):
 	def setUp(self):
+		install_scripts()
 		self.company = _get_company()
 		self.customer = _get_or_create_customer()
 
@@ -322,18 +339,17 @@ class TestOnlyContractItemsBecomeRows(FrappeTestCase):
 	def _populate(self, contracted, source):
 		from unittest.mock import patch
 
-		module = "one_fm.one_fm.doctype.proof_of_work.proof_of_work"
 		doc = frappe.new_doc("Proof of Work")
 		doc.contract = "_TEST-POW-ROWS"
 		doc.project = "_TEST-POW-PROJECT"
 		doc.generation_basis = "Attendance Day"
 
-		with patch(f"{module}._contracted_count_by_sale_item", return_value=contracted), patch(
-			f"{module}.resolve_attendance_source", return_value=("attendance", None)
-		), patch(f"{module}._source_from_attendance", return_value=source), patch(
-			f"{module}._rate_type_by_sale_item", return_value={}
-		), patch(f"{module}._item_types_by_sale_item", return_value={}), patch(
-			f"{module}._shift_hours_from_item", return_value=12.0
+		with patch.object(POP, "_contracted_count_by_sale_item", return_value=contracted), patch.object(
+			POP, "resolve_attendance_source", return_value=("attendance", None)
+		), patch.object(POP, "_source_from_attendance", return_value=source), patch.object(
+			POP, "_rate_type_by_sale_item", return_value={}
+		), patch.object(POP, "_item_types_by_sale_item", return_value={}), patch.object(
+			POP, "_shift_hours_from_item", return_value=12.0
 		):
 			_populate_pow_items(doc, "2026-01-01", "2026-01-31")
 
@@ -487,7 +503,7 @@ class TestTheWorkedColumnUsesTheRightUnit(FrappeTestCase):
 		self.assertEqual(_fmt_actual(blank, 12.0, "Shift Hours"), "0.00 hrs")
 
 	def test_hours_fall_back_to_days_when_only_statuses_were_recorded(self):
-		# Same fallback _actual_hours has: a source with no numeric hours.
+		# A source with no numeric hours falls back to days x the shift length.
 		self.assertEqual(
 			_fmt_actual({"days": 10.0, "hours": 0.0}, 8.0, "Shift Hours"), "80.00 hrs"
 		)
@@ -635,13 +651,6 @@ class TestHourlyReportsNominalShiftHours(FrappeTestCase):
 		# The amendment path shows data as generated, so the clock still wins there.
 		out = _fmt_staff_breakdown(self._staff(), shift_hours=12, basis="Shift Hours")
 		self.assertIn("540.96", out)
-
-	def test_actual_hours_total_follows_the_same_rule(self):
-		source = {"days": 45, "hours": 540.96, "staff": {}}
-		self.assertEqual(
-			_actual_hours(source, 12, "Shift Hours", nominal_shift_hours=True), 540
-		)
-		self.assertEqual(_actual_hours(source, 12, "Shift Hours"), 540.96)
 
 	def test_only_hourly_without_an_amendment_uses_the_shift_length(self):
 		self.assertTrue(_uses_nominal_shift_hours("Hourly", "attendance"))
@@ -1033,6 +1042,7 @@ class TestNonManpowerRollup(FrappeTestCase):
 	"""
 
 	def setUp(self):
+		install_scripts()
 		self.company = _get_company()
 		self.customer = _get_or_create_customer()
 		self.project = _get_or_create_project(self.company)

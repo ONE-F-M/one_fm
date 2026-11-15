@@ -31,10 +31,11 @@ class TestTheRuleTakesTheOwner(FrappeTestCase):
 		self.assertEqual(doc.rule, "Based on Field")
 		self.assertEqual(doc.field, "owner")
 
-	def test_it_is_enabled_and_on_paci(self):
+	def test_it_is_retired_and_on_paci(self):
+		"""The PACI Lifecycle process assigns every task now."""
 		doc = _rule()
 
-		self.assertFalse(doc.disabled)
+		self.assertTrue(doc.disabled)
 		self.assertEqual(doc.document_type, "PACI")
 
 	def test_it_no_longer_depends_on_a_process_task(self):

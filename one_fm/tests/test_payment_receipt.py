@@ -10,7 +10,6 @@ from frappe.tests.utils import FrappeTestCase
 from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
-from one_fm.grd.doctype.paci.paci import create_PACI
 from one_fm.grd.doctype.paci.test_payment_date import _an_active_employee
 from one_fm.grd.payment_receipt import (
 	PAM_KNET_HEADING,
@@ -96,7 +95,7 @@ class TestPaymentDateFromText(FrappeTestCase):
 
 class TestReadPaymentDate(FrappeTestCase):
 	def setUp(self):
-		self.paci = create_PACI(frappe.get_doc("Employee", _an_active_employee()), "Renewal")
+		self.paci = frappe.get_doc({"doctype": "PACI", "employee": _an_active_employee(), "category": "Renewal", "date_of_application": frappe.utils.nowdate()}).insert()
 
 	def _attach(self, content: bytes, file_name: str = "receipt.pdf"):
 		file = frappe.get_doc({

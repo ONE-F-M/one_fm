@@ -2,14 +2,25 @@
 # See license.txt
 """WI-002094: the nationals a sector needs, and what it is short of."""
 
+from unittest import mock
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.grd.doctype.pam_license_details.pam_license_details import (
-	as_figure,
-	derived_figures,
-	to_whole,
-)
+from one_fm.grd.doctype.pam_license_details.test_pam_license_details_processa_scripts import rules
+
+_rules = rules()
+as_figure = _rules["as_figure"]
+derived_figures = _rules["derived_figures"]
+to_whole = _rules["to_whole"]
+
+
+def _recounted(license, nationals, expatriates):
+	"""Run the recount the map runs after a save, with the headcount the row is given."""
+	with mock.patch.dict(_rules, {"count_workers": lambda name, sector: (nationals, expatriates)}):
+		_rules["recount_license"](license.name)
+	license.reload()
+	return license.pam_license_stats[0]
 
 # The requirement and the shortfall do not depend on the sector - only the expatriate
 # allowance does - so these cases state one and hold it still.
@@ -126,7 +137,7 @@ class TestLicenceRecalculates(FrappeTestCase):
 		license.flags.ignore_permissions = True
 		license.insert()
 
-		row = license.pam_license_stats[0]
+		row = _recounted(license, 5, 8)
 		# 8 x 20 / 80 = 2 required, and five nationals is three over that.
 		self.assertEqual(row.required_number_of_national_workers, "2")
 		self.assertEqual(row.exceeding_the_ratio_number_of_national_workers, "3")
@@ -148,12 +159,14 @@ class TestLicenceRecalculates(FrappeTestCase):
 		})
 		license.flags.ignore_permissions = True
 		license.insert()
+		row = _recounted(license, 10, 8)
 		# 8 x 20 / 80 = 2 required, and ten nationals is eight over it.
-		self.assertEqual(license.pam_license_stats[0].required_number_of_national_workers, "2")
-		self.assertEqual(license.pam_license_stats[0].exceeding_the_ratio_number_of_national_workers, "8")
+		self.assertEqual(row.required_number_of_national_workers, "2")
+		self.assertEqual(row.exceeding_the_ratio_number_of_national_workers, "8")
 
 		license.pam_license_stats[0].ratio_number_of_national_workers = "50"
 		license.save()
+		_recounted(license, 10, 8)
 
 		# 8 x 50 / 50 = 8 required, so the same ten nationals are now only two over it -
 		# both figures move with the ratio, which is the point of this test.

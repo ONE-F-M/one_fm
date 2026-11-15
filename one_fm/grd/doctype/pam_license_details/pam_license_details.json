@@ -23,6 +23,9 @@
   "lg_expiry_date",
   "quota_classification_section",
   "total_number_of_employees",
+  "column_break_ameo",
+  "total_available_quota",
+  "section_break_uxvr",
   "quota_classification",
   "pam_stats_section",
   "pam_license_stats"
@@ -130,6 +133,20 @@
    "label": "Total Number of Employees "
   },
   {
+   "fieldname": "column_break_ameo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Total Number of Quota Available in Each PAM File, Including All Types of Quota",
+   "fieldname": "total_available_quota",
+   "fieldtype": "Data",
+   "label": "Total Available Quota"
+  },
+  {
+   "fieldname": "section_break_uxvr",
+   "fieldtype": "Section Break"
+  },
+  {
    "fieldname": "quota_classification",
    "fieldtype": "Table",
    "label": "Quota Classification",
@@ -150,7 +167,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-30 12:00:00.000000",
+ "modified": "2026-11-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM License Details",
