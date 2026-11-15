@@ -366,8 +366,93 @@ if doc.reference_doctype and doc.reference_docname:
             create_notification_log(subject, message, [supervisor_user], doc)
 '''
 
+VALIDATE_PENALTY_ISSUANCE = '''# Checks a Penalty Issuance before the process submits it. A Performance penalty takes
+# its site, project and site location from the shift; other categories carry none.
+# Sets result["issuance_valid"]; on False the process reopens Review Penalty Issuance.
+from frappe.utils import add_days, get_datetime, now_datetime
+
+OCCURRENCE_WINDOW_DAYS = 10
+errors = []
+
+employee_ids = [row.employee_id for row in doc.employees if row.employee_id]
+if not employee_ids:
+    errors.append(frappe._("Add at least one employee."))
+duplicates = sorted({employee for employee in employee_ids if employee_ids.count(employee) > 1})
+if duplicates:
+    errors.append(frappe._("Employee already added: {0}").format(", ".join(duplicates)))
+
+if not any(row.penalty_type for row in doc.penalty_issuance_details):
+    errors.append(frappe._("Add at least one violation."))
+
+occurrence = get_datetime(doc.penalty_occurence_time)
+issued = get_datetime(doc.issuing_time or now_datetime())
+if occurrence > issued:
+    errors.append(frappe._("Penalty time cannot be in future."))
+elif occurrence < add_days(issued, -OCCURRENCE_WINDOW_DAYS):
+    errors.append(frappe._("Penalty can only be issued for the previous {0} days.").format(OCCURRENCE_WINDOW_DAYS))
+
+site_assignment = {"shift": None, "site": None, "project": None, "site_location": None}
+if doc.penalty_category == "Performance":
+    site_assignment["shift"] = doc.shift
+    if doc.shift:
+        site, project = frappe.db.get_value("Operations Shift", doc.shift, ["site", "project"]) or (None, None)
+        site_assignment["site"] = site
+        site_assignment["project"] = project
+        site_assignment["site_location"] = site and frappe.db.get_value("Operations Site", site, "site_location")
+    if not doc.shift or not site_assignment["site"]:
+        errors.append(frappe._("Shift and Site are required for a Performance penalty."))
+
+if not errors:
+    frappe.db.set_value("Penalty Issuance", doc.name, site_assignment, update_modified=False)
+    doc.update(site_assignment)
+
+result["issuance_valid"] = not errors
+for error in errors:
+    frappe.msgprint(error, title=frappe._("Cannot Submit"), indicator="red")
+'''
+
+NOTIFY_LEGAL_OF_MANUAL_LOCATION = '''# Asks Legal to review an issuance whose location the supervisor entered by hand.
+from frappe.utils import get_link_to_form
+from one_fm.processor import sendemail
+
+legal_email = frappe.db.get_single_value("Legal Settings", "legal_department_email")
+if doc.different_location and legal_email:
+    message = frappe._(
+        "Please review the penalty issuance. The penalty location details were added manually by the supervisor.<br> Link: {0}"
+    ).format(get_link_to_form(doc.doctype, doc.name))
+    sendemail(
+        [legal_email],
+        subject=frappe._("Penalty Issuance - Review"),
+        message=message,
+        reference_doctype=doc.doctype,
+        reference_name=doc.name,
+    )
+'''
+
+VALIDATE_INVESTIGATION_LEAD = '''# The Investigation Lead cannot be a party to the investigation.
+# Sets result["lead_valid"]; on False the process reopens Set Up Investigation.
+parties = {row.employee_id for row in doc.legal_investigation_employees}
+lead_valid = not (doc.investigation_lead and doc.investigation_lead in parties)
+if not lead_valid:
+    frappe.msgprint(
+        frappe._("{0} is a party to this investigation and cannot lead it. Choose another Investigation Lead.").format(
+            doc.investigation_lead
+        ),
+        title=frappe._("Cannot Continue"),
+        indicator="red",
+    )
+result["lead_valid"] = lead_valid
+'''
+
 # (Server Script, process, script task id, reviewed body)
 SCRIPTS = (
+	(
+		"Notify Legal of Manual Location",
+		PENALTY_ISSUANCE_PROCESS,
+		"script_notify_manual_location",
+		NOTIFY_LEGAL_OF_MANUAL_LOCATION,
+	),
+	("Validate Penalty Issuance", PENALTY_ISSUANCE_PROCESS, "script_validate_issuance", VALIDATE_PENALTY_ISSUANCE),
 	("Query Employee Salary", PENALTY_ISSUANCE_PROCESS, "Activity_1nwkxsy", QUERY_EMPLOYEE_SALARY),
 	("Create HR Enquiry", PENALTY_ISSUANCE_PROCESS, "Activity_1ksq2wv", CREATE_HR_ENQUIRY),
 	("Create Legal Investigation", PENALTY_ISSUANCE_PROCESS, "Activity_0jv6zqu", CREATE_LEGAL_INVESTIGATION),
@@ -386,6 +471,7 @@ SCRIPTS = (
 		FETCH_SOURCE_DETAILS_INTO_INVESTIGATION,
 	),
 	("Notify Issuing Supervisor", LEGAL_INVESTIGATION_PROCESS, "task_notify_supervisor", NOTIFY_ISSUING_SUPERVISOR),
+	("Validate Investigation Lead", LEGAL_INVESTIGATION_PROCESS, "task_validate_lead", VALIDATE_INVESTIGATION_LEAD),
 	("Verify Session Submitted", LEGAL_INVESTIGATION_PROCESS, "task_verify_session", VERIFY_SESSION_SUBMITTED),
 	(
 		"Create Penalty on Penalty Applied",
@@ -498,6 +584,23 @@ class TestTheDiagrams(FrappeTestCase):
 			with self.subTest(process=title):
 				guarded = [e.get("id") for e in self.root(title).iter() if e.get(SPIFF + "onlyAllowEdit")]
 				self.assertEqual(guarded, [])
+
+	def test_a_failed_check_reopens_the_task_it_checks(self):
+		for title, gateway, valid_flag, passed_to, reopened in (
+			(PENALTY_ISSUANCE_PROCESS, "gw_issuance_valid", "issuance_valid", "Activity_1kv4wi5", "Activity_1r8gy17"),
+			(LEGAL_INVESTIGATION_PROCESS, "gw_lead_valid", "lead_valid", "task_set_started", "task_setup"),
+		):
+			with self.subTest(process=title):
+				root = self.root(title)
+				flows = {f.get("id"): f for f in root.iter(BPMN + "sequenceFlow")}
+				gate = next(e for e in root.iter(BPMN + "exclusiveGateway") if e.get("id") == gateway)
+				default = flows[gate.get("default")]
+				passed = next(f for f in flows.values() if f.get("sourceRef") == gateway and f is not default)
+
+				self.assertEqual(passed.get("targetRef"), passed_to)
+				self.assertEqual(passed.find(BPMN + "conditionExpression").text, f"{valid_flag} == True")
+				join = default.get("targetRef")
+				self.assertEqual(next(f for f in flows.values() if f.get("sourceRef") == join).get("targetRef"), reopened)
 
 	def test_investigation_tasks_go_to_the_lead_user(self):
 		fields = {
@@ -701,8 +804,7 @@ class TestHREnquiryToLegalInvestigation(PenaltyFixtures):
 		issuance, enquiry = self.make_hr_enquiry(third_party_damage=1)
 		enquiry.db_set("damage_amount", 120)
 		enquiry.reload()
-		with patch("one_fm.legal.doctype.legal_investigation.legal_investigation.sendemail"):
-			run_script(CONFIRM_LEGAL_INVESTIGATION_LINKED, enquiry)
+		run_script(CONFIRM_LEGAL_INVESTIGATION_LINKED, enquiry)
 		return issuance, enquiry, frappe.db.get_value("HR Enquiry", enquiry.name, "legal_investigation")
 
 	def test_escalation_carries_the_whole_chain(self):
@@ -752,6 +854,98 @@ class TestHREnquiryToLegalInvestigation(PenaltyFixtures):
 		self.assertEqual(penalty.source_process, "Legal Investigation")
 
 
+class TestValidatePenaltyIssuance(PenaltyFixtures):
+	def check(self, issuance):
+		with patch("frappe.msgprint") as msgprint:
+			valid = run_script(VALIDATE_PENALTY_ISSUANCE, issuance)["issuance_valid"]
+		return valid, " ".join(str(c.args[0]) for c in msgprint.call_args_list)
+
+	def assert_refused(self, issuance, message):
+		valid, shown = self.check(issuance)
+		self.assertFalse(valid)
+		self.assertIn(message, shown)
+
+	def test_a_complete_issuance_passes_and_takes_its_site_from_the_shift(self):
+		issuance = self.make_penalty_issuance(site=None, project=None, site_location=None)
+		self.assertEqual(self.check(issuance), (True, ""))
+		saved = frappe.db.get_value("Penalty Issuance", issuance.name, ["site", "project", "site_location"])
+		self.assertEqual(saved, (self.site, self.project, self.site_location))
+
+	def test_at_least_one_employee(self):
+		issuance = self.make_penalty_issuance()
+		issuance.set("employees", [])
+		self.assert_refused(issuance, "at least one employee")
+
+	def test_an_employee_may_be_added_only_once(self):
+		self.assert_refused(self.make_penalty_issuance(employees=[self.first, self.first]), "Employee already added")
+
+	def test_at_least_one_violation(self):
+		issuance = self.make_penalty_issuance()
+		issuance.set("penalty_issuance_details", [])
+		self.assert_refused(issuance, "at least one violation")
+
+	def test_the_occurrence_cannot_be_in_the_future(self):
+		issuance = self.make_penalty_issuance(penalty_occurence_time=add_to_date(now_datetime(), hours=1))
+		self.assert_refused(issuance, "future")
+
+	def test_the_occurrence_must_be_within_ten_days_of_issuing(self):
+		issuance = self.make_penalty_issuance(penalty_occurence_time=add_to_date(now_datetime(), days=-11))
+		self.assert_refused(issuance, "previous 10 days")
+		issuance = self.make_penalty_issuance(penalty_occurence_time=add_to_date(now_datetime(), days=-9))
+		self.assertTrue(self.check(issuance)[0])
+
+	def test_the_window_is_measured_from_issuing_not_from_submitting(self):
+		issuance = self.make_penalty_issuance(penalty_occurence_time=add_to_date(now_datetime(), days=-32))
+		issuance.issuing_time = add_to_date(now_datetime(), days=-30)
+		self.assertTrue(self.check(issuance)[0])
+
+	def test_performance_needs_a_shift(self):
+		issuance = self.make_penalty_issuance()
+		issuance.shift = None
+		self.assert_refused(issuance, "Shift and Site are required")
+
+	def test_other_categories_carry_no_site_assignment(self):
+		issuance = self.make_penalty_issuance(penalty_category="Accomodation")
+		self.assertTrue(self.check(issuance)[0])
+		saved = frappe.db.get_value("Penalty Issuance", issuance.name, ["shift", "site", "project", "site_location"])
+		self.assertEqual(saved, (None, None, None, None))
+
+	def test_a_refused_issuance_is_left_untouched(self):
+		issuance = self.make_penalty_issuance()
+		issuance.penalty_category = "Accomodation"
+		issuance.set("penalty_issuance_details", [])
+		self.assertFalse(self.check(issuance)[0])
+		self.assertEqual(frappe.db.get_value("Penalty Issuance", issuance.name, "shift"), self.shift)
+
+
+class TestNotifyLegalOfManualLocation(PenaltyFixtures):
+	def test_legal_is_asked_to_review_a_manual_location(self):
+		frappe.db.set_single_value("Legal Settings", "legal_department_email", "legal@example.com")
+		with patch("one_fm.processor.sendemail") as sendemail:
+			run_script(NOTIFY_LEGAL_OF_MANUAL_LOCATION, self.make_penalty_issuance(different_location=1))
+			run_script(NOTIFY_LEGAL_OF_MANUAL_LOCATION, self.make_penalty_issuance(different_location=0))
+		self.assertEqual(sendemail.call_count, 1)
+		self.assertEqual(sendemail.call_args.args[0], ["legal@example.com"])
+
+
+class TestValidateInvestigationLead(PenaltyFixtures):
+	def investigation(self, lead):
+		return frappe._dict(
+			investigation_lead=lead,
+			legal_investigation_employees=[frappe._dict(employee_id=self.issuer.name), frappe._dict(employee_id=self.first.name)],
+		)
+
+	def test_a_party_cannot_lead(self):
+		with patch("frappe.msgprint") as msgprint:
+			self.assertFalse(run_script(VALIDATE_INVESTIGATION_LEAD, self.investigation(self.first.name))["lead_valid"])
+		self.assertIn("cannot lead it", str(msgprint.call_args.args[0]))
+
+	def test_an_outsider_or_no_lead_passes(self):
+		for lead in (self.second.name, None):
+			with self.subTest(lead=lead):
+				self.assertTrue(run_script(VALIDATE_INVESTIGATION_LEAD, self.investigation(lead))["lead_valid"])
+
+
 class TestTheScriptsRunAsAnIssuer(PenaltyFixtures):
 	"""Scripts run as the instance's initiator, the issuer, and may not bypass permissions."""
 
@@ -776,9 +970,9 @@ class TestTheScriptsRunAsAnIssuer(PenaltyFixtures):
 		issuance = self.make_penalty_issuance()
 		frappe.set_user(ISSUER_USER)
 
+		self.assertTrue(run_script(VALIDATE_PENALTY_ISSUANCE, issuance)["issuance_valid"])
 		run_script(CREATE_HR_ENQUIRY, issuance)
-		with patch("one_fm.legal.doctype.legal_investigation.legal_investigation.sendemail"):
-			run_script(CREATE_LEGAL_INVESTIGATION, issuance)
+		run_script(CREATE_LEGAL_INVESTIGATION, issuance)
 		enquiry = frappe.get_doc("HR Enquiry", {"penalty_issuance": issuance.name, "employee": self.first.name})
 		run_script(CONFIRM_PENALTY_LINKED, enquiry)
 

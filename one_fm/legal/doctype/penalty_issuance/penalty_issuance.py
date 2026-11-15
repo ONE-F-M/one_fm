@@ -5,27 +5,14 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import add_days, cint, get_datetime, get_link_to_form, getdate, now_datetime
+from frappe.utils import cint, getdate, now_datetime
 from frappe import _
-from one_fm.processor import sendemail
 
-OCCURRENCE_WINDOW_DAYS = 10
-SITE_FIELDS = ("shift", "site", "project", "site_location")
-
-# The Initiate Penalty Issuance process routes a submitted issuance to an HR Enquiry or a
-# Legal Investigation, so nothing here creates Penalty or Legal Investigation records.
+# The Initiate Penalty Issuance process owns the lifecycle: the checks before submit, the
+# manual-location notice to Legal and the routing to an HR Enquiry or a Legal Investigation.
 class PenaltyIssuance(Document):
 	def before_insert(self):
 		self.set_issuer()
-
-	def validate(self):
-		self.validate_employees()
-		self.validate_penalty_details()
-		self.validate_occurrence_time()
-		self.set_site_assignment()
-
-	def after_insert(self):
-		self.validate_location()
 
 	def set_issuer(self):
 		"""The issuer is the session user's employee, the issuing time the server's clock.
@@ -39,49 +26,6 @@ class PenaltyIssuance(Document):
 		self.issuing_time = now_datetime()
 		self.location = self.location or self.penalty_location
 
-	def validate_employees(self):
-		employee_ids = [row.employee_id for row in self.employees if row.employee_id]
-		if not employee_ids:
-			frappe.throw(_("Add at least one employee."))
-
-		duplicates = sorted({employee for employee in employee_ids if employee_ids.count(employee) > 1})
-		if duplicates:
-			frappe.throw(_("Employee already added: {0}").format(", ".join(duplicates)))
-
-	def validate_penalty_details(self):
-		if not any(row.penalty_type for row in self.penalty_issuance_details):
-			frappe.throw(_("Add at least one violation."))
-
-	def validate_occurrence_time(self):
-		occurrence = get_datetime(self.penalty_occurence_time)
-		issued = get_datetime(self.issuing_time or now_datetime())
-		if occurrence > issued:
-			frappe.throw(_("Penalty time cannot be in future."))
-		if occurrence < add_days(issued, -OCCURRENCE_WINDOW_DAYS):
-			frappe.throw(_("Penalty can only be issued for the previous {0} days.").format(OCCURRENCE_WINDOW_DAYS))
-
-	def set_site_assignment(self):
-		"""A Performance penalty takes its site, project and site location from the shift;
-		other categories carry no site assignment."""
-		if self.penalty_category != "Performance":
-			for fieldname in SITE_FIELDS:
-				self.set(fieldname, None)
-			return
-
-		if self.shift:
-			self.site, self.project = frappe.db.get_value("Operations Shift", self.shift, ["site", "project"])
-			self.site_location = self.site and frappe.db.get_value("Operations Site", self.site, "site_location")
-		if not self.shift or not self.site:
-			frappe.throw(_("Shift and Site are required for a Performance penalty."))
-
-	def validate_location(self):
-		if self.different_location:
-			subject = _("Penalty Issuance - Review")
-			link = get_link_to_form(self.doctype, self.name)
-			message = _("Please review the penalty issuance. The penalty location details were added manually by the supervisor.<br> Link: {link}".format(link=link))
-			recipient = [frappe.get_value("Legal Settings", "Legal Settings", "legal_department_email")]
-			sendemail(recipient, subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)
-
 
 def submit_through_process(doc):
 	"""Submit a new issuance by completing its Review Penalty Issuance task, so the process
@@ -90,6 +34,11 @@ def submit_through_process(doc):
 
 	if not complete_action(doc, "Submit", "Review Penalty Issuance"):
 		doc.submit()
+		return
+
+	# The process's Validate Penalty Issuance step reopens Review when a check fails.
+	if frappe.db.get_value(doc.doctype, doc.name, "docstatus") != 1:
+		frappe.throw(_("Penalty Issuance {0} was not submitted. Fix the errors shown and submit it again.").format(doc.name))
 
 
 @frappe.whitelist()
