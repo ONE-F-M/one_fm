@@ -10,7 +10,7 @@ the literals below the way FrappeScriptEngine does (one namespace, ``doc`` loade
 """
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -276,12 +276,13 @@ if len(sessions) > 0:
     doc.db_set("session_verified", 1, update_modified=False)
     result = True
 else:
-    if not doc.get("investigation_results"):
-        frappe.throw(
-            frappe._("Cannot complete investigation {0}. No submitted session found and no investigation results recorded.").format(doc.name)
-        )
     doc.db_set("session_verified", 0, update_modified=False)
     result = False
+    frappe.msgprint(
+        frappe._("Submit a Legal Investigation Session for {0} before submitting findings.").format(doc.name),
+        title=frappe._("Cannot Submit Findings"),
+        indicator="red",
+    )
 '''
 
 CREATE_PENALTY_ON_PENALTY_APPLIED = '''import frappe
@@ -954,6 +955,16 @@ class TestValidateInvestigationLead(PenaltyFixtures):
 		for lead in (self.second.name, None):
 			with self.subTest(lead=lead):
 				self.assertTrue(run_script(VALIDATE_INVESTIGATION_LEAD, self.investigation(lead))["lead_valid"])
+
+
+class TestVerifySessionSubmitted(FrappeTestCase):
+	def test_no_submitted_session_reopens_the_task_instead_of_halting(self):
+		doc = MagicMock(name="investigation")
+		doc.name = "LI-NO-SESSION"
+		with patch("frappe.msgprint") as msgprint:
+			run_script(VERIFY_SESSION_SUBMITTED, doc)
+		doc.db_set.assert_called_once_with("session_verified", 0, update_modified=False)
+		self.assertIn("Submit a Legal Investigation Session", str(msgprint.call_args.args[0]))
 
 
 class TestTheScriptsRunAsAnIssuer(PenaltyFixtures):
