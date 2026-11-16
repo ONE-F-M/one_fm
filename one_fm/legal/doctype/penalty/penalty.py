@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2020, ONE FM and contributors
 # For license information, please see license.txt
+"""A penalty issued to an employee.
+
+The Penalty Lifecycle process sets it Issued and notifies the recipient; the monthly Penalty
+Deduction process deducts it.
+"""
 
 import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.query_builder import DocType
-from frappe.utils import add_to_date, cint, flt, get_link_to_form, getdate, nowdate
-
-from one_fm.api.notification import create_notification_log
+from frappe.utils import add_to_date, cint, flt, getdate, nowdate
 
 # The penalty matrix has six occurrence columns; the sixth (Termination) applies from then on.
 MAX_OCCURRENCE = 6
@@ -23,20 +26,9 @@ class Penalty(Document):
 	def validate(self):
 		self.validate_self_issuance()
 
-	def after_insert(self):
-		self.notify_employee()
-
 	def validate_self_issuance(self):
 		if self.recipient_employee == self.issuer_employee:
 			frappe.throw(_("Penalty recepient and issuer cannot be the same Employee."))
-
-	def notify_employee(self):
-		if not self.recipient_user:
-			return
-		issuer_name = self.issuer_name or "Administrator"
-		subject = _("Penalty Issued by {0}.").format(issuer_name)
-		message = _("You have been issued a penalty.<br>Link: {0}").format(get_link_to_form(self.doctype, self.name))
-		create_notification_log(subject, message, [self.recipient_user], self)
 
 	def set_occurrences(self):
 		"""Number each penalty type by the employee's earlier penalties of that type in the
