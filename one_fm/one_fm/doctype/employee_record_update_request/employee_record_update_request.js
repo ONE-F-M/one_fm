@@ -26,7 +26,7 @@ frappe.ui.form.on("Employee Record Update Request Properties Item", {
 				if (frm.doc.employee && p.employee_field) {
 					frappe.db.get_value("Employee", frm.doc.employee, p.employee_field).then((res) => {
 						const val = (res.message || {})[p.employee_field] || "";
-						frappe.model.set_value(cdt, cdn, "current_value", val);
+						frappe.model.set_value(cdt, cdn, "old_value", val);
 					});
 				}
 			});

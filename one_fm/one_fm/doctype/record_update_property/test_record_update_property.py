@@ -17,7 +17,7 @@ class TestRecordUpdateProperty(FrappeTestCase):
 
 	def test_meta_matches_ba(self):
 		meta = frappe.get_meta(DOCTYPE)
-		self.assertEqual((meta.is_submittable, meta.autoname, meta.module), (1, "field:property_name", "One Fm"))
+		self.assertEqual((meta.is_submittable, meta.autoname, meta.module), (0, "field:property_name", "One Fm"))
 		self.assertEqual(
 			[(f.fieldname, f.fieldtype, f.options or "") for f in meta.fields],
 			[
@@ -25,12 +25,14 @@ class TestRecordUpdateProperty(FrappeTestCase):
 				("property_name", "Data", ""),
 				("linked_doctype", "Link", "DocType"),
 				("employee_field", "Data", ""),
-				("amended_from", "Link", DOCTYPE),
 			],
 		)
 		name_field = meta.get_field("property_name")
 		self.assertEqual((name_field.reqd, name_field.unique, name_field.in_list_view), (1, 1, 1))
 		self.assertEqual({p.role for p in meta.permissions}, {"System Manager", "HR User", "Employee"})
+		employee = next(p for p in meta.permissions if p.role == "Employee")
+		granted = {k for k in ("read", "select", "write", "create", "delete", "submit") if employee.get(k)}
+		self.assertEqual(granted, {"read", "select"})
 
 	def test_seed_creates_every_property_once(self):
 		frappe.db.delete(DOCTYPE)

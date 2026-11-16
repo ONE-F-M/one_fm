@@ -240,7 +240,7 @@
    "fieldname": "day_off_category_new_value",
    "fieldtype": "Select",
    "label": "Day Off Category - New Value",
-   "options": "Monthly\nWeekly"
+   "options": "\nMonthly\nWeekly"
   },
   {
    "fieldname": "column_break_5f45d8",
@@ -259,7 +259,7 @@
    "fieldname": "number_of_days_off_new_value",
    "fieldtype": "Select",
    "label": "Number of Days Off - New Value",
-   "options": "1\n2\n3\n4"
+   "options": "\n1\n2\n3\n4"
   },
   {
    "fieldname": "section_break_8bc0f8",
@@ -288,7 +288,7 @@
    "fieldname": "reason_for_changes",
    "fieldtype": "Select",
    "label": "Reason for Changes",
-   "options": "Increment\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits\nOthers",
+   "options": "\nIncrement\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits\nOthers",
    "reqd": 1
   },
   {
@@ -310,7 +310,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-16 10:00:00.000000",
+ "modified": "2026-11-16 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Employee Record Update Request",
