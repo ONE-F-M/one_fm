@@ -340,6 +340,13 @@ def missing_from_site() -> list:
 	return [name for name, _id, _label, _body in SCRIPTS if not frappe.db.exists("Server Script", name)]
 
 
+# Scripts that call one_fm functions through frappe.get_attr carry a System Manager approval for it on each site.
+APPROVED_MODULES = {
+	"Auto Fetch Visa & payment Details using OCR": frozenset({"frappe.get_attr"}),
+	"Create new visa request version": frozenset({"frappe.get_attr"}),
+}
+
+
 class TestTheScriptsPassTheSecurityGate(FrappeTestCase):
 	"""Every BPMN script task body is gated on save and again at deploy. A body that
 	fails the gate cannot be attached to the diagram at all, so this comes first."""
@@ -353,7 +360,10 @@ class TestTheScriptsPassTheSecurityGate(FrappeTestCase):
 	def test_no_violations_in_any_body(self):
 		for name, body in self.ALL_BODIES:
 			with self.subTest(script=name):
-				self.assertEqual(deep_inspect_script(body), [], msg=name)
+				self.assertEqual(deep_inspect_script(body, allowed=APPROVED_MODULES.get(name, frozenset())), [], msg=name)
+
+	def test_get_attr_needs_the_approval(self):
+		self.assertNotEqual(deep_inspect_script(OCR_SCRIPT), [])
 
 	def test_each_body_compiles_in_the_restricted_context(self):
 		# Server Script.validate() runs the body through RestrictedPython and msgprints

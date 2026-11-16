@@ -177,7 +177,7 @@ def _build_doc(payload: dict):
 
 def _complete_review_task(doc) -> str | None:
 	"""Complete the Review task the process opened on insert; submit directly when no process runs."""
-	from one_bpmn.api.instance_api import complete_task
+	from processa.api.instances import complete_task
 
 	Instance = DocType("BPMN Process Instance")
 	Task = DocType("BPMN Active Task")

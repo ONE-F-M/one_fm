@@ -733,3 +733,4 @@ one_fm.patches.v15_0.add_penalty_issuance_app_service
 one_fm.patches.v15_0.add_shift_assignment_shift_date_index
 one_fm.patches.v15_0.seed_record_update_properties
 one_fm.patches.v15_0.move_attendance_approval_lifecycle_to_processa
+one_fm.patches.v15_0.move_request_for_purchase_lifecycle_to_processa
