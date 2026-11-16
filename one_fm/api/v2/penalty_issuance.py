@@ -3,7 +3,7 @@
 import frappe
 from frappe import _
 from frappe.query_builder import DocType
-from frappe.utils import cint, get_datetime
+from frappe.utils import cint, getdate
 
 from one_fm.api.v1.utils import handle_attachment_internal, response
 
@@ -80,98 +80,54 @@ def get_penalty_types() -> dict:
 		return _error(error)
 
 
-def _shift_query():
-	Shift = DocType("Operations Shift")
-	Site = DocType("Operations Site")
-	return (
-		frappe.qb.from_(Shift)
-		.left_join(Site)
-		.on(Site.name == Shift.site)
-		.select(
-			Shift.name.as_("shift"),
-			Shift.site,
-			Shift.project,
-			Site.site_location,
-		)
-	), Shift
-
-
-@frappe.whitelist(methods=["GET"])
-def get_shifts(txt: str | None = None) -> dict:
-	"""Active Operations Shifts with the site, project and site location they fill."""
-	try:
-		_require_issuer()
-		query, Shift = _shift_query()
-		query = query.where(Shift.status == "Active")
-		if txt and txt.strip():
-			query = query.where(Shift.name.like(f"%{txt.strip()}%"))
-		shifts = query.orderby(Shift.name).limit(SEARCH_LIMIT).run(as_dict=True)
-		return response("Success", 200, shifts)
-	except Exception as error:
-		return _error(error)
-
-
-@frappe.whitelist(methods=["GET"])
-def get_current_assignment(employee: str, occurrence_time: str) -> dict:
-	"""The shift the employee was rostered on at occurrence_time, from submitted Shift Assignments."""
-	try:
-		_require_issuer()
-		at = get_datetime(occurrence_time)
-		ShiftAssignment = DocType("Shift Assignment")
-		assignment = (
-			frappe.qb.from_(ShiftAssignment)
-			.select(ShiftAssignment.shift)
-			.where(ShiftAssignment.employee == employee)
-			.where(ShiftAssignment.docstatus == 1)
-			.where(ShiftAssignment.status == "Active")
-			.where(ShiftAssignment.start_datetime <= at)
-			.where(ShiftAssignment.end_datetime >= at)
-			.orderby(ShiftAssignment.start_datetime, order=frappe.qb.desc)
-			.limit(1)
-		).run(as_dict=True)
-		if not assignment or not assignment[0].shift:
-			return response("Not Found", 404, None, _("No rostered shift covers that time."))
-
-		query, Shift = _shift_query()
-		shift = query.where(Shift.name == assignment[0].shift).run(as_dict=True)
-		return response("Success", 200, shift[0] if shift else {"shift": assignment[0].shift})
-	except Exception as error:
-		return _error(error)
+def _penalty_shift(employee: str, occurrence_time: str) -> str | None:
+	"""The employee's assigned shift on the occurrence date, else the default shift on the Employee."""
+	ShiftAssignment = DocType("Shift Assignment")
+	assignment = (
+		frappe.qb.from_(ShiftAssignment)
+		.select(ShiftAssignment.shift)
+		.where(ShiftAssignment.employee == employee)
+		.where(ShiftAssignment.docstatus == 1)
+		.where(ShiftAssignment.start_date == getdate(occurrence_time))
+		.orderby(ShiftAssignment.start_datetime, order=frappe.qb.desc)
+		.limit(1)
+	).run()
+	if assignment and assignment[0][0]:
+		return assignment[0][0]
+	return frappe.db.get_value("Employee", employee, "shift")
 
 
 def _build_doc(payload: dict):
+	"""The app sends one employee and one penalty type per issuance."""
 	category = CATEGORIES.get(payload.get("penalty_category"))
 	if not category:
 		frappe.throw(_("Choose a category: Performance, Accommodation or Transportation."))
+	employee = payload.get("employee")
+	if not employee:
+		frappe.throw(_("Select an employee."))
+	penalty_type = payload.get("penalty_type")
+	if not penalty_type:
+		frappe.throw(_("Select a penalty type."))
 
-	employees = [row.get("employee_id") for row in payload.get("employees") or []]
-	if not employees or not all(employees):
-		frappe.throw(_("Add at least one employee."))
-	if len(set(employees)) != len(employees):
-		frappe.throw(_("Employee already added"))
-
-	details = payload.get("penalty_issuance_details") or []
-	if not details or not all(row.get("penalty_type") for row in details):
-		frappe.throw(_("Add at least one violation."))
+	occurrence_time = payload.get("penalty_occurence_time")
+	# The app has no shift field; site, project and site location follow the shift.
+	shift = _penalty_shift(employee, occurrence_time) if category == PERFORMANCE and occurrence_time else None
 
 	doc = frappe.new_doc("Penalty Issuance")
 	doc.update(
 		{
 			"penalty_category": category,
-			"penalty_occurence_time": payload.get("penalty_occurence_time"),
+			"penalty_occurence_time": occurrence_time,
 			"penalty_location": payload.get("penalty_location"),
 			"third_party_damage": cint(payload.get("third_party_damage")),
-			# Site, project and site location are filled from the shift on validate.
-			"shift": payload.get("shift") if category == PERFORMANCE else None,
+			"shift": shift,
 		}
 	)
-	for employee in employees:
-		doc.append("employees", {"employee_id": employee})
-	for row in details:
-		doc.append(
-			"penalty_issuance_details",
-			{"penalty_type": row.get("penalty_type"), "exact_notes": row.get("exact_notes")},
-		)
+	doc.append("employees", {"employee_id": employee})
+	doc.append(
+		"penalty_issuance_details",
+		{"penalty_type": penalty_type, "exact_notes": payload.get("exact_notes")},
+	)
 	return doc
 
 
@@ -221,9 +177,8 @@ def submit_penalty_issuance(payload: str | dict) -> dict:
 		payload = frappe.parse_json(payload) if isinstance(payload, str) else payload
 		doc = _build_doc(payload)
 		doc.insert()
-		for row, detail in zip(doc.penalty_issuance_details, payload.get("penalty_issuance_details")):
-			if detail.get("attachments"):
-				handle_attachment_internal(doc, row, detail["attachments"], "attachments")
+		if payload.get("attachment"):
+			handle_attachment_internal(doc, doc.penalty_issuance_details[0], payload["attachment"], "attachments")
 	except Exception as error:
 		_rollback_to("penalty_issuance_insert")
 		return _error(error)
