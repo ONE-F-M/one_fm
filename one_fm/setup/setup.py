@@ -54,6 +54,18 @@ def _create_custom_fields_resiliently(custom_fields: dict):
 				title=f"one_fm after_install: failed to create custom fields for {doctype}",
 				message=frappe.get_traceback(),
 			)
+		finally:
+			# The Custom Field rows saved before a failure exist, but their columns are only added when the table is updated.
+			# A failing updatedb is logged too, so it cannot stop the next doctype. A doctype that does not exist has no table.
+			try:
+				if frappe.db.exists("DocType", doctype):
+					frappe.clear_cache(doctype=doctype)
+					frappe.db.updatedb(doctype)
+			except Exception:
+				frappe.log_error(
+					title=f"one_fm after_install: failed to add the custom field columns for {doctype}",
+					message=frappe.get_traceback(),
+				)
 
 def before_uninstall():
 	delete_custom_fields(get_custom_fields())
