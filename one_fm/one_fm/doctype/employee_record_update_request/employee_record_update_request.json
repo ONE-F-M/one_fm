@@ -31,6 +31,13 @@
   "section_break_5307d1",
   "properties_changes_required",
   "properties",
+  "section_break_6048f4",
+  "day_off_terms_required",
+  "day_off_category_current_value",
+  "day_off_category_new_value",
+  "column_break_5f45d8",
+  "number_of_days_off_current_value",
+  "number_of_days_off_new_value",
   "section_break_8bc0f8",
   "benefits_changes_required",
   "benefit",
@@ -210,6 +217,51 @@
    "options": "Employee Record Update Request Properties Item"
   },
   {
+   "fieldname": "section_break_6048f4",
+   "fieldtype": "Section Break",
+   "label": "Day Off Terms"
+  },
+  {
+   "default": "0",
+   "fieldname": "day_off_terms_required",
+   "fieldtype": "Check",
+   "label": "Day Off Terms Required"
+  },
+  {
+   "depends_on": "eval:doc.day_off_terms_required==1",
+   "fetch_from": "employee.day_off_category",
+   "fieldname": "day_off_category_current_value",
+   "fieldtype": "Data",
+   "label": "Day Off Category - Current Value",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.day_off_terms_required==1",
+   "fieldname": "day_off_category_new_value",
+   "fieldtype": "Select",
+   "label": "Day Off Category - New Value",
+   "options": "Monthly\nWeekly"
+  },
+  {
+   "fieldname": "column_break_5f45d8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.day_off_terms_required==1",
+   "fetch_from": "employee.number_of_days_off",
+   "fieldname": "number_of_days_off_current_value",
+   "fieldtype": "Data",
+   "label": "Number of Days Off - Current Value",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.day_off_terms_required==1",
+   "fieldname": "number_of_days_off_new_value",
+   "fieldtype": "Select",
+   "label": "Number of Days Off - New Value",
+   "options": "1\n2\n3\n4"
+  },
+  {
    "fieldname": "section_break_8bc0f8",
    "fieldtype": "Section Break",
    "label": "Benefits"
@@ -236,7 +288,7 @@
    "fieldname": "reason_for_changes",
    "fieldtype": "Select",
    "label": "Reason for Changes",
-   "options": "\nIncrement\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits",
+   "options": "Increment\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits\nOthers",
    "reqd": 1
   },
   {
@@ -258,7 +310,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-11 10:30:00.000000",
+ "modified": "2026-11-16 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Employee Record Update Request",
