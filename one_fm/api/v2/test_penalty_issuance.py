@@ -99,14 +99,10 @@ class TestPenaltyIssuanceAPI(FrappeTestCase):
 			"penalty_location": "Camp gate",
 			"third_party_damage": 0,
 			"shift": "should be dropped",
-			"employees": [{"employee_id": self.target.name}],
-			"penalty_issuance_details": [
-				{
-					"penalty_type": PENALTY_TYPE,
-					"exact_notes": "Late",
-					"attachments": {"attachment_name": "../../evil.txt", "attachment": "aGVsbG8="},
-				}
-			],
+			"employee": self.target.name,
+			"penalty_type": PENALTY_TYPE,
+			"exact_notes": "Late",
+			"attachment": {"attachment_name": "../../evil.txt", "attachment": "aGVsbG8="},
 		}
 		payload.update(overrides)
 		return payload
@@ -116,8 +112,6 @@ class TestPenaltyIssuanceAPI(FrappeTestCase):
 			calls = [
 				(api.search_employees, ("abcd",)),
 				(api.get_penalty_types, ()),
-				(api.get_shifts, ()),
-				(api.get_current_assignment, (self.target.name, str(now_datetime()))),
 				(api.submit_penalty_issuance, (self._payload(),)),
 			]
 			for method, args in calls:
@@ -138,14 +132,7 @@ class TestPenaltyIssuanceAPI(FrappeTestCase):
 		self.assertEqual(result.status_code, 200)
 		self.assertIn(PENALTY_TYPE, [row["name"] for row in result.data])
 
-	def test_get_shifts(self):
-		with self.set_user(ISSUER):
-			result = _call(api.get_shifts)
-		self.assertEqual(result.status_code, 200)
-		for row in result.get("data") or []:
-			self.assertTrue({"shift", "site", "project", "site_location"} <= set(row))
-
-	def test_get_current_assignment(self):
+	def test_performance_takes_the_rostered_shift(self):
 		assignment = frappe.get_all(
 			"Shift Assignment",
 			filters={"docstatus": 1, "status": "Active", "shift": ["is", "set"], "start_datetime": ["is", "set"]},
@@ -154,10 +141,21 @@ class TestPenaltyIssuanceAPI(FrappeTestCase):
 		)
 		if not assignment:
 			self.skipTest("no submitted Shift Assignment")
+		doc = api._build_doc(
+			self._payload(
+				penalty_category="Performance",
+				employee=assignment[0].employee,
+				penalty_occurence_time=str(assignment[0].start_datetime),
+			)
+		)
+		self.assertEqual(doc.shift, assignment[0].shift)
+
+	def test_performance_without_a_rostered_shift_is_rejected(self):
+		payload = self._payload(penalty_category="Performance", penalty_occurence_time="2000-01-01 08:00:00")
 		with self.set_user(ISSUER):
-			result = _call(api.get_current_assignment, assignment[0].employee, str(assignment[0].start_datetime))
-		self.assertEqual(result.status_code, 200)
-		self.assertTrue(result.data["shift"])
+			result = _call(api.submit_penalty_issuance, payload)
+		self.assertEqual(result.status_code, 400)
+		self.assertIn("no rostered shift", result.error)
 
 	def test_submit_creates_the_issuance(self):
 		with self.set_user(ISSUER):
@@ -176,19 +174,12 @@ class TestPenaltyIssuanceAPI(FrappeTestCase):
 		# The client file name cannot leave the private files folder.
 		self.assertEqual(file_url.count("/"), 3, file_url)
 
-	def test_duplicate_employee_is_rejected(self):
-		payload = self._payload(employees=[{"employee_id": self.target.name}, {"employee_id": self.target.name}])
-		with self.set_user(ISSUER):
-			result = _call(api.submit_penalty_issuance, payload)
-		self.assertEqual(result.status_code, 400)
-		self.assertIn("Employee already added", result.error)
-
-	def test_unknown_category_and_empty_lists_are_rejected(self):
+	def test_unknown_category_and_missing_values_are_rejected(self):
 		with self.set_user(ISSUER):
 			for payload in (
 				self._payload(penalty_category="Other"),
-				self._payload(employees=[]),
-				self._payload(penalty_issuance_details=[]),
+				self._payload(employee=""),
+				self._payload(penalty_type=""),
 			):
 				self.assertEqual(_call(api.submit_penalty_issuance, payload).status_code, 400)
 
