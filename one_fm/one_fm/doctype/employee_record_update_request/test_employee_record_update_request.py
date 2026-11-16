@@ -16,8 +16,9 @@ from one_fm.tests.utils import make_employee
 DOCTYPE = "Employee Record Update Request"
 
 REASON_OPTIONS = (
-	"\nIncrement\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits"
+	"\nIncrement\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits\nOthers"
 )
+DAY_OFF_DEPENDS = "eval:doc.day_off_terms_required==1"
 
 # (fieldname, fieldtype, options, reqd, read_only, depends_on, fetch_from) in BA order.
 # Layout fields (Section/Column Breaks) are checked separately.
@@ -54,6 +55,11 @@ EXPECTED_FIELDS = [
 		"properties", "Table", "Employee Record Update Request Properties Item", 0, 0,
 		"eval:doc.properties_changes_required==1", "",
 	),
+	("day_off_terms_required", "Check", "", 0, 0, "", ""),
+	("day_off_category_current_value", "Data", "", 0, 1, DAY_OFF_DEPENDS, "employee.day_off_category"),
+	("day_off_category_new_value", "Select", "\nMonthly\nWeekly", 0, 0, DAY_OFF_DEPENDS, ""),
+	("number_of_days_off_current_value", "Data", "", 0, 1, DAY_OFF_DEPENDS, "employee.number_of_days_off"),
+	("number_of_days_off_new_value", "Select", "\n1\n2\n3\n4", 0, 0, DAY_OFF_DEPENDS, ""),
 	("benefits_changes_required", "Check", "", 0, 0, "", ""),
 	(
 		"benefit", "Table", "Employee Record Update Request Benefits Item", 0, 0,
@@ -86,6 +92,7 @@ DOCTYPES = (
 	"employee_record_update_request_benefits_item",
 	"employee_record_update_request_salary_structure_compone_item",
 	"employee_record_update_request",
+	"record_update_property",
 )
 
 
@@ -169,8 +176,12 @@ class TestEmployeeRecordUpdateRequest(FrappeTestCase):
 	def test_section_titles(self):
 		meta = frappe.get_meta(DOCTYPE)
 		labels = [f.label for f in meta.fields if f.fieldtype == "Section Break"]
-		for label in ("Employee", "Salary Update", "Salary Structure Components", "Changes to Update", "Benefits", "Reason for Changes"):
+		for label in ("Employee", "Salary Update", "Salary Structure Components", "Changes to Update", "Day Off Terms", "Benefits", "Reason for Changes"):
 			self.assertIn(label, labels)
+
+	def test_property_links_to_record_update_property(self):
+		field = frappe.get_meta("Employee Record Update Request Properties Item").get_field("property")
+		self.assertEqual((field.fieldtype, field.options, field.reqd), ("Link", "Record Update Property", 1))
 
 	def test_submittable_naming_and_doctype_properties(self):
 		meta = frappe.get_meta(DOCTYPE)
