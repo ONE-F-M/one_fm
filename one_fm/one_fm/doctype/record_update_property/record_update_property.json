@@ -9,8 +9,7 @@
   "property",
   "property_name",
   "linked_doctype",
-  "employee_field",
-  "amended_from"
+  "employee_field"
  ],
  "fields": [
   {
@@ -36,22 +35,12 @@
    "fieldname": "employee_field",
    "fieldtype": "Data",
    "label": "Employee Field"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Record Update Property",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
   }
  ],
  "index_web_pages_for_search": 1,
- "is_submittable": 1,
+ "is_submittable": 0,
  "links": [],
- "modified": "2026-11-16 10:00:00.000000",
+ "modified": "2026-11-16 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Record Update Property",
@@ -84,17 +73,9 @@
    "write": 1
   },
   {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
    "read": 1,
-   "report": 1,
    "role": "Employee",
-   "select": 1,
-   "share": 1,
-   "write": 1
+   "select": 1
   }
  ],
  "sort_field": "modified",

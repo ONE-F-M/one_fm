@@ -16,7 +16,7 @@ from one_fm.tests.utils import make_employee
 DOCTYPE = "Employee Record Update Request"
 
 REASON_OPTIONS = (
-	"Increment\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits\nOthers"
+	"\nIncrement\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits\nOthers"
 )
 DAY_OFF_DEPENDS = "eval:doc.day_off_terms_required==1"
 
@@ -57,9 +57,9 @@ EXPECTED_FIELDS = [
 	),
 	("day_off_terms_required", "Check", "", 0, 0, "", ""),
 	("day_off_category_current_value", "Data", "", 0, 1, DAY_OFF_DEPENDS, "employee.day_off_category"),
-	("day_off_category_new_value", "Select", "Monthly\nWeekly", 0, 0, DAY_OFF_DEPENDS, ""),
+	("day_off_category_new_value", "Select", "\nMonthly\nWeekly", 0, 0, DAY_OFF_DEPENDS, ""),
 	("number_of_days_off_current_value", "Data", "", 0, 1, DAY_OFF_DEPENDS, "employee.number_of_days_off"),
-	("number_of_days_off_new_value", "Select", "1\n2\n3\n4", 0, 0, DAY_OFF_DEPENDS, ""),
+	("number_of_days_off_new_value", "Select", "\n1\n2\n3\n4", 0, 0, DAY_OFF_DEPENDS, ""),
 	("benefits_changes_required", "Check", "", 0, 0, "", ""),
 	(
 		"benefit", "Table", "Employee Record Update Request Benefits Item", 0, 0,
