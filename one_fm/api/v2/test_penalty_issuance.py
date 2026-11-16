@@ -132,30 +132,31 @@ class TestPenaltyIssuanceAPI(FrappeTestCase):
 		self.assertEqual(result.status_code, 200)
 		self.assertIn(PENALTY_TYPE, [row["name"] for row in result.data])
 
-	def test_performance_takes_the_rostered_shift(self):
+	def test_performance_takes_the_shift_assigned_that_day(self):
 		assignment = frappe.get_all(
 			"Shift Assignment",
-			filters={"docstatus": 1, "status": "Active", "shift": ["is", "set"], "start_datetime": ["is", "set"]},
-			fields=["employee", "shift", "start_datetime"],
+			filters={"docstatus": 1, "shift": ["is", "set"], "start_datetime": ["is", "set"]},
+			fields=["employee", "shift", "start_date"],
+			order_by="start_datetime desc",
 			limit=1,
 		)
 		if not assignment:
 			self.skipTest("no submitted Shift Assignment")
+		# Late in the day, outside most shift windows: the date alone decides.
 		doc = api._build_doc(
 			self._payload(
 				penalty_category="Performance",
 				employee=assignment[0].employee,
-				penalty_occurence_time=str(assignment[0].start_datetime),
+				penalty_occurence_time=f"{assignment[0].start_date} 23:59:00",
 			)
 		)
 		self.assertEqual(doc.shift, assignment[0].shift)
 
-	def test_performance_without_a_rostered_shift_is_rejected(self):
-		payload = self._payload(penalty_category="Performance", penalty_occurence_time="2000-01-01 08:00:00")
-		with self.set_user(ISSUER):
-			result = _call(api.submit_penalty_issuance, payload)
-		self.assertEqual(result.status_code, 400)
-		self.assertIn("no rostered shift", result.error)
+	def test_performance_falls_back_to_the_employee_shift(self):
+		doc = api._build_doc(
+			self._payload(penalty_category="Performance", penalty_occurence_time="2000-01-01 08:00:00")
+		)
+		self.assertEqual(doc.shift, frappe.db.get_value("Employee", self.target.name, "shift"))
 
 	def test_submit_creates_the_issuance(self):
 		with self.set_user(ISSUER):

@@ -3,7 +3,7 @@
 import frappe
 from frappe import _
 from frappe.query_builder import DocType
-from frappe.utils import cint, get_datetime
+from frappe.utils import cint, getdate
 
 from one_fm.api.v1.utils import handle_attachment_internal, response
 
@@ -80,21 +80,21 @@ def get_penalty_types() -> dict:
 		return _error(error)
 
 
-def _rostered_shift(employee: str, at) -> str | None:
-	"""The shift the employee was rostered on at the given time, from submitted Shift Assignments."""
+def _penalty_shift(employee: str, occurrence_time: str) -> str | None:
+	"""The employee's assigned shift on the occurrence date, else the default shift on the Employee."""
 	ShiftAssignment = DocType("Shift Assignment")
 	assignment = (
 		frappe.qb.from_(ShiftAssignment)
 		.select(ShiftAssignment.shift)
 		.where(ShiftAssignment.employee == employee)
 		.where(ShiftAssignment.docstatus == 1)
-		.where(ShiftAssignment.status == "Active")
-		.where(ShiftAssignment.start_datetime <= at)
-		.where(ShiftAssignment.end_datetime >= at)
+		.where(ShiftAssignment.start_date == getdate(occurrence_time))
 		.orderby(ShiftAssignment.start_datetime, order=frappe.qb.desc)
 		.limit(1)
 	).run()
-	return assignment[0][0] if assignment else None
+	if assignment and assignment[0][0]:
+		return assignment[0][0]
+	return frappe.db.get_value("Employee", employee, "shift")
 
 
 def _build_doc(payload: dict):
@@ -110,12 +110,8 @@ def _build_doc(payload: dict):
 		frappe.throw(_("Select a penalty type."))
 
 	occurrence_time = payload.get("penalty_occurence_time")
-	shift = None
-	if category == PERFORMANCE:
-		# The app has no shift field; site, project and site location follow the shift.
-		shift = occurrence_time and _rostered_shift(employee, get_datetime(occurrence_time))
-		if not shift:
-			frappe.throw(_("The employee has no rostered shift at that date and time."))
+	# The app has no shift field; site, project and site location follow the shift.
+	shift = _penalty_shift(employee, occurrence_time) if category == PERFORMANCE and occurrence_time else None
 
 	doc = frappe.new_doc("Penalty Issuance")
 	doc.update(
