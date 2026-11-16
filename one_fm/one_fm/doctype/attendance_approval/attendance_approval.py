@@ -8,19 +8,16 @@ from frappe.utils import cint, cstr, get_link_to_form
 from calendar import monthrange
 from frappe import _
 
+from one_fm.one_fm import processa_rules
+
+# The Attendance Approval Lifecycle process holds the working-day rules.
+WORKING_DAYS_RULES = "Calculate Attendance Approval Working Days"
+
+
 class AttendanceApproval(Document):
 	def validate(self):
 		self.recalculate_working_days()
-		self.validate_attendance_details_present()
 		self.validate_duplicate()
-
-	def validate_attendance_details_present(self):
-		if self.workflow_state == "Pending Approval" and not self.attendance_details:
-			frappe.throw(
-				_(
-					"Attendance Details are empty. Select Attendance Record Based On and click Fetch Attendance Record before submitting for review."
-				)
-			)
 
 	def validate_duplicate(self):
 		"""Refuse a second live record for the same project, month and year.
@@ -61,35 +58,7 @@ class AttendanceApproval(Document):
 			)
 
 	def recalculate_working_days(self):
-		for row in self.get("attendance_details") + self.get("overtime_details"):
-			working_days = 0
-			off_days = 0
-			# OT + Attendance Status stores statuses in day_X; OT + hours modes use day_X_hour
-			use_hours = self.attendance_based_on in ("Shift Hours", "Working Hours")
-
-			for i in range(1, 32):
-				if use_hours:
-					val = row.get(f"day_{i}")
-					hour_val = row.get(f"day_{i}_hour")
-					if isinstance(val, str) and val in ("Day Off", "Client Day Off"):
-						off_days += 1
-					elif hour_val and hour_val not in ("N/A",):
-						try:
-							if float(hour_val) > 0:
-								working_days += 1
-						except (ValueError, TypeError):
-							pass
-				else:
-					# Attendance Status mode (basic rows only)
-					val = row.get(f"day_{i}")
-					if val in ["Present", "Working", "Work From Home"]:
-						working_days += 1
-					elif val == "Half Day":
-						working_days += 0.5
-					elif val in ["Day Off", "Client Day Off"]:
-						off_days += 1
-			row.working_days = working_days
-			row.off_days = off_days
+		processa_rules.run_rule(WORKING_DAYS_RULES, "recount", self)
 
 	@frappe.whitelist()
 	def fetch_attendance_record(self):
