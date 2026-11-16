@@ -16,7 +16,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_to_date, now_datetime
 
-from one_bpmn.security.script_validator import deep_inspect_script
+from processa.ai_agent_security.code_checks.script_validator import deep_inspect_script
 
 PENALTY_ISSUANCE_PROCESS = "Initiate Penalty Issuance - v1"
 HR_ENQUIRY_PROCESS = "HR Enquiry Lifecycle - v1"

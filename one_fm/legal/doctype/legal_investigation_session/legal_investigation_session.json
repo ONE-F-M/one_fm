@@ -19,7 +19,8 @@
   "summary_section",
   "notes",
   "attachment",
-  "amended_from"
+  "amended_from",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -112,10 +113,19 @@
    "options": "Legal Investigation Session",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2026-11-15 19:00:00.000000",
+ "modified": "2026-11-16 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Legal Investigation Session",
