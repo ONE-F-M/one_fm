@@ -75,3 +75,27 @@ class TestCreateCustomFieldsResiliently(FrappeTestCase):
 	def test_a_doctype_that_does_not_exist_has_no_table_to_update(self):
 		create, log, updatedb = self._run(exists=False)
 		updatedb.assert_not_called()
+
+
+class TestEmployeeIbanMatchesProduction(FrappeTestCase):
+	"""ERPNext's standard Employee `iban` shows only when the salary mode is Bank and is checked as an IBAN. Production overrides both with an
+	Employee-iban Custom Field row, which a new site cannot create. The same settings are applied as property setters, so a new site's `iban`
+	behaves like production's."""
+
+	def test_the_property_setters_clear_depends_on_and_options_and_keep_it_translatable(self):
+		from one_fm.custom.property_setter.employee import get_employee_properties
+
+		iban = {p["property"]: p for p in get_employee_properties() if p["doc_type"] == "Employee" and p["field_name"] == "iban"}
+		self.assertEqual(set(iban), {"depends_on", "options", "translatable"})
+		self.assertEqual(iban["depends_on"]["value"], "")
+		self.assertEqual(iban["options"]["value"], "")
+		self.assertEqual((iban["translatable"]["value"], iban["translatable"]["property_type"]), ("1", "Check"))
+		for p in iban.values():
+			self.assertEqual(p["doctype_or_field"], "DocField")
+
+	def test_the_employee_form_has_one_iban_with_production_behaviour(self):
+		fields = [df for df in frappe.get_meta("Employee").fields if df.fieldname == "iban"]
+		self.assertEqual(len(fields), 1)
+		self.assertFalse(fields[0].depends_on, "iban must not be hidden unless the salary mode is Bank")
+		self.assertFalse(fields[0].options, "iban must not be format-checked as an IBAN")
+		self.assertEqual(fields[0].translatable, 1)
