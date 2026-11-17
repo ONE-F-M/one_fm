@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2021, ONE FM and Contributors
 # See license.txt
+import re
+from pathlib import Path
 from unittest.mock import patch
 
 import frappe
@@ -53,3 +55,10 @@ class TestCostingNotificationIsQueued(FrappeTestCase):
 		with patch.object(frappe.db, "get_single_value", return_value=None):
 			with patch.object(frappe, "attach_print", _wkhtmltopdf_segfault):
 				send_costing_notification("PRE-TEST-QUEUED")
+
+
+class TestFormScriptMethodsExist(FrappeTestCase):
+	def test_every_method_the_form_script_calls_resolves(self):
+		script = Path(__file__).with_name("preparation.js").read_text()
+		for method in re.findall(r"""["'](one_fm\.[\w.]+)["']""", script):
+			self.assertTrue(callable(frappe.get_attr(method)), method)
