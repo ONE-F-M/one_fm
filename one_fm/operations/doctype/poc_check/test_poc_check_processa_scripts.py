@@ -15,7 +15,11 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 import one_fm
+from one_fm.patches.v15_0.delete_poc_check_workflow_and_assignment_rules import (
+	execute as delete_poc_check_workflow_and_assignment_rules,
+)
 from one_fm.patches.v15_0.move_poc_check_lifecycle_to_processa import execute as retire_poc_check
+from one_fm.setup.assignment_rule import create_assignment_rules
 
 SITE = "_Test POC Check Site"
 
@@ -369,6 +373,7 @@ class TestExecutePOCChanges(FrappeTestCase):
 
 class TestRetirePOCCheckAssignmentRule(FrappeTestCase):
 	def test_the_patch_switches_the_assignment_rule_off(self):
+		make_poc_check_assignment_rule()
 		frappe.db.set_value("Assignment Rule", "Action POC Check", "disabled", 0)
 
 		retire_poc_check()
@@ -381,3 +386,38 @@ class TestRetirePOCCheckAssignmentRule(FrappeTestCase):
 		)
 		with open(path) as handle:
 			self.assertEqual(json.load(handle)["disabled"], 1)
+
+
+class TestDeletePOCCheckWorkflowAndAssignmentRules(FrappeTestCase):
+	def test_the_patch_deletes_the_workflow_and_the_assignment_rule(self):
+		make_poc_check_assignment_rule()
+		frappe.get_doc(
+			{
+				"doctype": "Workflow",
+				"workflow_name": "POC Check Test Workflow",
+				"document_type": "POC Check",
+				"workflow_state_field": "workflow_state",
+				"is_active": 0,
+			}
+		).db_insert()
+
+		delete_poc_check_workflow_and_assignment_rules()
+
+		self.assertFalse(frappe.db.exists("Assignment Rule", {"document_type": "POC Check"}))
+		self.assertFalse(frappe.db.exists("Workflow", {"document_type": "POC Check"}))
+
+	def test_a_fresh_install_does_not_create_the_assignment_rule(self):
+		delete_poc_check_workflow_and_assignment_rules()
+
+		create_assignment_rules()
+
+		self.assertFalse(frappe.db.exists("Assignment Rule", "Action POC Check"))
+
+
+def make_poc_check_assignment_rule():
+	if not frappe.db.exists("Assignment Rule", "Action POC Check"):
+		path = os.path.join(
+			os.path.dirname(one_fm.__file__), "custom", "assignment_rule", "action_poc_check.json"
+		)
+		with open(path) as handle:
+			frappe.get_doc(json.load(handle)).insert()
