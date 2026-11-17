@@ -516,20 +516,23 @@
    "fieldname": "margin_known",
    "fieldtype": "Select",
    "label": "Margin Known?",
-   "options": "\nYes\nNo"
+   "options": "\nYes\nNo",
+   "mandatory_depends_on": "eval:doc.type == \"Project\" && doc.is_refundable == 1"
   },
   {
    "depends_on": "eval:doc.is_refundable == 1 && doc.margin_known == \"Yes\"",
    "fieldname": "margin_type",
    "fieldtype": "Select",
    "label": "Margin Type",
-   "options": "\nPercentage\nAmount"
+   "options": "\nPercentage\nAmount",
+   "mandatory_depends_on": "eval:doc.type == \"Project\" && doc.is_refundable == 1 && doc.margin_known == \"Yes\""
   },
   {
    "depends_on": "eval:doc.is_refundable == 1 && doc.margin_known == \"Yes\"",
    "fieldname": "margin_rate_or_amount",
    "fieldtype": "Float",
-   "label": "Margin Rate or Amount"
+   "label": "Margin Rate or Amount",
+   "mandatory_depends_on": "eval:doc.type == \"Project\" && doc.is_refundable == 1 && doc.margin_known == \"Yes\""
   },
   {
    "fieldname": "warehouse_section",
@@ -594,7 +597,7 @@
    "link_fieldname": "linked_rfm"
   }
  ],
- "modified": "2026-09-04 12:00:00.000000",
+ "modified": "2026-11-17 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",

@@ -93,12 +93,30 @@ class RequestforMaterial(BuyingController):
         self.validate_refundable_margins()
 
     def validate_refundable_margins(self):
-        """Margin details are mandatory on refundable item rows.
+        """Margin details are mandatory on a refundable Project request and on refundable item rows.
 
         mandatory_depends_on is only enforced in the browser, so the same rule is
         enforced here for API-created requests. 0 and negative values are valid for
         Margin Rate or Amount; only an unset (None) value is rejected.
         """
+        if self.type == "Project" and self.is_refundable:
+            if not self.margin_known:
+                frappe.throw(
+                    _("Margin Known is mandatory for a refundable Project request."),
+                    title=_("Margin Missing")
+                )
+            if self.margin_known == "Yes":
+                if not self.margin_type:
+                    frappe.throw(
+                        _("Margin Type is mandatory when Margin Known is Yes."),
+                        title=_("Margin Missing")
+                    )
+                if self.margin_rate_or_amount is None:
+                    frappe.throw(
+                        _("Margin Rate or Amount is mandatory when Margin Known is Yes."),
+                        title=_("Margin Missing")
+                    )
+
         for d in self.get("items") or []:
             if not d.get("is_refundable"):
                 continue
