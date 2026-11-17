@@ -38,3 +38,25 @@ class TestRequestforMaterial(FrappeTestCase):
 	def test_non_refundable_row_is_ignored(self):
 		rfm = self.make_rfm(is_refundable=0)
 		rfm.validate_refundable_margins()
+
+	def make_header(self, **header):
+		return frappe.get_doc(dict({"doctype": "Request for Material", "items": []}, **header))
+
+	def test_refundable_project_without_margin_known_raises(self):
+		rfm = self.make_header(type="Project", is_refundable=1)
+		self.assertRaises(frappe.ValidationError, rfm.validate_refundable_margins)
+
+	def test_refundable_project_margin_known_yes_without_type_or_rate_raises(self):
+		for header in ({"margin_rate_or_amount": 5}, {"margin_type": "Amount"}):
+			rfm = self.make_header(type="Project", is_refundable=1, margin_known="Yes", **header)
+			self.assertRaises(frappe.ValidationError, rfm.validate_refundable_margins)
+
+	def test_refundable_project_with_margin_passes(self):
+		self.make_header(
+			type="Project", is_refundable=1, margin_known="Yes", margin_type="Amount", margin_rate_or_amount=0
+		).validate_refundable_margins()
+		self.make_header(type="Project", is_refundable=1, margin_known="No").validate_refundable_margins()
+
+	def test_header_rule_applies_to_project_only(self):
+		self.make_header(type="Stock", is_refundable=1).validate_refundable_margins()
+		self.make_header(type="Project", is_refundable=0).validate_refundable_margins()
