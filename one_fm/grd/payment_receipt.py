@@ -22,7 +22,8 @@ RECEIPT_FIELDS = {
 }
 
 # Values are glued to the following text (e.g. "4:39 PM6277..."), so no word boundary after AM/PM.
-DMY_12H = r"(\d{1,2}/\d{1,2}/\d{4})\s+(\d{1,2})[:.](\d{2})\s*([AP]M)"
+# MOH has printed the month both as a number (31/10/2026) and as a name (12/Nov/2026).
+DMY_12H = r"(\d{1,2}/(?:\d{1,2}|[A-Za-z]{3})/\d{4})\s+(\d{1,2})[:.](\d{2})\s*([AP]M)"
 PACI_RULE = re.compile(r"Payment Date\s*" + DMY_12H)
 DMY_12H_RULE = re.compile(DMY_12H)
 # MOI prints time first, then date, sometimes with spaces around the hyphen.
@@ -44,7 +45,8 @@ def _dmy_12h(match: re.Match | None) -> str | None:
 	if not match:
 		return None
 	date, hour, minute, meridiem = match.groups()
-	value = datetime.strptime(f"{date} {hour}:{minute} {meridiem}", "%d/%m/%Y %I:%M %p")
+	date_format = "%d/%m/%Y" if date.split("/")[1].isdigit() else "%d/%b/%Y"
+	value = datetime.strptime(f"{date} {hour}:{minute} {meridiem}", f"{date_format} %I:%M %p")
 	return value.strftime("%Y-%m-%d %H:%M:%S")
 
 
