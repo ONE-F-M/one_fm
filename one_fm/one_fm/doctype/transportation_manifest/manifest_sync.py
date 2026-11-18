@@ -9,6 +9,26 @@ and reuse across the schedule page backend and any future callers.
 """
 
 
+def _same_time(stored, new):
+	"""True when two Time values are the same moment, however each is written.
+
+	A Time column reads back as a timedelta whose str() is ``6:30:00`` while the value
+	we compute is ``06:30:00``. Compared as strings every row before 10:00 looked
+	changed on every load, so an unchanged manifest was re-saved each time the page
+	opened (WI-004740).
+	"""
+	if not stored and not new:
+		return True
+	if not stored or not new:
+		return False
+	try:
+		from frappe.utils import to_timedelta
+
+		return to_timedelta(stored) == to_timedelta(new)
+	except Exception:
+		return str(stored) == str(new)
+
+
 def sync_manifest_details(manifest_doc, assignment_rows, emp_map):
 	"""Upsert child rows using compound key: (employee, trip_id, stop_id, employee_action).
 
@@ -116,7 +136,7 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map):
 				if (
 					(row.stop_name or "") != new_stop_name
 					or (row.stop_type or "") != new_stop_type
-					or str(row.scheduled_time or "") != str(time_str or "")
+					or not _same_time(row.scheduled_time, time_str)
 					or (row.trip_name or "") != new_trip_name
 					or (row.employee_name or "") != new_emp_name
 				):
