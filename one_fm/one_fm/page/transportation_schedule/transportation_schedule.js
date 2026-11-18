@@ -217,7 +217,8 @@ frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
         }
         const s = document.createElement('script');
         s.id = 'vue3-cdn';
-        s.src = 'https://unpkg.com/vue@3/dist/vue.global.prod.js';
+        // Pinned: an unpinned @3 costs a redirect on every cold load and can change under us.
+        s.src = 'https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js';
         s.onload = () => fetchRPData(wrapper);
         document.head.appendChild(s);
     } else {
@@ -225,22 +226,31 @@ frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     }
 };
 
+// The plan list and the active plan do not depend on the board data, so all three
+// requests go out together and the app mounts with the results (no second round trip).
+// A failed plan call resolves to null and mounted() falls back to loadSavedAssignments().
 function fetchRPData(wrapper) {
-    frappe.call({
-        method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_route_planner_data',
-        callback: function (r) {
-            if (!r.message || r.message.status === 'error') {
-                frappe.msgprint(r.message ? r.message.message : 'Failed to load data');
-                return;
-            }
-            mountRoutePlannerApp(wrapper, r.message);
+    const base = 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.';
+    const call = (method, args, quiet) => new Promise(resolve => frappe.call({
+        method: base + method, args, async: true,
+        callback: r => resolve(r),
+        error: () => resolve(null),
+    }));
+    const plans = call('get_route_plans');
+    const active = call('load_assignments', { plan_name: '' });
+    call('get_route_planner_data').then(r => {
+        if (!r) return;
+        if (!r.message || r.message.status === 'error') {
+            frappe.msgprint(r.message ? r.message.message : __('Failed to load data'));
+            return;
         }
+        Promise.all([plans, active]).then(([p, a]) => mountRoutePlannerApp(wrapper, r.message, { plans: p, active: a }));
     });
 }
 
 // ── Vue App ───────────────────────────────────────────────────────────────────
 
-function mountRoutePlannerApp(wrapper, data) {
+function mountRoutePlannerApp(wrapper, data, preloaded) {
     injectRPVueTemplate();
     injectRPStyles();
     $(wrapper).html('<div id="rp-app"></div>');
@@ -5978,8 +5988,17 @@ function mountRoutePlannerApp(wrapper, data) {
                 // Apply saved theme
                 this.applyTheme();
 
-                // Load saved assignments from backend
-                this.loadSavedAssignments();
+                // Apply the plan list and active plan fetched alongside the board data;
+                // only fall back to fetching them here if either request failed.
+                const pre = preloaded || {};
+                if (pre.plans && pre.active) {
+                    this.planList = pre.plans.message || [];
+                    if (pre.active.message && pre.active.message.status === 'ok') {
+                        this._applyLoadedPlan(pre.active.message);
+                    }
+                } else {
+                    this.loadSavedAssignments();
+                }
             });
         },
 
