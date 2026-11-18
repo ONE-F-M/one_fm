@@ -87,9 +87,15 @@ def get_route_planner_data():
         def fmt(dt):
             return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
+        _utc_memo = {}
+
         def to_utc(dt_str):
-            dt = frappe.utils.get_datetime(f"{frappe.utils.today()} {dt_str}")
-            return site_tz.localize(dt).astimezone(pytz.utc).replace(tzinfo=None)
+            # Cards share a handful of shift times, so each distinct string is
+            # converted once per call.
+            if dt_str not in _utc_memo:
+                dt = frappe.utils.get_datetime(f"{frappe.utils.today()} {dt_str}")
+                _utc_memo[dt_str] = site_tz.localize(dt).astimezone(pytz.utc).replace(tzinfo=None)
+            return _utc_memo[dt_str]
 
         # ── Coords cache (avoid repeated DB lookups for same Location) ──
         _coords_cache = {}
@@ -98,6 +104,39 @@ def get_route_planner_data():
             if key not in _coords_cache:
                 _coords_cache[key] = get_coords(doctype, name)
             return _coords_cache[key]
+
+        def prime_coords(locations=(), accommodations=()):
+            """Fill the cache for many places with two queries (Accommodation, then
+            Location) instead of one or two per place. A place that cannot be resolved
+            here is left uncached, so get_coords still answers it exactly as before."""
+            locs = {l for l in locations if l and ("Location", l) not in _coords_cache}
+            accs = {a for a in accommodations if a and ("Accommodation", a) not in _coords_cache}
+            acc_stop = {}
+            if accs:
+                for r in frappe.get_all("Accommodation",
+                    filters={"name": ["in", list(accs)]},
+                    fields=["name", "transport_stop_location"]
+                ):
+                    acc_stop[r.name] = r.transport_stop_location
+                    if r.transport_stop_location and ("Location", r.transport_stop_location) not in _coords_cache:
+                        locs.add(r.transport_stop_location)
+            if locs:
+                for r in frappe.get_all("Location",
+                    filters={"name": ["in", list(locs)]},
+                    fields=["name", "latitude", "longitude"]
+                ):
+                    _coords_cache[("Location", r.name)] = (
+                        (float(r.latitude), float(r.longitude)) if r.latitude and r.longitude else None
+                    )
+            for a in accs:
+                if a not in acc_stop:
+                    _coords_cache[("Accommodation", a)] = None
+                elif not acc_stop[a]:
+                    _coords_cache[("Accommodation", a)] = None
+                elif ("Location", acc_stop[a]) in _coords_cache:
+                    _coords_cache[("Accommodation", a)] = _coords_cache[("Location", acc_stop[a])]
+
+        get_coords_cached.prime = prime_coords
 
         # ── 1. Vehicles (batch queries) ──
         transport_vehicles = frappe.get_all("Vehicle",
@@ -132,6 +171,7 @@ def get_route_planner_data():
 
         # The row number the canvas puts in a trip name - the same helper the server
         # uses to repair a name, so the two cannot disagree.
+        prime_coords(locations=[v.location for v in transport_vehicles])
         trip_series = canvas_trip_series(transport_vehicles, get_coords_cached)
 
         vehicles = []
@@ -1140,6 +1180,15 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
         ):
             trq_time_map[trq.name] = trq
 
+    # One batch for every place the cards below point at, so the loop reads coordinates
+    # from the cache rather than querying per card.
+    prime = getattr(get_coords_cached, "prime", None)
+    if prime:
+        prime(
+            locations=[s.stop_location for s in shipments],
+            accommodations=[s.accommodation for s in shipments],
+        )
+
     for s in shipments:
         try:
             employees = emps_by_ship.get(s.name, [])
@@ -1929,18 +1978,11 @@ def get_manifest_data_for_plan(plan_name: str):
 	# ── Fetch shipment cards for employee data ──
 	# We need the live employee lists from get_route_planner_data.
 	# Build a card_id -> employee list map from shipment cards.
-	try:
-		planner_data = get_route_planner_data()
-		if planner_data.get("status") != "ok":
-			planner_data = {"shipment_cards": [], "vehicles": []}
-	except Exception:
-		planner_data = {"shipment_cards": [], "vehicles": []}
-
+	# The whole schedule board (vehicles, coordinates, handover windows, every open
+	# card) used to be rebuilt here just to read each card's riders. The riders live on
+	# the shipment itself, so they are read from there directly below (WI-004740).
 	card_emp_map = {}
 	card_headcount_map = {}
-	for card in planner_data.get("shipment_cards", []):
-		card_emp_map[card["id"]] = card.get("employees", [])
-		card_headcount_map[card["id"]] = card.get("headcount", 0)
 
 	# Supplement rosters for shipment-backed assignment rows. Once a shipment is
 	# Assigned it no longer surfaces as an Unassigned pool card above, so pull its
@@ -1948,7 +1990,7 @@ def get_manifest_data_for_plan(plan_name: str):
 	shipment_by_card = {
 		row.card_id: row.transportation_shipment
 		for row in rows
-		if row.transportation_shipment and row.card_id not in card_emp_map
+		if row.transportation_shipment
 	}
 	if shipment_by_card:
 		ship_names = list({v for v in shipment_by_card.values() if v})
@@ -1985,12 +2027,21 @@ def get_manifest_data_for_plan(plan_name: str):
 	
 	manifests = {}
 
-	for v_id in assigned_vehicles:
-		manifest_name = frappe.db.get_value(
+	# One query for every vehicle's manifest of the day instead of one per vehicle. The
+	# newest wins, as the single-row lookup it replaces did.
+	manifest_name_by_vehicle = {}
+	_vehicles_with_id = [v for v in assigned_vehicles if v]
+	if _vehicles_with_id:
+		for _m in frappe.get_all(
 			"Transportation Manifest",
-			{"vehicle_no": v_id, "schedule_date": schedule_date_str},
-			"name"
-		)
+			filters={"vehicle_no": ["in", _vehicles_with_id], "schedule_date": schedule_date_str},
+			fields=["name", "vehicle_no"],
+			order_by="creation desc",
+		):
+			manifest_name_by_vehicle.setdefault(_m.vehicle_no, _m.name)
+
+	for v_id in assigned_vehicles:
+		manifest_name = manifest_name_by_vehicle.get(v_id)
 		if manifest_name:
 			manifest_doc = frappe.get_doc("Transportation Manifest", manifest_name)
 		else:
@@ -2036,11 +2087,51 @@ def get_manifest_data_for_plan(plan_name: str):
 	# so the manifest page can group boarding staff camp-by-camp (MA2-11).
 	acc_label_cache = {}
 
+	# Everything the enrichment below would otherwise look up row by row: the camp
+	# label of each pickup accommodation and the name/mobile of each reliever, one
+	# query each for the whole manifest set.
+	_detail_rows = [
+		d for m in manifests.values() for d in m.transportation_manifest_details
+	]
+	acc_name_map = {}
+	_acc_ids = list({d.pickup_accommodation for d in _detail_rows if d.pickup_accommodation})
+	if _acc_ids:
+		for _a in frappe.get_all(
+			"Accommodation", filters={"name": ["in", _acc_ids]}, fields=["name", "accommodation"]
+		):
+			acc_name_map[_a.name] = _a.accommodation
+	reliever_info = {}
+	_reliever_ids = list({d.reliever_employee for d in _detail_rows if d.reliever_employee})
+	if _reliever_ids:
+		for _e in frappe.get_all(
+			"Employee", filters={"name": ["in", _reliever_ids]},
+			fields=["name", "employee_name", "cell_number"],
+		):
+			reliever_info[_e.name] = _e
+
+	# Per manifest, built once: the first row for each lookup key, in row order, which is
+	# what the nested scans this replaces returned.
+	_row_index_cache = {}
+
+	def _row_indexes(vehicle_id, manifest_doc):
+		if vehicle_id not in _row_index_cache:
+			primary, by_stop_name, by_employee = {}, {}, {}
+			for r in manifest_doc.transportation_manifest_details:
+				primary.setdefault(
+					(r.employee, r.stop_id or "", r.trip_id or "", r.employee_action), r
+				)
+				by_stop_name.setdefault(
+					(r.employee, r.stop_name or "", r.trip_id or "", r.employee_action), r
+				)
+				by_employee.setdefault(r.employee, r)
+			_row_index_cache[vehicle_id] = (primary, by_stop_name, by_employee)
+		return _row_index_cache[vehicle_id]
+
 	def _acc_label(acc):
 		if not acc:
 			return None
 		if acc not in acc_label_cache:
-			lbl = frappe.db.get_value("Accommodation", acc, "accommodation") or acc
+			lbl = acc_name_map.get(acc) or acc
 			acc_label_cache[acc] = "Mahboula Camp" if lbl in MAHBOULA_LABELS else lbl
 		return acc_label_cache[acc]
 
@@ -2052,6 +2143,7 @@ def get_manifest_data_for_plan(plan_name: str):
 		enriched = []
 		action = "Dropping Off" if is_return else "Boarding"
 		stop_location_normalized = stop_location or ""
+		idx_primary, idx_stop_name, idx_employee = _row_indexes(vehicle_id, manifest_doc)
 		direction = "RETURN" if is_return else "OUTBOUND"
 		stop_id_val = f"{stop_location_normalized}|{direction}"
 		
@@ -2059,28 +2151,15 @@ def get_manifest_data_for_plan(plan_name: str):
 			emp_id = emp.get("id")
 			matching_row = None
 			# Primary match: compound key using stop_id
-			for row in manifest_doc.transportation_manifest_details:
-				if (row.employee == emp_id and 
-					(row.stop_id or "") == stop_id_val and 
-					(row.trip_id or "") == (trip_id or "") and 
-					row.employee_action == action):
-					matching_row = row
-					break
+			matching_row = idx_primary.get((emp_id, stop_id_val, trip_id or "", action))
 			# Fallback: match by stop_name for rows created before stop_id was added
 			if not matching_row:
-				for row in manifest_doc.transportation_manifest_details:
-					if (row.employee == emp_id and 
-						(row.stop_name or "") == stop_location_normalized and 
-						(row.trip_id or "") == (trip_id or "") and 
-						row.employee_action == action):
-						matching_row = row
-						break
+				matching_row = idx_stop_name.get(
+					(emp_id, stop_location_normalized, trip_id or "", action)
+				)
 			
 			if not matching_row:
-				for row in manifest_doc.transportation_manifest_details:
-					if row.employee == emp_id:
-						matching_row = row
-						break
+				matching_row = idx_employee.get(emp_id)
 						
 			emp_copy = dict(emp)
 			# Manifest link is stamped regardless of match so the page can wire the
@@ -2106,8 +2185,9 @@ def get_manifest_data_for_plan(plan_name: str):
 				emp_copy["end_time"] = str(matching_row.end_time) if matching_row.end_time else None
 				
 				if matching_row.reliever_employee:
-					rel_name = frappe.db.get_value("Employee", matching_row.reliever_employee, "employee_name") or matching_row.reliever_employee
-					rel_mobile = frappe.db.get_value("Employee", matching_row.reliever_employee, "cell_number") or ""
+					_rel = reliever_info.get(matching_row.reliever_employee) or {}
+					rel_name = _rel.get("employee_name") or matching_row.reliever_employee
+					rel_mobile = _rel.get("cell_number") or ""
 					emp_copy["replacement"] = {
 						"id": matching_row.reliever_employee,
 						"name": rel_name,
