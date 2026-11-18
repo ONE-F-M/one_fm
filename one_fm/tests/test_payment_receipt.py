@@ -55,6 +55,10 @@ class TestPaymentDateFromText(FrappeTestCase):
 		text = "Health Insurance\n06/10/2026 10.52 PM\nAmount 50.000"
 		self.assertEqual(payment_date_from_text("Medical Insurance", text), "2026-10-06 22:52:00")
 
+	def test_moh_reads_a_month_name(self):
+		text = ": \n12/Nov/2026 12.48 PM2027-11-092026-11-10200000000000\nAmount 100.000"
+		self.assertEqual(payment_date_from_text("Medical Insurance", text), "2026-11-12 12:48:00")
+
 	def test_moi_reads_time_then_date_with_or_without_spaces(self):
 		for text in ("Date & Time 19:40:31-2026-10-04", "تاريخ ووقت العملية\n19:39:18 - 2026-10-04"):
 			with self.subTest(text=text):
