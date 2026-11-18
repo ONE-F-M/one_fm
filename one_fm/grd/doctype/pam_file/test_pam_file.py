@@ -252,3 +252,13 @@ class TestCompanyFileManagementTables(FrappeTestCase):
 		definition = read_definition("delegates_on_the_file", "delegates_on_the_file.json")
 		self.assertEqual(field_of(definition, "onefm_id")["options"], "Employee")
 		self.assertEqual(field_of(definition, "civil_id")["fetch_from"], "onefm_id.one_fm_civil_id")
+
+	def test_the_delegates_table_is_labelled_public_relations_officer(self):
+		definition = read_definition("pam_file", "pam_file.json")
+		self.assertEqual(
+			field_of(definition, "delegates_on_the_file")["label"], "Public Relations Officer"
+		)
+
+	def test_the_housing_details_table_is_hidden(self):
+		definition = read_definition("pam_file", "pam_file.json")
+		self.assertEqual(field_of(definition, "housing_details").get("hidden"), 1)
