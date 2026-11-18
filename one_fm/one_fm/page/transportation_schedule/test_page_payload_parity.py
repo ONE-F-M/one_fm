@@ -147,7 +147,8 @@ EMPLOYEES = {  # id -> (name, mobile) as the Transportation Shipment Employee ro
 	"EMP-3": ("Cara", ""), "EMP-4": ("Dan", "444"),
 }
 RELIEVERS = {"REL-1": ("Rita", "999")}  # REL-2 has no Employee record on purpose
-CAMPS = {"ACC-1": "Mahboula 3", "ACC-2": "Salmiya"}
+# ACC-1 is a Mahboula sub-camp, which the page collapses into one "Mahboula Camp" label
+CAMPS = {"ACC-1": sorted(_ts.MAHBOULA_LABELS)[0], "ACC-2": "Salmiya"}
 
 
 class FakeManifest:
@@ -309,7 +310,7 @@ class TestManifestPayloadParity(FrappeTestCase):
 				label = None
 				if acc:
 					label = CAMPS.get(acc) or acc
-					label = "Mahboula Camp" if label in _ts_mahboula() else label
+					label = "Mahboula Camp" if label in _ts.MAHBOULA_LABELS else label
 				copy["pickup_camp_label"] = label
 				if match.reliever_employee:
 					name, mobile = RELIEVERS.get(match.reliever_employee, (None, None))
@@ -348,8 +349,6 @@ class TestManifestPayloadParity(FrappeTestCase):
 		self.assertEqual([e["id"] for e in got], list(EMPLOYEES))
 		# first match wins, as the nested scans did
 		self.assertEqual(got[0]["row_id"], "ROW-1")
-		# the rider that had no row is added by the sync and still gets its own row id
-		self.assertTrue(got[3]["row_id"] == "" or got[3]["row_id"] is None or got[3]["id"] == "EMP-4")
 
 	def test_a_reliever_row_still_gets_the_replacement_name_and_mobile(self):
 		result, _ = self._call(self._seeded_manifest())
@@ -400,6 +399,3 @@ class TestManifestPayloadParity(FrappeTestCase):
 		self._call(manifest, employees=changed)
 		self.assertEqual(manifest.saves, 1)
 
-
-def _ts_mahboula():
-	return {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
