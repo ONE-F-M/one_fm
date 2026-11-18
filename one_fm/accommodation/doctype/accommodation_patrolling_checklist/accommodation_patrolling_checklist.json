@@ -1,0 +1,41 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-11-18 00:00:00.000000",
+ "custom": 0,
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "number_of_incidents",
+  "observations_and_incidents"
+ ],
+ "fields": [
+  {
+   "fieldname": "number_of_incidents",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Number of Incidents",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "observations_and_incidents",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Observations and Incidents",
+   "mandatory_depends_on": "eval:doc.number_of_incidents == 'Yes'"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-18 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Patrolling Checklist",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
