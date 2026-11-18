@@ -231,7 +231,7 @@ frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
 // A failed plan call resolves to null and mounted() falls back to loadSavedAssignments().
 function fetchRPData(wrapper) {
     const base = 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.';
-    const call = (method, args, quiet) => new Promise(resolve => frappe.call({
+    const call = (method, args) => new Promise(resolve => frappe.call({
         method: base + method, args, async: true,
         callback: r => resolve(r),
         error: () => resolve(null),
