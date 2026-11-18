@@ -70,6 +70,55 @@ def canvas_trip_series(vehicles=None, coords_of=None) -> dict:
     return series
 
 
+def _batched_coords_cache():
+    """A per-call coordinates cache that can be filled for many places at once.
+
+    The returned function answers ``(doctype, name)`` like get_coords, remembering the
+    answer. Its ``prime(locations, accommodations)`` fills the cache with two queries
+    (Accommodation, then Location) however many places are named, so a page with a
+    hundred cards does not run a hundred lookups. A place that cannot be resolved by
+    the batch is left uncached, so get_coords still answers it exactly as before.
+    """
+    cache = {}
+
+    def get_coords_cached(doctype, name):
+        key = (doctype, name)
+        if key not in cache:
+            cache[key] = get_coords(doctype, name)
+        return cache[key]
+
+    def prime(locations=(), accommodations=()):
+        locs = {l for l in locations if l and ("Location", l) not in cache}
+        accs = {a for a in accommodations if a and ("Accommodation", a) not in cache}
+        acc_stop = {}
+        if accs:
+            for r in frappe.get_all(
+                "Accommodation",
+                filters={"name": ["in", list(accs)]},
+                fields=["name", "transport_stop_location"],
+            ):
+                acc_stop[r.name] = r.transport_stop_location
+                if r.transport_stop_location and ("Location", r.transport_stop_location) not in cache:
+                    locs.add(r.transport_stop_location)
+        if locs:
+            for r in frappe.get_all(
+                "Location",
+                filters={"name": ["in", list(locs)]},
+                fields=["name", "latitude", "longitude"],
+            ):
+                cache[("Location", r.name)] = (
+                    (float(r.latitude), float(r.longitude)) if r.latitude and r.longitude else None
+                )
+        for a in accs:
+            if a not in acc_stop or not acc_stop[a]:
+                cache[("Accommodation", a)] = None
+            elif ("Location", acc_stop[a]) in cache:
+                cache[("Accommodation", a)] = cache[("Location", acc_stop[a])]
+
+    get_coords_cached.prime = prime
+    return get_coords_cached
+
+
 @frappe.whitelist()
 def get_route_planner_data():
     try:
@@ -98,45 +147,8 @@ def get_route_planner_data():
             return _utc_memo[dt_str]
 
         # ── Coords cache (avoid repeated DB lookups for same Location) ──
-        _coords_cache = {}
-        def get_coords_cached(doctype, name):
-            key = (doctype, name)
-            if key not in _coords_cache:
-                _coords_cache[key] = get_coords(doctype, name)
-            return _coords_cache[key]
-
-        def prime_coords(locations=(), accommodations=()):
-            """Fill the cache for many places with two queries (Accommodation, then
-            Location) instead of one or two per place. A place that cannot be resolved
-            here is left uncached, so get_coords still answers it exactly as before."""
-            locs = {l for l in locations if l and ("Location", l) not in _coords_cache}
-            accs = {a for a in accommodations if a and ("Accommodation", a) not in _coords_cache}
-            acc_stop = {}
-            if accs:
-                for r in frappe.get_all("Accommodation",
-                    filters={"name": ["in", list(accs)]},
-                    fields=["name", "transport_stop_location"]
-                ):
-                    acc_stop[r.name] = r.transport_stop_location
-                    if r.transport_stop_location and ("Location", r.transport_stop_location) not in _coords_cache:
-                        locs.add(r.transport_stop_location)
-            if locs:
-                for r in frappe.get_all("Location",
-                    filters={"name": ["in", list(locs)]},
-                    fields=["name", "latitude", "longitude"]
-                ):
-                    _coords_cache[("Location", r.name)] = (
-                        (float(r.latitude), float(r.longitude)) if r.latitude and r.longitude else None
-                    )
-            for a in accs:
-                if a not in acc_stop:
-                    _coords_cache[("Accommodation", a)] = None
-                elif not acc_stop[a]:
-                    _coords_cache[("Accommodation", a)] = None
-                elif ("Location", acc_stop[a]) in _coords_cache:
-                    _coords_cache[("Accommodation", a)] = _coords_cache[("Location", acc_stop[a])]
-
-        get_coords_cached.prime = prime_coords
+        get_coords_cached = _batched_coords_cache()
+        prime_coords = get_coords_cached.prime
 
         # ── 1. Vehicles (batch queries) ──
         transport_vehicles = frappe.get_all("Vehicle",
