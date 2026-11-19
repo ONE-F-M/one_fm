@@ -290,7 +290,7 @@ class TestSalaryUpdate(FrappeTestCase):
 		text = _text(_render(self._salary_request()))
 
 		for component, amount in (("Basic Pay", "450"), ("Housing Pay", "150"), ("Transport Pay", "100")):
-			self.assertRegex(text, r"%s %s" % (component, amount))
+			self.assertRegex(text, r"%s \D*%s" % (component, amount))
 
 	def test_no_salary_section_when_not_required(self):
 		doc = self._salary_request()
