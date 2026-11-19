@@ -6,6 +6,7 @@ Records written after Route Plan Assignment stopped being a child table have no 
 parenttype or parentfield, so anything still filtering on those would silently skip them.
 """
 
+import unittest
 from unittest.mock import patch
 
 import frappe
@@ -16,25 +17,18 @@ from one_fm.operations.doctype.route_plan.route_plan import get_plan_rows
 from one_fm.operations.doctype.route_plan.test_route_plan import pin_three_passenger_seats
 from one_fm.operations.doctype.route_plan_assignment.test_route_plan_assignment import (
 	_child_rows,
+	make_card_shipment,
 	make_route_plan,
 )
 
 VEHICLE = "VHL-L-0022"
 
 
-def _shipment(headcount=0, direction="Outward"):
-	doc = frappe.new_doc("Transportation Shipment")
-	doc.status = "Assigned"
-	doc.trip_direction = direction
-	for n in range(headcount):
-		doc.append("transportation_shipment_employee", {
-			"employee_id": f"RPA-R-{n}", "employee_name": f"Rider {n}",
-		})
-	doc.generation_key = frappe.generate_hash("TS-RPA", 10)
-	doc.flags.ignore_mandatory = True
-	doc.flags.ignore_links = True
-	doc.insert(ignore_permissions=True)
-	return doc.name
+def _shipment(headcount):
+	name = make_card_shipment(headcount)
+	if not name:
+		raise unittest.SkipTest("needs an Accommodation and a Location")
+	return name
 
 
 def _row(card, vehicle=VEHICLE, **values):

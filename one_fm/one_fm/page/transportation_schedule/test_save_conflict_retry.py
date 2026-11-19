@@ -481,6 +481,7 @@ class TestPlannersOnDifferentVehiclesDoNotWait(FrappeTestCase):
 			"Vehicle", self.VEHICLE,
 			["seats", "custom_includes_driver_seat", "custom_max_passenger_capacity"], as_dict=True,
 		)
+		self.shipments = []
 		self.plan = make_route_plan()
 		_save_board(self.plan, [_card("CARD-A", self.v1), _card("CARD-B", self.v2),
 								_card("CARD-C", self.VEHICLE, trip="T-C")])
@@ -490,6 +491,9 @@ class TestPlannersOnDifferentVehiclesDoNotWait(FrappeTestCase):
 		frappe.db.rollback()
 		frappe.db.delete("Route Plan Assignment", {"route_plan": self.plan})
 		frappe.db.delete("Route Plan", {"name": self.plan})
+		if self.shipments:
+			frappe.db.delete("Transportation Shipment Employee", {"parent": ["in", self.shipments]})
+			frappe.db.delete("Transportation Shipment", {"name": ["in", self.shipments]})
 		frappe.db.set_value("Vehicle", self.VEHICLE, dict(self.seats), update_modified=False)
 		frappe.db.commit()
 
@@ -517,13 +521,22 @@ class TestPlannersOnDifferentVehiclesDoNotWait(FrappeTestCase):
 
 	def test_a_save_on_the_same_vehicle_is_judged_on_the_first_ones_result(self):
 		from one_fm.operations.doctype.route_plan.test_route_plan import pin_three_passenger_seats
+		from one_fm.operations.doctype.route_plan_assignment.test_route_plan_assignment import (
+			make_card_shipment,
+		)
 
 		pin_three_passenger_seats(self.VEHICLE)
+		# Shipment-backed: a run is judged only when its cards change, and cards are told
+		# apart by their shipment.
+		mine_card, theirs_card = make_card_shipment(2), make_card_shipment(2)
+		if not (mine_card and theirs_card):
+			self.skipTest("needs an Accommodation and a Location")
+		self.shipments += [mine_card, theirs_card]
 		frappe.db.commit()
 		items, known = _board(self.plan)
-		# Each save alone fits a 3-seat bus (1 + 2); together they carry 5.
-		mine = items + [_card("CARD-D", self.VEHICLE, trip="T-C", headcount=2)]
-		theirs = items + [_card("CARD-E", self.VEHICLE, trip="T-C", headcount=2)]
+		# Each save alone fits a 3-seat bus (2 riders); together they carry 4.
+		mine = items + [_card(f"TSHIP-{mine_card}", self.VEHICLE, trip="T-C", headcount=2)]
+		theirs = items + [_card(f"TSHIP-{theirs_card}", self.VEHICLE, trip="T-C", headcount=2)]
 
 		_save_board(self.plan, mine, known)
 		other = _Planner(lambda: _save_board(self.plan, theirs, known))
@@ -534,7 +547,7 @@ class TestPlannersOnDifferentVehiclesDoNotWait(FrappeTestCase):
 
 		self.assertIsInstance(other.error, frappe.ValidationError)
 		self.assertIn("Capacity Exceeded", str(other.error))
-		self.assertNotIn("CARD-E", _placed(self.plan))
+		self.assertNotIn(f"TSHIP-{theirs_card}", _placed(self.plan))
 
 	def test_the_same_card_on_two_vehicles_goes_to_the_first(self):
 		items, known = _board(self.plan)

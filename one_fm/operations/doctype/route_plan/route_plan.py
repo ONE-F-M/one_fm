@@ -91,6 +91,9 @@ def get_plan_rows(plan, vehicles=None, trip_groups=None, fields=None, for_update
 	``vehicles`` / ``trip_groups`` narrow the read, and ``for_update`` locks what it reads
 	until the transaction ends.
 	"""
+	if for_update and vehicles is not None and trip_groups is None:
+		return _lock_vehicle_rows(plan, vehicles, fields or plan_row_fields())
+
 	filters = {"route_plan": plan}
 	if vehicles is not None:
 		filters["vehicle"] = ["in", list(vehicles) or [""]]
@@ -104,6 +107,28 @@ def get_plan_rows(plan, vehicles=None, trip_groups=None, fields=None, for_update
 		order_by="idx asc, creation asc",
 		for_update=for_update,
 	)
+
+
+def _lock_vehicle_rows(plan, vehicles, fields) -> list:
+	"""The rows of ``vehicles`` on ``plan``, locked until the transaction ends.
+
+	Forced onto the (route_plan, vehicle) index: on a small plan MariaDB prefers the
+	route_plan index or a scan, and a locking read through either locks every vehicle of
+	the plan, so two planners on different buses waited on each other.
+	"""
+	from frappe.query_builder import DocType
+
+	Assignment = DocType("Route Plan Assignment")
+	return (
+		frappe.qb.from_(Assignment)
+		.force_index("route_plan_vehicle_index")
+		.select(*[Assignment[field] for field in fields])
+		.where(Assignment.route_plan == plan)
+		.where(Assignment.vehicle.isin(list(vehicles) or [""]))
+		.orderby(Assignment.idx)
+		.orderby(Assignment.creation)
+		.for_update()
+	).run(as_dict=True)
 
 
 class PlanRules:

@@ -24,6 +24,7 @@ from one_fm.operations.doctype.route_plan.route_plan import (
 )
 from one_fm.operations.doctype.route_plan.test_route_plan import pin_three_passenger_seats
 from one_fm.operations.doctype.route_plan_assignment.test_route_plan_assignment import (
+	make_card_shipment,
 	make_route_plan,
 )
 
@@ -80,9 +81,13 @@ def _stamps(plan):
 
 
 class TestTheLoadIsUnchanged(FrappeTestCase):
-	def setUp(self):
-		self.plan = make_route_plan()
-		_store_fixture_rows(self.plan)
+	@classmethod
+	def setUpClass(cls):
+		# Once per class: the fixture rows have fixed names, and this class's tests share
+		# one transaction.
+		super().setUpClass()
+		cls.plan = make_route_plan()
+		_store_fixture_rows(cls.plan)
 
 	def test_the_board_receives_what_it_did_before(self):
 		result = load_assignments(self.plan)
@@ -225,17 +230,31 @@ class TestARefusedSaveStoresNothing(FrappeTestCase):
 		if not frappe.db.exists("Vehicle", self.VEHICLE):
 			self.skipTest(f"Fixture vehicle {self.VEHICLE} missing on this site")
 		pin_three_passenger_seats(self.VEHICLE)
+		# Shipment-backed: a run is judged only when its cards change, and cards are told
+		# apart by their shipment.
+		cards = [make_card_shipment(n) for n in (1, 1, 5)]
+		if not all(cards):
+			self.skipTest("needs an Accommodation and a Location")
 		plan = make_route_plan()
-		board = [_item("CARD-1", self.VEHICLE, trip="T-1"), _item("CARD-2", self.VEHICLE, trip="T-1")]
+		board = [_item(f"TSHIP-{cards[0]}", self.VEHICLE, trip="T-1"),
+				 _item(f"TSHIP-{cards[1]}", self.VEHICLE, trip="T-1")]
 		_save(plan, board)
-		before = (_stamps(plan), frappe.db.get_value("Route Plan", plan, ["modified", "last_modified_at"]))
+		before = (
+			_stamps(plan), frappe.db.get_value("Route Plan", plan, ["modified", "last_modified_at"]),
+			frappe.get_all("Transportation Shipment", filters={"name": ["in", cards]},
+						   fields=["name", "status"], order_by="name"),
+		)
 
 		with self.assertRaises(frappe.ValidationError) as caught:
-			_save(plan, board + [_item("CARD-3", self.VEHICLE, trip="T-1", headcount=5)])
+			_save(plan, board + [_item(f"TSHIP-{cards[2]}", self.VEHICLE, trip="T-1", headcount=5)])
 
 		self.assertIn("Capacity Exceeded", str(caught.exception))
 		self.assertEqual(
-			(_stamps(plan), frappe.db.get_value("Route Plan", plan, ["modified", "last_modified_at"])),
+			(
+				_stamps(plan), frappe.db.get_value("Route Plan", plan, ["modified", "last_modified_at"]),
+				frappe.get_all("Transportation Shipment", filters={"name": ["in", cards]},
+							   fields=["name", "status"], order_by="name"),
+			),
 			before,
 		)
 
