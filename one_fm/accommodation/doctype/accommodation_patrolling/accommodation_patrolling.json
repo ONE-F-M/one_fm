@@ -1,12 +1,12 @@
 {
  "actions": [],
- "autoname": "hash",
- "creation": "2026-11-18 00:00:00.000000",
- "custom": 0,
+ "allow_rename": 1,
+ "creation": "2026-11-19 10:30:00.000000",
  "doctype": "DocType",
- "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "section_break_m7dg",
+  "amended_from",
   "patrolling_date_and_time",
   "name_of_security_officer",
   "email_address",
@@ -16,10 +16,24 @@
   "accommodation_buildingarea_covered",
   "floor_number",
   "condition_of_entryexit_points",
-  "accommodation_patrolling_checklist",
-  "amended_from"
+  "section_break_bzmd",
+  "accommodation_patrolling_checklist"
  ],
  "fields": [
+  {
+   "fieldname": "section_break_m7dg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Accommodation Patrolling",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
   {
    "fieldname": "patrolling_date_and_time",
    "fieldtype": "Datetime",
@@ -35,8 +49,7 @@
    "fetch_from": "name_of_security_officer.email",
    "fieldname": "email_address",
    "fieldtype": "Data",
-   "label": "Email Address",
-   "options": "Email"
+   "label": "Email Address"
   },
   {
    "fieldname": "patrol_shift",
@@ -65,6 +78,7 @@
   {
    "fieldname": "floor_number",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Floor Number",
    "reqd": 1
   },
@@ -75,34 +89,26 @@
    "options": "\nSecured\nUnsecured"
   },
   {
+   "fieldname": "section_break_bzmd",
+   "fieldtype": "Section Break"
+  },
+  {
    "fieldname": "accommodation_patrolling_checklist",
    "fieldtype": "Table",
    "label": "Accommodation Patrolling Checklist",
    "options": "Accommodation Patrolling Checklist"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Accommodation Patrolling",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-18 00:00:00.000000",
+ "modified": "2026-11-19 10:30:00.000000",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Patrolling",
  "owner": "Administrator",
  "permissions": [
   {
-   "amend": 1,
-   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -116,8 +122,6 @@
    "write": 1
   },
   {
-   "amend": 1,
-   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -131,8 +135,6 @@
    "write": 1
   },
   {
-   "amend": 1,
-   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -141,6 +143,7 @@
    "read": 1,
    "report": 1,
    "role": "Accommodation User",
+   "select": 1,
    "share": 1,
    "submit": 1,
    "write": 1

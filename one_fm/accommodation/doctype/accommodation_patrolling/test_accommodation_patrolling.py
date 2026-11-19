@@ -33,3 +33,9 @@ class TestAccommodationPatrolling(FrappeTestCase):
 	def test_doctypes_are_not_custom(self):
 		for name in ("Accommodation Patrolling", "Accommodation Patrolling Checklist"):
 			self.assertEqual(frappe.get_meta(name).custom, 0)
+
+	def test_checklist_has_all_ba_fields(self):
+		fieldnames = [df.fieldname for df in frappe.get_meta("Accommodation Patrolling Checklist").fields]
+		self.assertEqual(len(fieldnames), 11)
+		for fieldname in ("is_the_corridor_clear", "presence_of_unauthorized_persons", "new_arrivals"):
+			self.assertIn(fieldname, fieldnames)

@@ -11,8 +11,7 @@ class AccommodationPatrolling(Document):
 		self.validate_incident_observations()
 
 	def validate_incident_observations(self):
-		"""The installed Frappe does not enforce mandatory_depends_on on the server,
-		so enforce it here for the checklist rows."""
+		# Frappe v15 enforces mandatory_depends_on only in the browser.
 		for row in self.get("accommodation_patrolling_checklist") or []:
 			if row.number_of_incidents == "Yes" and not (row.observations_and_incidents or "").strip():
 				frappe.throw(
