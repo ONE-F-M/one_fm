@@ -37,37 +37,43 @@
   {
    "fieldname": "patrolling_date_and_time",
    "fieldtype": "Datetime",
-   "label": "Patrolling Date and Time"
+   "label": "Patrolling Date and Time",
+   "read_only": 1
   },
   {
    "fieldname": "name_of_security_officer",
    "fieldtype": "Link",
    "label": "Name of Security Officer",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "fetch_from": "name_of_security_officer.email",
    "fieldname": "email_address",
    "fieldtype": "Data",
-   "label": "Email Address"
+   "label": "Email Address",
+   "read_only": 1
   },
   {
    "fieldname": "patrol_shift",
    "fieldtype": "Link",
    "label": "Patrol Shift",
-   "options": "Shift Type"
+   "options": "Operations Shift",
+   "read_only": 1
   },
   {
    "fetch_from": "patrol_shift.start_time",
    "fieldname": "shift_time",
    "fieldtype": "Time",
-   "label": "Shift Start Time"
+   "label": "Shift Start Time",
+   "read_only": 1
   },
   {
    "fetch_from": "patrol_shift.end_time",
    "fieldname": "shift_end_time",
    "fieldtype": "Time",
-   "label": "Shift End Time"
+   "label": "Shift End Time",
+   "read_only": 1
   },
   {
    "fieldname": "accommodation_buildingarea_covered",
@@ -102,7 +108,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-19 10:30:00.000000",
+ "modified": "2026-11-19 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Patrolling",
