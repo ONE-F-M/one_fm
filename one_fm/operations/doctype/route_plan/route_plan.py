@@ -30,11 +30,6 @@ class RoutePlan(Document):
 		self._validate_dates()
 		self._validate_single_active()
 		self._validate_single_default()
-		self._validate_vehicle_retention_locks()
-		self._validate_vehicle_datetime_locks()
-		self._validate_trip_group_single_vehicle()
-		self._rename_duplicate_trip_names()
-		self._validate_vehicle_capacity()
 
 	def _validate_dates(self):
 		"""Ensure effective_until >= effective_from when set."""
@@ -68,6 +63,70 @@ class RoutePlan(Document):
 					_("A default Route Plan already exists ({0}). Only one plan can be set as default at a time.").format(existing)
 				)
 
+	def before_save(self):
+		self.last_modified_by_user = frappe.session.user
+		self.last_modified_at = frappe.utils.now()
+
+	def on_trash(self):
+		# The assignments are the plan's own; without this the link to them refuses the delete.
+		frappe.db.delete("Route Plan Assignment", {"route_plan": self.name})
+
+
+def plan_row_fields() -> list:
+	"""Every data column of a Route Plan Assignment, plus name, idx and modified."""
+	from frappe.model import no_value_fields
+
+	return ["name", "idx", "modified"] + [
+		df.fieldname
+		for df in frappe.get_meta("Route Plan Assignment").fields
+		if df.fieldtype not in no_value_fields
+	]
+
+
+def get_plan_rows(plan, vehicles=None, trip_groups=None, fields=None, for_update=False) -> list:
+	"""The assignments of one plan as frappe._dict rows, in the order the plan lists them.
+
+	idx is the order the rows had as a child table, which is the order every reader of a
+	run relies on; creation breaks a tie between records written in the same save.
+	``vehicles`` / ``trip_groups`` narrow the read, and ``for_update`` locks what it reads
+	until the transaction ends.
+	"""
+	filters = {"route_plan": plan}
+	if vehicles is not None:
+		filters["vehicle"] = ["in", list(vehicles) or [""]]
+	if trip_groups is not None:
+		filters["trip_group"] = ["in", list(trip_groups) or [""]]
+	return frappe.db.get_values(
+		"Route Plan Assignment",
+		filters,
+		fields or plan_row_fields(),
+		as_dict=True,
+		order_by="idx asc, creation asc",
+		for_update=for_update,
+	)
+
+
+class PlanRules:
+	"""The plan-wide rules, judged over a set of Route Plan Assignment rows.
+
+	``rows`` is the plan as this save would leave it, ``before`` the same rows as they are
+	stored (None for a plan that has none yet). Every rule groups rows by vehicle except
+	the trip-group rule, which compares one trip group across vehicles, so a caller may
+	pass only the vehicles it touches plus the vehicles holding its trip groups.
+	"""
+
+	def __init__(self, rows, before=None):
+		self.rows = rows
+		self.before = before
+
+	def run(self):
+		"""The rules in the order the Route Plan save used to run them."""
+		self._validate_vehicle_retention_locks()
+		self._validate_vehicle_datetime_locks()
+		self._validate_trip_group_single_vehicle()
+		self._rename_duplicate_trip_names()
+		self._validate_vehicle_capacity()
+
 	def _validate_vehicle_retention_locks(self):
 		"""Block a vehicle whose timeline is held by a retention (STANDBY) shipment.
 
@@ -85,7 +144,7 @@ class RoutePlan(Document):
 		# those so a card never conflicts with itself.
 		vehicle_shipments = {}
 		shipment_names = set()
-		for row in card_rows(self.assignments):
+		for row in card_rows(self.rows):
 			if not row.vehicle or not row.transportation_shipment:
 				continue
 			vehicle_shipments.setdefault(row.vehicle, set()).add(row.transportation_shipment)
@@ -121,7 +180,7 @@ class RoutePlan(Document):
 		mirroring the retention lock above.
 		"""
 		by_vehicle = {}
-		for row in card_rows(self.assignments):
+		for row in card_rows(self.rows):
 			if row.vehicle:
 				by_vehicle.setdefault(row.vehicle, []).append(row)
 
@@ -218,7 +277,7 @@ class RoutePlan(Document):
 		the journey so the dispatcher can re-drop it cleanly.
 		"""
 		leg_vehicle = {}
-		for row in card_rows(self.assignments):
+		for row in card_rows(self.rows):
 			if not row.trip_group or not row.vehicle:
 				continue
 			key = (row.trip_group, _row_direction(row))
@@ -427,7 +486,7 @@ class RoutePlan(Document):
 		does not go through ``_logical_trips``, which deliberately drops them.
 		"""
 		by_vehicle = {}
-		for idx, row in enumerate(self.assignments):
+		for idx, row in enumerate(self.rows):
 			if not row.vehicle:
 				continue
 			# Standalone rows are keyed by position so two of them never merge.
@@ -456,7 +515,7 @@ class RoutePlan(Document):
 		run).
 		"""
 		trips = {}
-		rows = card_rows(assignments if assignments is not None else self.assignments)
+		rows = card_rows(assignments if assignments is not None else self.rows)
 		live = live_headcounts(rows)
 		for idx, row in enumerate(rows):
 			if not row.vehicle:
@@ -520,8 +579,7 @@ class RoutePlan(Document):
 		untouched one was fixed. The check is for what a save DOES, so a bus it does
 		nothing to keeps the verdict it was saved with.
 		"""
-		before = self.get_doc_before_save()
-		if not before:
+		if not self.before:
 			return set()
 
 		def placement(trips):
@@ -549,7 +607,7 @@ class RoutePlan(Document):
 				)
 			return by_vehicle
 
-		was = placement(self._logical_trips(before.assignments))
+		was = placement(self._logical_trips(self.before))
 		now = placement(trips)
 		return {vehicle for vehicle, cards in now.items() if was.get(vehicle) == cards}
 
@@ -565,8 +623,7 @@ class RoutePlan(Document):
 		Same membership rule as above, one level finer: a run nobody added a card to or
 		took one off keeps the verdict it was saved with.
 		"""
-		before = self.get_doc_before_save()
-		if not before:
+		if not self.before:
 			return set()
 
 		def placement(trips):
@@ -577,7 +634,7 @@ class RoutePlan(Document):
 				)
 			return by_trip
 
-		was = placement(self._logical_trips(before.assignments))
+		was = placement(self._logical_trips(self.before))
 		now = placement(trips)
 		return {key for key, cards in now.items() if was.get(key) == cards}
 
@@ -640,9 +697,6 @@ class RoutePlan(Document):
 			title=_("Vehicle Capacity Exceeded"),
 		)
 
-	def before_save(self):
-		self.last_modified_by_user = frappe.session.user
-		self.last_modified_at = frappe.utils.now()
 
 
 def _row_direction(row) -> str:
