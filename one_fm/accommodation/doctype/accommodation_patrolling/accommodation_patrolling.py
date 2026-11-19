@@ -4,12 +4,14 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import now_datetime
+from frappe.model.naming import getseries
+from frappe.utils import cint, getdate, now_datetime
 
 
 class AccommodationPatrolling(Document):
 	def before_insert(self):
 		self.set_officer_details()
+		self.set_number_of_patrolling()
 
 	def set_officer_details(self):
 		"""Stamp the creating user, time and Employee shift. Insert only, so later edits keep them."""
@@ -23,6 +25,12 @@ class AccommodationPatrolling(Document):
 			"Operations Shift", self.patrol_shift, ["start_time", "end_time"]
 		)
 		self.shift_time, self.shift_end_time = times or (None, None)
+
+	def set_number_of_patrolling(self):
+		"""Daily sequence from a per-date counter in tabSeries; locked row, rolled back with a failed insert."""
+		self.number_of_patrolling = cint(
+			getseries(f"ACC-PATROL-{getdate(self.patrolling_date_and_time)}", 1)
+		)
 
 	def validate(self):
 		self.validate_incident_observations()

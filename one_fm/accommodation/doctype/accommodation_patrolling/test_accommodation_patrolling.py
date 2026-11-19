@@ -1,6 +1,8 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
 
+from unittest.mock import patch
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import get_datetime, now_datetime
@@ -74,6 +76,12 @@ class TestAccommodationPatrolling(FrappeTestCase):
 			self.assertTrue(meta.get_field(fieldname).read_only, fieldname)
 		self.assertEqual(meta.get_field("patrol_shift").options, "Operations Shift")
 
+	def test_number_of_patrolling_field(self):
+		df = frappe.get_meta("Accommodation Patrolling").get_field("number_of_patrolling")
+		self.assertEqual(df.fieldtype, "Int")
+		self.assertTrue(df.read_only)
+		self.assertTrue(df.no_copy)
+
 
 class TestAccommodationPatrollingAutoFetch(FrappeTestCase):
 	@classmethod
@@ -125,3 +133,38 @@ class TestAccommodationPatrollingAutoFetch(FrappeTestCase):
 		self.assertFalse(doc.patrol_shift)
 		self.assertFalse(doc.shift_time)
 		self.assertFalse(doc.shift_end_time)
+
+
+class TestNumberOfPatrolling(FrappeTestCase):
+	def setUp(self):
+		for day in ("2026-11-18", "2026-11-19"):
+			frappe.db.delete("Series", {"name": f"ACC-PATROL-{day}"})
+
+	def insert_at(self, timestamp, **kwargs):
+		with patch(
+			"one_fm.accommodation.doctype.accommodation_patrolling.accommodation_patrolling.now_datetime",
+			return_value=get_datetime(timestamp),
+		):
+			return make_patrolling(**kwargs).insert()
+
+	def test_daily_sequence_restarts_next_day(self):
+		numbers = [
+			self.insert_at(f"2026-11-18 {time}").number_of_patrolling for time in ("05:00", "15:00", "17:00")
+		]
+		self.assertEqual(numbers, [1, 2, 3])
+		self.assertEqual(self.insert_at("2026-11-19 05:00").number_of_patrolling, 1)
+
+	def test_resave_keeps_number(self):
+		doc = self.insert_at("2026-11-18 05:00")
+		doc.floor_number = "3"
+		doc.save()
+		doc.reload()
+		self.assertEqual(doc.number_of_patrolling, 1)
+
+	def test_failed_insert_does_not_use_a_number(self):
+		self.insert_at("2026-11-18 05:00")
+		# A failed request rolls back; the savepoint stands in for that here.
+		frappe.db.savepoint("failed_patrol")
+		self.assertRaises(frappe.MandatoryError, self.insert_at, "2026-11-18 06:00", floor_number=None)
+		frappe.db.rollback(save_point="failed_patrol")
+		self.assertEqual(self.insert_at("2026-11-18 07:00").number_of_patrolling, 2)

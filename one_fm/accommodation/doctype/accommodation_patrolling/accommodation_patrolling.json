@@ -8,6 +8,7 @@
   "section_break_m7dg",
   "amended_from",
   "patrolling_date_and_time",
+  "number_of_patrolling",
   "name_of_security_officer",
   "email_address",
   "patrol_shift",
@@ -38,6 +39,13 @@
    "fieldname": "patrolling_date_and_time",
    "fieldtype": "Datetime",
    "label": "Patrolling Date and Time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "number_of_patrolling",
+   "fieldtype": "Int",
+   "label": "Number of Patrolling",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -108,7 +116,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-19 12:00:00.000000",
+ "modified": "2026-11-19 12:30:00.000000",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Patrolling",
