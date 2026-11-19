@@ -1917,17 +1917,22 @@ def get_manifest_data_for_plan(plan_name: str):
 	if not _route_plan_exists():
 		frappe.throw(_("Route Plan DocType not found. Please run 'bench migrate' on this site first."))
 
-	doc = frappe.get_doc("Route Plan", plan_name)
-	doc.check_permission("read")
+	doc = frappe.db.get_value("Route Plan", plan_name, ["name", "title"], as_dict=True)
+	if not doc:
+		frappe.throw(_("Route Plan {0} not found").format(plan_name), frappe.DoesNotExistError)
+	frappe.has_permission("Route Plan", "read", plan_name, throw=True)
+	# In the order the plan lists them (idx, then creation): the rows of each vehicle
+	# keep the trip order they were saved in.
+	assignments = get_plan_rows(plan_name)
 
 	# A camp leg describes a stop the bus makes; no card is filed against it and it
 	# carries no roster, so the manifest is compiled from the rows that stand for one.
-	rows = card_rows(doc.assignments)
+	rows = card_rows(assignments)
 	# The camp and home legs, kept aside: they carry no roster and are never stops on
 	# the manifest, but they are when the bus actually leaves and when it gets back.
 	leg_rows = {}
 	camp_departure = {}
-	for row in doc.assignments:
+	for row in assignments:
 		if cint(row.is_camp_leg) and row.vehicle:
 			leg_rows.setdefault(row.vehicle, []).append(row)
 			if not cint(row.is_home_leg) and row.trip_group and row.start_time:

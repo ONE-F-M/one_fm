@@ -48,7 +48,7 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map):
 
 	Args:
 		manifest_doc: A Transportation Manifest document (new or existing).
-		assignment_rows: List of Route Plan Assignment child rows for this vehicle.
+		assignment_rows: The Route Plan Assignment records of this vehicle, read as rows.
 		emp_map: Dict mapping card_id -> the card's riders, whichever way a leg of it
 			travels. There used to be a second map for RETURN legs and nothing ever
 			filled it, so every return row on a driver's manifest listed nobody while

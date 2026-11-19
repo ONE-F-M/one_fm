@@ -221,7 +221,7 @@ class TestTheTripNamePatchIsRegistered(FrappeTestCase):
 		# about what a correct lane looks like.
 		patch = pathlib.Path(frappe.get_app_path(
 			"one_fm", "patches", "v15_0", "rename_duplicate_trip_names.py")).read_text()
-		self.assertIn("doc._rename_duplicate_trip_names()", patch)
+		self.assertIn("PlanRules(rows)._rename_duplicate_trip_names()", patch)
 		# Saving the plan would re-run capacity validation on months-old lanes.
 		self.assertIn("frappe.db.set_value(", patch)
 		self.assertNotIn("doc.save(", patch)

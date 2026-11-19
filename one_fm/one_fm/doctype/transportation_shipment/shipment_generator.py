@@ -1052,15 +1052,15 @@ class _SeatCheck:
 	"""
 
 	def __init__(self):
-		self._plans = {}
+		self._rows = {}
 
 	def room(self, card: str, staying: int, wanted: int) -> int:
 		places = {
-			(row.parent, row.vehicle)
+			(row.route_plan, row.vehicle)
 			for row in frappe.get_all(
 				"Route Plan Assignment",
-				filters={"transportation_shipment": card, "parenttype": "Route Plan", "is_camp_leg": 0},
-				fields=["parent", "vehicle"],
+				filters={"transportation_shipment": card, "route_plan": ["is", "set"], "is_camp_leg": 0},
+				fields=["route_plan", "vehicle"],
 			)
 			if row.vehicle
 		}
@@ -1094,19 +1094,20 @@ class _SeatCheck:
 
 	def _fits(self, plan_name: str, vehicle: str) -> bool:
 		from one_fm.operations.doctype.route_plan.route_plan import (
+			PlanRules,
 			_passenger_limits,
 			_peak_concurrent_headcount,
 			_trip_occupancy,
+			get_plan_rows,
 		)
 
-		if plan_name not in self._plans:
-			self._plans[plan_name] = frappe.get_doc("Route Plan", plan_name)
-		plan = self._plans[plan_name]
+		if (plan_name, vehicle) not in self._rows:
+			self._rows[(plan_name, vehicle)] = get_plan_rows(plan_name, vehicles=[vehicle])
 
 		limit = _passenger_limits({vehicle}).get(vehicle)
 		if not limit:
 			return True
-		trips = plan._logical_trips([row for row in plan.assignments if row.vehicle == vehicle])
+		trips = PlanRules(self._rows[(plan_name, vehicle)])._logical_trips()
 		return all(_trip_occupancy(trip) <= limit for trip in trips) \
 			and _peak_concurrent_headcount(trips) <= limit
 
