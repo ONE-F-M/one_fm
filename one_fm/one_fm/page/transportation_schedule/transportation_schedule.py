@@ -1988,17 +1988,11 @@ def get_manifest_data_for_plan(plan_name: str):
 			site_location_map[row.name] = row.site_location or row.name
 
 	# ── Fetch shipment cards for employee data ──
-	# We need the live employee lists from get_route_planner_data.
-	# Build a card_id -> employee list map from shipment cards.
-	# The whole schedule board (vehicles, coordinates, handover windows, every open
-	# card) used to be rebuilt here just to read each card's riders. The riders live on
-	# the shipment itself, so they are read from there directly below (WI-004740).
+	# Each card's riders are read from its shipment below, not from a rebuild of the
+	# whole schedule board.
 	card_emp_map = {}
 	card_headcount_map = {}
 
-	# Supplement rosters for shipment-backed assignment rows. Once a shipment is
-	# Assigned it no longer surfaces as an Unassigned pool card above, so pull its
-	# employee list straight from the shipment document instead.
 	shipment_by_card = {
 		row.card_id: row.transportation_shipment
 		for row in rows

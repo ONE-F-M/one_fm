@@ -218,7 +218,7 @@ frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
         const s = document.createElement('script');
         s.id = 'vue3-cdn';
         // Pinned: an unpinned @3 costs a redirect on every cold load and can change under us.
-        s.src = 'https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js';
+        s.src = 'https://unpkg.com/vue@3.5.45/dist/vue.global.prod.js';
         s.onload = () => fetchRPData(wrapper);
         document.head.appendChild(s);
     } else {

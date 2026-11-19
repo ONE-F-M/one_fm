@@ -1,7 +1,7 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
-"""WI-004740 - the schedule and manifest pages load faster without changing what they show.
+"""The schedule and manifest pages load faster without changing what they show.
 
 Each test keeps the OLD per-row way of doing the thing as a small reference helper and
 compares what the new batched code returns against it, so a speed-up that quietly
@@ -16,6 +16,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import to_timedelta
 
+from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import MAHBOULA_LABELS
 from one_fm.one_fm.page.transportation_schedule import transportation_schedule as _ts
 
 
@@ -148,7 +149,7 @@ EMPLOYEES = {  # id -> (name, mobile) as the Transportation Shipment Employee ro
 }
 RELIEVERS = {"REL-1": ("Rita", "999")}  # REL-2 has no Employee record on purpose
 # ACC-1 is a Mahboula sub-camp, which the page collapses into one "Mahboula Camp" label
-CAMPS = {"ACC-1": sorted(_ts.MAHBOULA_LABELS)[0], "ACC-2": "Salmiya"}
+CAMPS = {"ACC-1": sorted(MAHBOULA_LABELS)[0], "ACC-2": "Salmiya"}
 
 
 class FakeManifest:
@@ -248,8 +249,14 @@ class TestManifestPayloadParity(FrappeTestCase):
 			log["get_value"].append(doctype)
 			return real_get_value(doctype, *args, **kwargs)
 
+		real_get_doc = frappe.get_doc
+
 		def fake_get_doc(doctype, *args, **kwargs):
-			return plan if doctype == "Route Plan" else manifest
+			if doctype == "Route Plan":
+				return plan
+			if doctype == "Transportation Manifest":
+				return manifest
+			return real_get_doc(doctype, *args, **kwargs)
 
 		with patch.object(_ts, "_route_plan_exists", return_value=True), \
 			patch.object(_ts.frappe, "get_doc", side_effect=fake_get_doc), \
@@ -310,7 +317,7 @@ class TestManifestPayloadParity(FrappeTestCase):
 				label = None
 				if acc:
 					label = CAMPS.get(acc) or acc
-					label = "Mahboula Camp" if label in _ts.MAHBOULA_LABELS else label
+					label = "Mahboula Camp" if label in MAHBOULA_LABELS else label
 				copy["pickup_camp_label"] = label
 				if match.reliever_employee:
 					name, mobile = RELIEVERS.get(match.reliever_employee, (None, None))
@@ -399,3 +406,49 @@ class TestManifestPayloadParity(FrappeTestCase):
 		self._call(manifest, employees=changed)
 		self.assertEqual(manifest.saves, 1)
 
+
+
+class TestManifestSyncNoOp(FrappeTestCase):
+	"""A load that changes nothing reports nothing changed, so the manifest is not re-saved."""
+
+	@staticmethod
+	def _as_read_back(manifest):
+		# What the database hands back: named rows, Time columns as timedeltas.
+		for n, row in enumerate(manifest.transportation_manifest_details):
+			row.name = f"ROW-{n}"
+			row.scheduled_time = to_timedelta(row.scheduled_time)
+
+	def _sync(self, manifest, rows, emp_map, seconds):
+		from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
+
+		with patch.object(_ts, "_local_seconds", side_effect=lambda stamp: seconds[stamp]):
+			return sync_manifest_details(manifest, rows, emp_map)
+
+	def test_two_legs_sharing_a_row_key_are_not_a_change(self):
+		# A Mixed run's two cards carry the same rider to the same stop on one trip.
+		out_leg = frappe._dict(_plan_row(), direction="MIXED", end_time="OUT")
+		back_leg = frappe._dict(_plan_row(), direction="MIXED", card_id="TSHIP-TS-2", end_time="BACK")
+		emp_map = {"TSHIP-TS-1": [{"id": "EMP-1", "name": "Alice"}], "TSHIP-TS-2": [{"id": "EMP-1", "name": "Alice"}]}
+		seconds = {"OUT": 6 * 3600, "BACK": 6 * 3600 + 420}
+		manifest = FakeManifest([])
+
+		self.assertTrue(self._sync(manifest, [out_leg, back_leg], emp_map, seconds))
+		self._as_read_back(manifest)
+		self.assertFalse(self._sync(manifest, [out_leg, back_leg], emp_map, seconds))
+
+	def test_a_midnight_row_is_not_a_change(self):
+		emp_map = {"TSHIP-TS-1": [{"id": "EMP-1", "name": "Alice"}]}
+		manifest = FakeManifest([])
+		self._sync(manifest, [_plan_row()], emp_map, {_plan_row().end_time: 0})
+		self._as_read_back(manifest)
+		self.assertEqual(manifest.transportation_manifest_details[0].scheduled_time, timedelta(0))
+
+		self.assertFalse(self._sync(manifest, [_plan_row()], emp_map, {_plan_row().end_time: 0}))
+
+	def test_a_moved_stop_time_is_a_change(self):
+		emp_map = {"TSHIP-TS-1": [{"id": "EMP-1", "name": "Alice"}]}
+		manifest = FakeManifest([])
+		self._sync(manifest, [_plan_row()], emp_map, {_plan_row().end_time: 6 * 3600})
+		self._as_read_back(manifest)
+
+		self.assertTrue(self._sync(manifest, [_plan_row()], emp_map, {_plan_row().end_time: 7 * 3600}))

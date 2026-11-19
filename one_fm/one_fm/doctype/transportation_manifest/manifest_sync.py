@@ -8,25 +8,35 @@ Contains the manifest detail upsert logic extracted for testability
 and reuse across the schedule page backend and any future callers.
 """
 
+from frappe.utils import to_timedelta
+
 
 def _same_time(stored, new):
 	"""True when two Time values are the same moment, however each is written.
 
-	A Time column reads back as a timedelta whose str() is ``6:30:00`` while the value
-	we compute is ``06:30:00``. Compared as strings every row before 10:00 looked
-	changed on every load, so an unchanged manifest was re-saved each time the page
-	opened (WI-004740).
+	A Time column reads back as a timedelta (str() ``6:30:00``) while the computed value
+	is ``06:30:00``, so a string compare re-saved unchanged manifests on every load.
+	Midnight is a falsy timedelta, so blanks are tested by identity, not truthiness.
 	"""
-	if not stored and not new:
-		return True
-	if not stored or not new:
-		return False
+	blank = (None, "")
+	if stored in blank or new in blank:
+		return stored in blank and new in blank
 	try:
-		from frappe.utils import to_timedelta
-
 		return to_timedelta(stored) == to_timedelta(new)
 	except Exception:
 		return str(stored) == str(new)
+
+
+def _system_fields(row) -> tuple:
+	"""The fields the sync owns, in a fixed order; scheduled_time last."""
+	return (
+		row.stop_name or "", row.stop_type or "", row.trip_name or "", row.employee_name or "",
+		row.stop_id or "", row.trip_id or "", row.scheduled_time,
+	)
+
+
+def _same_system_fields(before: tuple, after: tuple) -> bool:
+	return before[:-1] == after[:-1] and _same_time(before[-1], after[-1])
 
 
 def sync_manifest_details(manifest_doc, assignment_rows, emp_map):
@@ -48,6 +58,7 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map):
 		True if any rows were added or updated.
 	"""
 	changed = False
+	touched = {}  # id(row) -> (row, its system fields before this sync)
 
 	# Build lookup index of existing rows by compound key.
 	# For pre-existing rows with empty stop_id, derive it from stop_name + employee_action
@@ -132,15 +143,9 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map):
 				new_trip_name = a_row.trip_name or ""
 				new_emp_name = emp.get("name", "")
 
-				# Detect if any system field actually changed
-				if (
-					(row.stop_name or "") != new_stop_name
-					or (row.stop_type or "") != new_stop_type
-					or not _same_time(row.scheduled_time, time_str)
-					or (row.trip_name or "") != new_trip_name
-					or (row.employee_name or "") != new_emp_name
-				):
-					changed = True
+				# Compared once all rows are applied: two plan rows can share a key (a Mixed
+				# run's two legs) and write the row in turn, ending where it started.
+				touched.setdefault(id(row), (row, _system_fields(row)))
 
 				row.stop_name = new_stop_name
 				row.stop_type = new_stop_type
@@ -150,11 +155,9 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map):
 				# Backfill stop_id for pre-existing rows
 				if not row.stop_id or row.stop_id != stop_id_val:
 					row.stop_id = stop_id_val
-					changed = True
 				# Backfill trip_id for legacy rows
 				if not row.trip_id and (a_row.trip_group or ""):
 					row.trip_id = a_row.trip_group
-					changed = True
 				# DO NOT touch: attendance_status, qoa_status, qoa_reason,
 				#               requires_reliever, reliever_employee
 			else:
@@ -172,5 +175,9 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map):
 					"requires_reliever": 0,
 				})
 				changed = True
+
+	for row, before in touched.values():
+		if not _same_system_fields(before, _system_fields(row)):
+			changed = True
 
 	return changed
