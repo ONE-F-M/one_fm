@@ -26,7 +26,9 @@ A plan ten times the size of the default one, for the scale comparison:
 	bench execute one_fm.operations.doctype.route_plan.benchmark_route_plan.make_synthetic_plan --kwargs "{'rows': 10000}"
 
 It needs the standalone Route Plan Assignment, so it only runs after the change. It prints
-the new plan's name; pass that to run().
+the new plan's name; pass that to run(), then remove it:
+
+	bench execute one_fm.operations.doctype.route_plan.benchmark_route_plan.drop_synthetic_plan --kwargs "{'plan': 'RP-...'}"
 """
 
 import json
@@ -234,7 +236,10 @@ def make_synthetic_plan(rows=10000, source=None) -> str:
 	fields = [f for f in plan_row_fields() if f not in ("name", "modified", "route_plan", "idx")]
 	values, idx = [], 0
 	for copy in range(copies):
-		prefix = f"SYN{copy:02d}-"
+		# The first copy keeps the real card ids, so the card run() moves is still read as
+		# its own shipment and a save is judged as it is on the real plan. A prefixed id
+		# no longer names a shipment, which counts as a new card on its run.
+		prefix = f"SYN{copy:02d}-" if copy else ""
 		for row in source_rows:
 			idx += 1
 			if idx > int(rows):
@@ -261,3 +266,16 @@ def make_synthetic_plan(rows=10000, source=None) -> str:
 	)
 	print(f"{plan.name}: {len(values)} assignment(s) on {len(vehicles)} new vehicle(s)")
 	return plan.name
+
+
+def drop_synthetic_plan(plan) -> None:
+	"""Remove a plan made by make_synthetic_plan and the VHL-SYN vehicles no plan uses."""
+	frappe.db.delete("Route Plan Assignment", {"route_plan": plan})
+	frappe.db.delete("Route Plan", {"name": plan})
+	used = set(frappe.get_all("Route Plan Assignment", filters={"vehicle": ["like", "VHL-SYN-%"]},
+							  pluck="vehicle", distinct=True))
+	unused = [v for v in frappe.get_all("Vehicle", filters={"name": ["like", "VHL-SYN-%"]}, pluck="name")
+			  if v not in used]
+	if unused:
+		frappe.db.delete("Vehicle", {"name": ["in", unused]})
+	print(f"{plan} removed with {len(unused)} synthetic vehicle(s)")

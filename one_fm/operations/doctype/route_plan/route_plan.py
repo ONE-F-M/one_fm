@@ -92,7 +92,7 @@ def get_plan_rows(plan, vehicles=None, trip_groups=None, fields=None, for_update
 	until the transaction ends.
 	"""
 	if for_update and vehicles is not None and trip_groups is None:
-		return _lock_vehicle_rows(plan, vehicles, fields or plan_row_fields())
+		return _lock_vehicle_rows(plan, vehicles, list(fields or plan_row_fields()))
 
 	filters = {"route_plan": plan}
 	if vehicles is not None:
@@ -102,7 +102,7 @@ def get_plan_rows(plan, vehicles=None, trip_groups=None, fields=None, for_update
 	return frappe.db.get_values(
 		"Route Plan Assignment",
 		filters,
-		fields or plan_row_fields(),
+		list(fields or plan_row_fields()),
 		as_dict=True,
 		order_by="idx asc, creation asc",
 		for_update=for_update,
@@ -1273,6 +1273,12 @@ COPIED_FIELDS = (
 	"stop_location", "is_camp_leg", "is_home_leg",
 )
 WRITTEN_FIELDS = PLANNER_FIELDS + DERIVED_FIELDS + COPIED_FIELDS
+# The first, unlocked read of a save: identity, the planner's fields, the camp legs' timings
+# and what the board shows of a stale card.
+SNAPSHOT_FIELDS = (
+	"name", "idx", "modified", "is_home_leg", "origin_location", "qoa_time", "stop_index",
+	*PLANNER_FIELDS, *COPIED_FIELDS,
+)
 _STAMP_FIELDS = ("start_time", "end_time")
 _TIME_FIELDS = ("qoa_time", "shift_start_time")
 _TEXT_FIELDS = (
@@ -1295,7 +1301,11 @@ def _comparable(field, value):
 
 
 def differs(old, new, fields) -> bool:
-	return any(_comparable(f, old.get(f)) != _comparable(f, new.get(f)) for f in fields)
+	# Equal raw values need no parsing, which is nearly every field of nearly every card.
+	return any(
+		old.get(f) != new.get(f) and _comparable(f, old.get(f)) != _comparable(f, new.get(f))
+		for f in fields
+	)
 
 
 def run_group(row) -> str:
@@ -1371,7 +1381,9 @@ def apply_plan_changes(plan, items, leg_timings=None, known=None) -> dict:
 
 	frappe.has_permission("Route Plan", "write", plan, throw=True)
 	legs = leg_timings or {}
-	stored = get_plan_rows(plan)
+	# Only what deciding the diff needs: the vehicles a save touches are re-read in full,
+	# with a lock, before anything is judged or written.
+	stored = get_plan_rows(plan, fields=SNAPSHOT_FIELDS)
 	stored_cards = {row.card_id: row for row in card_rows(stored)}
 	items_by_card = {item.get("cardId", ""): item for item in items}
 
@@ -1615,10 +1627,11 @@ def check_plan_rows(plan, upserts):
 def _write_plan_rows(plan, stored, to_delete, to_update, to_insert) -> dict:
 	"""Deletes first, so a card id a delete frees can be inserted again. Returns the
 	``{card_id: modified}`` of the card rows written."""
-	for name in to_delete:
-		frappe.delete_doc(
-			"Route Plan Assignment", name, ignore_permissions=True, delete_permanently=True
-		)
+	# A plain delete: nothing links to an assignment and it has no on_trash, and
+	# delete_doc's feed and Deleted Document cost ~85 ms a row. The old child-table
+	# rebuild left no trail either.
+	if to_delete:
+		frappe.db.delete("Route Plan Assignment", {"name": ["in", to_delete]})
 
 	written = {}
 	for row in to_update:

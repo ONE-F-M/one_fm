@@ -33,8 +33,8 @@ from one_fm.operations.doctype.route_plan_assignment.test_route_plan_assignment 
 FIXTURE = json.loads(
 	(pathlib.Path(__file__).parent / "load_assignments_fixture.json").read_text()
 )
-# Queries a load may make. The child-table load made two reads of the plan plus one for
-# the shipments' names; a load now reads the header, the rows and the same names.
+# Queries a load may make: what load_assignments made on the child-table code for the
+# production plan (benchmark_route_plan.run, 10 runs). It makes the same 6 now.
 LOAD_QUERY_BUDGET = 6
 
 
