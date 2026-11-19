@@ -4469,6 +4469,9 @@ function mountRoutePlannerApp(wrapper, data, preloaded) {
             _applyLoadedPlan(msg) {
                 const items = msg.swim_items || [];
                 const cards = msg.assigned_cards || [];
+                // The version of each card this board has seen; a save sends it back so
+                // the server can tell a card another planner changed since.
+                this._knownRows = Object.fromEntries(items.map(i => [i.cardId, i.rowModified]));
                 this.legTimings = msg.leg_timings || {};
 
                 this.currentPlan = {
@@ -4758,11 +4761,29 @@ function mountRoutePlannerApp(wrapper, data, preloaded) {
             // looks like so the next save can tell it apart from another planner's change.
             _applySaveResult(result) {
                 const stamps = (result || {}).modified || {};
+                this._knownRows = { ...(this._knownRows || {}), ...stamps };
                 this.swimItems.forEach(item => {
                     if (stamps[item.cardId]) item.rowModified = stamps[item.cardId];
                 });
                 this.saveState = __('Saved {0}', [frappe.datetime.now_time().slice(0, 5)]);
                 this._applyStoredTripNames(result);
+
+                // Cards another planner changed since this board loaded them were kept as
+                // that planner left them. Reloading shows them through the same parsing as
+                // any load; whatever was queued behind this save described the old board.
+                // ponytail: reloads the whole plan; patch the returned items in place if
+                // large plans make the reload noticeable.
+                const stale = (result || {}).stale || [];
+                if (stale.length && this.currentPlan) {
+                    this._savePending = false;
+                    this._savePendingOnError = null;
+                    frappe.show_alert({
+                        message: __('{0} card(s) were changed by another planner and have been refreshed.',
+                                    [stale.length]),
+                        indicator: 'orange'
+                    }, 8);
+                    this.switchPlan(this.currentPlan.name);
+                }
             },
 
             _applyStoredTripNames(result) {
@@ -4859,7 +4880,8 @@ function mountRoutePlannerApp(wrapper, data, preloaded) {
                         plan_name: this.currentPlan.name,
                         swim_items: JSON.stringify(items),
                         assigned_cards: JSON.stringify(cards),
-                        leg_timings: JSON.stringify(this.legTimings || {})
+                        leg_timings: JSON.stringify(this.legTimings || {}),
+                        known_rows: JSON.stringify(this._knownRows || {})
                     },
                     async: true,
                     callback: (r) => { this._applySaveResult(r.message); },

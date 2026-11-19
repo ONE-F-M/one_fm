@@ -1465,6 +1465,9 @@ SAVE_CONFLICT_ATTEMPTS = 3
 def retry_on_stale_timestamp(write, attempts: int = SAVE_CONFLICT_ATTEMPTS):
     """Replay ``write`` when another save committed to the same row first.
 
+    A deadlock is replayed the same way: two saves locking vehicles in a different order
+    is the same race, and MariaDB has already rolled the loser back.
+
     The canvas posts the WHOLE board on every action, and a manifest check-in re-reads
     its parent before touching one row - so a save that lost a race has nothing to
     merge: replaying it against the current document produces exactly the state the
@@ -1491,7 +1494,7 @@ def retry_on_stale_timestamp(write, attempts: int = SAVE_CONFLICT_ATTEMPTS):
     for attempt in range(attempts):
         try:
             return write()
-        except frappe.TimestampMismatchError:
+        except (frappe.TimestampMismatchError, frappe.QueryDeadlockError):
             if attempt == attempts - 1:
                 # Out of attempts: let the message and the exception through, so a
                 # genuinely contended document still tells the operator to reload
@@ -1503,7 +1506,7 @@ def retry_on_stale_timestamp(write, attempts: int = SAVE_CONFLICT_ATTEMPTS):
 
 @frappe.whitelist()
 def save_assignments(plan_name: str, swim_items: str, assigned_cards: str,
-                     leg_timings: str = None):
+                     leg_timings: str = None, known_rows: str = None):
     """Save the board into the plan's Route Plan Assignment records.
 
     The board posts the whole canvas, but only what differs from the stored plan is
@@ -1514,6 +1517,10 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str,
     out of each accommodation - keyed by trip group and then by camp. They have no block
     on the lane to ride in on, so they are sent alongside the items and land on the camp
     rows _stamp_leg_details writes.
+
+    ``known_rows`` is ``{card_id: modified}`` as the board last loaded or saved each card,
+    so a card another planner changed since is refreshed rather than undone. A board
+    that does not send it is trusted with every card, as before.
     """
     if not _route_plan_exists():
         frappe.throw(_("Route Plan DocType not found. Please run 'bench migrate' on this site first."))
@@ -1522,10 +1529,11 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str,
     from one_fm.operations.doctype.route_plan.route_plan import apply_plan_changes
 
     legs = json.loads(leg_timings) if isinstance(leg_timings, str) else (leg_timings or {})
+    known = json.loads(known_rows) if isinstance(known_rows, str) else known_rows
 
     # A replay starts from the posted board again: the save numbers its stops in place.
     return retry_on_stale_timestamp(
-        lambda: apply_plan_changes(plan_name, json.loads(swim_items), legs)
+        lambda: apply_plan_changes(plan_name, json.loads(swim_items), legs, known)
     )
 
 
