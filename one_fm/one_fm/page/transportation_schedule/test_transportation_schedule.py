@@ -337,13 +337,13 @@ class TestARunThatStoppedBeingMixedSaysSo(FrappeTestCase):
 	def test_the_unmerge_runs_before_the_rows_are_written(self):
 		import inspect
 
-		from one_fm.one_fm.page.transportation_schedule import transportation_schedule
+		from one_fm.operations.doctype.route_plan import route_plan
 
-		source = inspect.getsource(transportation_schedule.save_assignments)
-		self.assertIn("_unmerge_unmixed_placements(items)", source)
+		source = inspect.getsource(route_plan.apply_plan_changes)
+		self.assertIn("_unmerge_unmixed_placements(", source)
 		# Before, not after: the row direction is read off the shipment.
 		self.assertLess(
-			source.index("_unmerge_unmixed_placements(items)"),
+			source.index("_unmerge_unmixed_placements("),
 			source.index("directions = _shipment_direction_flags(items)"),
 		)
 
@@ -393,7 +393,7 @@ class TestAPlacedBlockCanAlwaysBeOpened(FrappeTestCase):
 
 		from one_fm.one_fm.page.transportation_schedule import transportation_schedule
 
-		source = inspect.getsource(transportation_schedule.load_assignments)
+		source = inspect.getsource(transportation_schedule.plan_payload)
 		self.assertIn('"_shift":         row.shift or held.get("shift") or ""', source)
 		self.assertIn('"_stopLocation":  row.stop_location or held.get("stop_location") or ""',
 					  source)

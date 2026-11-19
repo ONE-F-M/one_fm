@@ -328,6 +328,7 @@ function mountRoutePlannerApp(wrapper, data, preloaded) {
                 currentPlan: null,        // { name, title, status, effective_from, effective_until }
                 planList: [],           // all available plans
                 planLoading: false,
+                saveState: '',          // "Saving…" / "Saved HH:MM" beside the plan selector
 
                 // ── Theme ──
                 isDark: localStorage.getItem('transportation-schedule-theme') === 'dark',
@@ -4753,6 +4754,17 @@ function mountRoutePlannerApp(wrapper, data, preloaded) {
             // whose name is a duplicate on its vehicle or belongs to another lane's
             // series, and the save is otherwise silent, so without this the board would
             // keep showing the old name until the next load.
+            // The save answered: confirm it, and remember what each written record now
+            // looks like so the next save can tell it apart from another planner's change.
+            _applySaveResult(result) {
+                const stamps = (result || {}).modified || {};
+                this.swimItems.forEach(item => {
+                    if (stamps[item.cardId]) item.rowModified = stamps[item.cardId];
+                });
+                this.saveState = __('Saved {0}', [frappe.datetime.now_time().slice(0, 5)]);
+                this._applyStoredTripNames(result);
+            },
+
             _applyStoredTripNames(result) {
                 const names = (result || {}).trip_names;
                 if (!names) return;
@@ -4840,6 +4852,7 @@ function mountRoutePlannerApp(wrapper, data, preloaded) {
                 const cards = [...this.assignedCards];
 
                 this._saveInFlight = true;
+                this.saveState = __('Saving…');
                 frappe.call({
                     method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.save_assignments',
                     args: {
@@ -4849,8 +4862,9 @@ function mountRoutePlannerApp(wrapper, data, preloaded) {
                         leg_timings: JSON.stringify(this.legTimings || {})
                     },
                     async: true,
-                    callback: (r) => { this._applyStoredTripNames(r.message); },
+                    callback: (r) => { this._applySaveResult(r.message); },
                     error: () => {
+                        this.saveState = '';
                         // A server-side validation (e.g. the vehicle-retention
                         // STANDBY lock) rejected the drop. Frappe already shows
                         // the thrown message; reload the plan so the phantom
@@ -6108,6 +6122,7 @@ function injectRPVueTemplate() {
           {{ currentPlan.effective_from }}{{ currentPlan.effective_until ? ' → ' + currentPlan.effective_until : ' → ∞' }}
         </span>
         <span v-if="planLoading" class="text-muted" style="font-size:11px">Loading…</span>
+        <span v-if="saveState" class="text-muted small">{{ saveState }}</span>
       </div>
     </div>
     <div id="rp-header-right">

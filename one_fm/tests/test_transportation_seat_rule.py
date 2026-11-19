@@ -205,7 +205,9 @@ class TestATripNameIsUniqueOnItsLane(FrappeTestCase):
 		# The save is silent, so a server-side repair would otherwise not show until
 		# the next reload and would then look like the run renaming itself.
 		self.assertIn("_applyStoredTripNames(result)", self.source)
-		self.assertIn("callback: (r) => { this._applyStoredTripNames(r.message); },", self.source)
+		self.assertIn("callback: (r) => { this._applySaveResult(r.message); },", self.source)
+		result = self.source.split("_applySaveResult(result) {", 1)[1].split("\n            },", 1)[0]
+		self.assertIn("this._applyStoredTripNames(result);", result)
 		self.assertIn("Trip renamed to match its vehicle", self.source)
 
 
