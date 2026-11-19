@@ -1,5 +1,3 @@
-import os
-
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
@@ -35,11 +33,11 @@ class TestDeleteAccommodationInspection(FrappeTestCase):
 			self.assertNotIn(name, delete_accommodation_inspection.DOCTYPES)
 
 	def test_patch_is_registered_in_post_model_sync(self):
-		path = os.path.join(os.path.dirname(frappe.get_app_path("one_fm")), "one_fm", "patches.txt")
-		with open(path) as f:
-			content = f.read()
-		self.assertIn("[post_model_sync]", content)
-		post = content.split("[post_model_sync]", 1)[1]
-		lines = [line.split("#", 1)[0].strip() for line in post.splitlines()]
-		self.assertIn(PATCH, lines)
-		self.assertNotIn(PATCH, [line.split("#", 1)[0].strip() for line in content.split("[post_model_sync]", 1)[0].splitlines()])
+		with open(frappe.get_app_path("one_fm", "patches.txt")) as f:
+			pre, post = f.read().split("[post_model_sync]", 1)
+
+		def patch_names(block):
+			return [line.split("#", 1)[0].strip() for line in block.splitlines()]
+
+		self.assertIn(PATCH, patch_names(post))
+		self.assertNotIn(PATCH, patch_names(pre))
