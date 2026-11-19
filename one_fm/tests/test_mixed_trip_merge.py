@@ -14,7 +14,7 @@ from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment impor
 )
 from one_fm.operations.doctype.route_plan.route_plan import (
 	MIXED_DIRECTION,
-	RoutePlan,
+	PlanRules,
 	_card_direction,
 	_normalize_shipment_direction,
 	_peak_concurrent_headcount,
@@ -283,17 +283,16 @@ class TestMixedLegCapacity(FrappeTestCase):
 	"""The peak on any one leg is what has to fit, not everyone the trip ever carried."""
 
 	def _plan(self, rows):
-		plan = frappe.new_doc("Route Plan")
-		plan.assignments = []
+		plan = frappe._dict(assignments=[])
 		for index, (shipment, headcount) in enumerate(rows, start=1):
-			plan.append("assignments", {
+			plan.assignments.append(frappe._dict({
 				"transportation_shipment": shipment,
 				"vehicle": "V-1",
 				"direction": MIXED_DIRECTION,
 				"trip_group": "MIX-test",
 				"stop_index": index,
 				"headcount": headcount,
-			})
+			}))
 		return plan
 
 	def _trip(self, plan, directions):
@@ -313,7 +312,7 @@ class TestMixedLegCapacity(FrappeTestCase):
 		real = mod._shipment_directions
 		mod._shipment_directions = lambda names: self._directions
 		try:
-			RoutePlan._validate_mixed_trip_legs(plan, trip, limit)
+			PlanRules(plan.assignments)._validate_mixed_trip_legs(trip, limit)
 		finally:
 			mod._shipment_directions = real
 

@@ -25,6 +25,7 @@ from frappe.tests.utils import FrappeTestCase
 import one_fm.operations.doctype.route_plan.route_plan as mod
 from one_fm.operations.doctype.route_plan.route_plan import (
 	MIXED_DIRECTION,
+	PlanRules,
 	_trip_peak,
 	row_headcount,
 )
@@ -61,18 +62,17 @@ class TestTheTripSumsWhatTheBoardShows(FrappeTestCase):
 	STOPS = [("TS-0371", 2, 2), ("TS-0345", 7, 6), ("TS-0381", 5, 5), ("TS-0081", 8, 8)]
 
 	def _plan(self):
-		plan = frappe.new_doc("Route Plan")
-		plan.assignments = []
+		rows = []
 		for index, (shipment, stored, _live) in enumerate(self.STOPS, start=1):
-			plan.append("assignments", {
+			rows.append(frappe._dict({
 				"transportation_shipment": shipment,
 				"vehicle": "VHL-L-0019",
 				"direction": "OUTBOUND",
 				"trip_group": "TRIP_VHL-L-0019_6w51vagg",
 				"stop_index": index,
 				"headcount": stored,
-			})
-		return plan
+			}))
+		return PlanRules(rows)
 
 	def _trips(self, plan, live):
 		real = mod.live_headcounts

@@ -217,7 +217,8 @@ frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
         }
         const s = document.createElement('script');
         s.id = 'vue3-cdn';
-        s.src = 'https://unpkg.com/vue@3/dist/vue.global.prod.js';
+        // Pinned: an unpinned @3 costs a redirect on every cold load and can change under us.
+        s.src = 'https://unpkg.com/vue@3.5.45/dist/vue.global.prod.js';
         s.onload = () => fetchRPData(wrapper);
         document.head.appendChild(s);
     } else {
@@ -225,22 +226,31 @@ frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     }
 };
 
+// The plan list and the active plan do not depend on the board data, so all three
+// requests go out together and the app mounts with the results (no second round trip).
+// A failed plan call resolves to null and mounted() falls back to loadSavedAssignments().
 function fetchRPData(wrapper) {
-    frappe.call({
-        method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_route_planner_data',
-        callback: function (r) {
-            if (!r.message || r.message.status === 'error') {
-                frappe.msgprint(r.message ? r.message.message : 'Failed to load data');
-                return;
-            }
-            mountRoutePlannerApp(wrapper, r.message);
+    const base = 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.';
+    const call = (method, args) => new Promise(resolve => frappe.call({
+        method: base + method, args, async: true,
+        callback: r => resolve(r),
+        error: () => resolve(null),
+    }));
+    const plans = call('get_route_plans');
+    const active = call('load_assignments', { plan_name: '' });
+    call('get_route_planner_data').then(r => {
+        if (!r) return;
+        if (!r.message || r.message.status === 'error') {
+            frappe.msgprint(r.message ? r.message.message : __('Failed to load data'));
+            return;
         }
+        Promise.all([plans, active]).then(([p, a]) => mountRoutePlannerApp(wrapper, r.message, { plans: p, active: a }));
     });
 }
 
 // ── Vue App ───────────────────────────────────────────────────────────────────
 
-function mountRoutePlannerApp(wrapper, data) {
+function mountRoutePlannerApp(wrapper, data, preloaded) {
     injectRPVueTemplate();
     injectRPStyles();
     $(wrapper).html('<div id="rp-app"></div>');
@@ -318,6 +328,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 currentPlan: null,        // { name, title, status, effective_from, effective_until }
                 planList: [],           // all available plans
                 planLoading: false,
+                saveState: '',          // "Saving…" / "Saved HH:MM" beside the plan selector
 
                 // ── Theme ──
                 isDark: localStorage.getItem('transportation-schedule-theme') === 'dark',
@@ -4743,6 +4754,17 @@ function mountRoutePlannerApp(wrapper, data) {
             // whose name is a duplicate on its vehicle or belongs to another lane's
             // series, and the save is otherwise silent, so without this the board would
             // keep showing the old name until the next load.
+            // The save answered: confirm it, and remember what each written record now
+            // looks like so the next save can tell it apart from another planner's change.
+            _applySaveResult(result) {
+                const stamps = (result || {}).modified || {};
+                this.swimItems.forEach(item => {
+                    if (stamps[item.cardId]) item.rowModified = stamps[item.cardId];
+                });
+                this.saveState = __('Saved {0}', [frappe.datetime.now_time().slice(0, 5)]);
+                this._applyStoredTripNames(result);
+            },
+
             _applyStoredTripNames(result) {
                 const names = (result || {}).trip_names;
                 if (!names) return;
@@ -4830,6 +4852,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 const cards = [...this.assignedCards];
 
                 this._saveInFlight = true;
+                this.saveState = __('Saving…');
                 frappe.call({
                     method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.save_assignments',
                     args: {
@@ -4839,8 +4862,9 @@ function mountRoutePlannerApp(wrapper, data) {
                         leg_timings: JSON.stringify(this.legTimings || {})
                     },
                     async: true,
-                    callback: (r) => { this._applyStoredTripNames(r.message); },
+                    callback: (r) => { this._applySaveResult(r.message); },
                     error: () => {
+                        this.saveState = '';
                         // A server-side validation (e.g. the vehicle-retention
                         // STANDBY lock) rejected the drop. Frappe already shows
                         // the thrown message; reload the plan so the phantom
@@ -5978,8 +6002,17 @@ function mountRoutePlannerApp(wrapper, data) {
                 // Apply saved theme
                 this.applyTheme();
 
-                // Load saved assignments from backend
-                this.loadSavedAssignments();
+                // Apply the plan list and active plan fetched alongside the board data;
+                // only fall back to fetching them here if either request failed.
+                const pre = preloaded || {};
+                if (pre.plans && pre.active) {
+                    this.planList = pre.plans.message || [];
+                    if (pre.active.message && pre.active.message.status === 'ok') {
+                        this._applyLoadedPlan(pre.active.message);
+                    }
+                } else {
+                    this.loadSavedAssignments();
+                }
             });
         },
 
@@ -6089,6 +6122,7 @@ function injectRPVueTemplate() {
           {{ currentPlan.effective_from }}{{ currentPlan.effective_until ? ' → ' + currentPlan.effective_until : ' → ∞' }}
         </span>
         <span v-if="planLoading" class="text-muted" style="font-size:11px">Loading…</span>
+        <span v-if="saveState" class="text-muted small">{{ saveState }}</span>
       </div>
     </div>
     <div id="rp-header-right">

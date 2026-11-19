@@ -30,11 +30,6 @@ class RoutePlan(Document):
 		self._validate_dates()
 		self._validate_single_active()
 		self._validate_single_default()
-		self._validate_vehicle_retention_locks()
-		self._validate_vehicle_datetime_locks()
-		self._validate_trip_group_single_vehicle()
-		self._rename_duplicate_trip_names()
-		self._validate_vehicle_capacity()
 
 	def _validate_dates(self):
 		"""Ensure effective_until >= effective_from when set."""
@@ -68,6 +63,70 @@ class RoutePlan(Document):
 					_("A default Route Plan already exists ({0}). Only one plan can be set as default at a time.").format(existing)
 				)
 
+	def before_save(self):
+		self.last_modified_by_user = frappe.session.user
+		self.last_modified_at = frappe.utils.now()
+
+	def on_trash(self):
+		# The assignments are the plan's own; without this the link to them refuses the delete.
+		frappe.db.delete("Route Plan Assignment", {"route_plan": self.name})
+
+
+def plan_row_fields() -> list:
+	"""Every data column of a Route Plan Assignment, plus name, idx and modified."""
+	from frappe.model import no_value_fields
+
+	return ["name", "idx", "modified"] + [
+		df.fieldname
+		for df in frappe.get_meta("Route Plan Assignment").fields
+		if df.fieldtype not in no_value_fields
+	]
+
+
+def get_plan_rows(plan, vehicles=None, trip_groups=None, fields=None, for_update=False) -> list:
+	"""The assignments of one plan as frappe._dict rows, in the order the plan lists them.
+
+	idx is the order the rows had as a child table, which is the order every reader of a
+	run relies on; creation breaks a tie between records written in the same save.
+	``vehicles`` / ``trip_groups`` narrow the read, and ``for_update`` locks what it reads
+	until the transaction ends.
+	"""
+	filters = {"route_plan": plan}
+	if vehicles is not None:
+		filters["vehicle"] = ["in", list(vehicles) or [""]]
+	if trip_groups is not None:
+		filters["trip_group"] = ["in", list(trip_groups) or [""]]
+	return frappe.db.get_values(
+		"Route Plan Assignment",
+		filters,
+		fields or plan_row_fields(),
+		as_dict=True,
+		order_by="idx asc, creation asc",
+		for_update=for_update,
+	)
+
+
+class PlanRules:
+	"""The plan-wide rules, judged over a set of Route Plan Assignment rows.
+
+	``rows`` is the plan as this save would leave it, ``before`` the same rows as they are
+	stored (None for a plan that has none yet). Every rule groups rows by vehicle except
+	the trip-group rule, which compares one trip group across vehicles, so a caller may
+	pass only the vehicles it touches plus the vehicles holding its trip groups.
+	"""
+
+	def __init__(self, rows, before=None):
+		self.rows = rows
+		self.before = before
+
+	def run(self):
+		"""The rules in the order the Route Plan save used to run them."""
+		self._validate_vehicle_retention_locks()
+		self._validate_vehicle_datetime_locks()
+		self._validate_trip_group_single_vehicle()
+		self._rename_duplicate_trip_names()
+		self._validate_vehicle_capacity()
+
 	def _validate_vehicle_retention_locks(self):
 		"""Block a vehicle whose timeline is held by a retention (STANDBY) shipment.
 
@@ -85,7 +144,7 @@ class RoutePlan(Document):
 		# those so a card never conflicts with itself.
 		vehicle_shipments = {}
 		shipment_names = set()
-		for row in card_rows(self.assignments):
+		for row in card_rows(self.rows):
 			if not row.vehicle or not row.transportation_shipment:
 				continue
 			vehicle_shipments.setdefault(row.vehicle, set()).add(row.transportation_shipment)
@@ -121,7 +180,7 @@ class RoutePlan(Document):
 		mirroring the retention lock above.
 		"""
 		by_vehicle = {}
-		for row in card_rows(self.assignments):
+		for row in card_rows(self.rows):
 			if row.vehicle:
 				by_vehicle.setdefault(row.vehicle, []).append(row)
 
@@ -218,7 +277,7 @@ class RoutePlan(Document):
 		the journey so the dispatcher can re-drop it cleanly.
 		"""
 		leg_vehicle = {}
-		for row in card_rows(self.assignments):
+		for row in card_rows(self.rows):
 			if not row.trip_group or not row.vehicle:
 				continue
 			key = (row.trip_group, _row_direction(row))
@@ -427,7 +486,7 @@ class RoutePlan(Document):
 		does not go through ``_logical_trips``, which deliberately drops them.
 		"""
 		by_vehicle = {}
-		for idx, row in enumerate(self.assignments):
+		for idx, row in enumerate(self.rows):
 			if not row.vehicle:
 				continue
 			# Standalone rows are keyed by position so two of them never merge.
@@ -456,7 +515,7 @@ class RoutePlan(Document):
 		run).
 		"""
 		trips = {}
-		rows = card_rows(assignments if assignments is not None else self.assignments)
+		rows = card_rows(assignments if assignments is not None else self.rows)
 		live = live_headcounts(rows)
 		for idx, row in enumerate(rows):
 			if not row.vehicle:
@@ -520,8 +579,7 @@ class RoutePlan(Document):
 		untouched one was fixed. The check is for what a save DOES, so a bus it does
 		nothing to keeps the verdict it was saved with.
 		"""
-		before = self.get_doc_before_save()
-		if not before:
+		if not self.before:
 			return set()
 
 		def placement(trips):
@@ -549,7 +607,7 @@ class RoutePlan(Document):
 				)
 			return by_vehicle
 
-		was = placement(self._logical_trips(before.assignments))
+		was = placement(self._logical_trips(self.before))
 		now = placement(trips)
 		return {vehicle for vehicle, cards in now.items() if was.get(vehicle) == cards}
 
@@ -565,8 +623,7 @@ class RoutePlan(Document):
 		Same membership rule as above, one level finer: a run nobody added a card to or
 		took one off keeps the verdict it was saved with.
 		"""
-		before = self.get_doc_before_save()
-		if not before:
+		if not self.before:
 			return set()
 
 		def placement(trips):
@@ -577,7 +634,7 @@ class RoutePlan(Document):
 				)
 			return by_trip
 
-		was = placement(self._logical_trips(before.assignments))
+		was = placement(self._logical_trips(self.before))
 		now = placement(trips)
 		return {key for key, cards in now.items() if was.get(key) == cards}
 
@@ -640,9 +697,6 @@ class RoutePlan(Document):
 			title=_("Vehicle Capacity Exceeded"),
 		)
 
-	def before_save(self):
-		self.last_modified_by_user = frappe.session.user
-		self.last_modified_at = frappe.utils.now()
 
 
 def _row_direction(row) -> str:
@@ -1164,3 +1218,293 @@ def leg_occupancy(stops):
 			peak, worst_leg = occupancy, leg
 
 	return peak, worst_leg, per_leg
+
+
+# ── Saving the board ────────────────────────────────────────────────────────
+#
+# A stored record and a canvas item are the same card when route_plan and card_id match.
+# card_id is the "TSHIP-<shipment>" id printed on the card, unique per plan (the unique
+# key on Route Plan Assignment enforces it). Camp legs match on their own card_id
+# "CAMPLEG|<trip group>|<stop>".
+#
+# A card has changed only when a field the planner sets differs from what is stored.
+# start_time and end_time are compared as (date, second of the day): the board rebuilds
+# the stamp text, and the date half is the lock lifespan it hands back unchanged.
+PLANNER_FIELDS = (
+	"vehicle", "trip_group", "trip_name", "transit_minutes", "buffer_minutes", "direction",
+	"start_time", "end_time",
+)
+# Derived from the run by _stamp_leg_details. Written when the card's run is saved, never
+# a reason on their own: the board round-trips a logical stop number, not the physical one.
+DERIVED_FIELDS = (
+	"max_passenger_capacity", "stop_index", "action_type", "current_passenger_count",
+	"boarding_count", "drop_off_count", "is_accommodation_origin", "origin_location",
+	"shift_start_time", "is_next_day", "qoa_time",
+)
+# Copies written with the row and never compared: headcount is the live shipment count on
+# the board, and the four names are back-filled from the shipment on load.
+COPIED_FIELDS = (
+	"card_id", "transportation_shipment", "headcount", "site", "shift", "accommodation",
+	"stop_location", "is_camp_leg", "is_home_leg",
+)
+WRITTEN_FIELDS = PLANNER_FIELDS + DERIVED_FIELDS + COPIED_FIELDS
+_STAMP_FIELDS = ("start_time", "end_time")
+_TIME_FIELDS = ("qoa_time", "shift_start_time")
+_TEXT_FIELDS = (
+	"vehicle", "trip_group", "trip_name", "direction", "action_type", "origin_location",
+	"card_id", "transportation_shipment", "site", "shift", "accommodation", "stop_location",
+)
+
+
+def _comparable(field, value):
+	"""``value`` in the form two copies of one field are compared in."""
+	if field in _STAMP_FIELDS:
+		day = _iso_to_date(value)
+		return (day, _iso_time_of_day(value)) if day else (str(value) if value else None)
+	if field in _TIME_FIELDS:
+		# A Time of 00:00:00 is timedelta(0), which is falsy - test for blank explicitly.
+		return None if value is None or value == "" else to_timedelta(value).total_seconds()
+	if field in _TEXT_FIELDS:
+		return str(value) if value else ""
+	return cint(value)
+
+
+def differs(old, new, fields) -> bool:
+	return any(_comparable(f, old.get(f)) != _comparable(f, new.get(f)) for f in fields)
+
+
+def run_group(row) -> str:
+	"""The trip group a row belongs to; a standalone card is a run of its own."""
+	if row.trip_group:
+		return row.trip_group
+	card_id = str(row.card_id or "")
+	return card_id.split("|")[1] if cint(row.get("is_camp_leg")) and "|" in card_id else card_id
+
+
+def run_key(row) -> tuple:
+	return (row.vehicle, run_group(row))
+
+
+def diff_cards(stored_cards, proposed) -> tuple:
+	"""``(inserts, updates, deletes)`` as card ids, by the identity rule above."""
+	inserts = [card for card in proposed if card not in stored_cards]
+	deletes = [card for card in stored_cards if card not in proposed]
+	updates = [
+		card for card in proposed
+		if card in stored_cards and differs(stored_cards[card], proposed[card], PLANNER_FIELDS)
+	]
+	return inserts, updates, deletes
+
+
+def _leg_signature(held):
+	"""What a run's camp and home legs say, without the lifespan date the board rebases."""
+	held = held or {}
+	home = held.get("home") or {}
+	return (
+		_iso_time_of_day(held.get("departure")),
+		_iso_time_of_day(held.get("arrival")),
+		tuple(sorted(
+			(place, cint(m.get("transit_minutes")), cint(m.get("buffer_minutes")))
+			for place, m in (held.get("camps") or {}).items()
+		)),
+		(cint(home.get("transit_minutes")), cint(home.get("buffer_minutes"))),
+	)
+
+
+def apply_plan_changes(plan, items, leg_timings=None) -> dict:
+	"""Write what the posted board changes in ``plan``, and nothing else.
+
+	A card is matched to its record by card_id (see the identity rule above). A card that
+	is new, moved, retimed or removed is written, and so is every row of the runs it left
+	or joined - their stop numbers, counts and camp legs follow it. Every other record is
+	left alone, and a board that changes nothing writes nothing.
+
+	Runs inside the request transaction: a refused rule rolls back every write, shipment
+	statuses included.
+	"""
+	from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+		_normalize_direction,
+		_shift_by_shipment,
+		_shipment_direction_flags,
+		_shipment_from_card_id,
+		_stamp_leg_details,
+		_sync_shipment_statuses,
+		_unmerge_unmixed_placements,
+		_with_stop_indexes,
+		card_row_values,
+		fold_leg_timings,
+	)
+
+	frappe.has_permission("Route Plan", "write", plan, throw=True)
+	legs = leg_timings or {}
+	stored = get_plan_rows(plan)
+	stored_cards = {row.card_id: row for row in card_rows(stored)}
+	items_by_card = {item.get("cardId", ""): item for item in items}
+
+	# A card that has left a merged run takes its own direction back before its row is
+	# built, because a row's direction is read off its shipment.
+	def may_have_left_a_merge(card, item):
+		row = stored_cards.get(card)
+		return not row or (
+			_normalize_direction(item.get("direction")) != (row.direction or "")
+			or (item.get("vehicleId") or "") != (row.vehicle or "")
+			or (item.get("tripId") or "") != (row.trip_group or "")
+		)
+
+	moved = {
+		_shipment_from_card_id(card) for card, item in items_by_card.items()
+		if may_have_left_a_merge(card, item)
+	}
+	_unmerge_unmixed_placements(
+		[item for item in items if _shipment_from_card_id(item.get("cardId", "")) in moved]
+	)
+	directions = _shipment_direction_flags(items)
+	shifts = _shift_by_shipment(items)
+	proposed = {
+		item.get("cardId", ""): card_row_values(item, directions, shifts)
+		for item in _with_stop_indexes(items)
+	}
+
+	inserts, updates, deletes = diff_cards(stored_cards, proposed)
+	runs = {run_key(proposed[card]) for card in inserts + updates}
+	runs |= {run_key(stored_cards[card]) for card in updates + deletes}
+	stored_legs = fold_leg_timings(stored)
+	for group in set(legs) | set(stored_legs):
+		if _leg_signature(legs.get(group)) != _leg_signature(stored_legs.get(group)):
+			runs |= {
+				run_key(row) for row in list(proposed.values()) + stored if run_group(row) == group
+			}
+
+	if not runs:
+		header = frappe.db.get_value("Route Plan", plan, "last_modified_at")
+		return {
+			"status": "ok", "unchanged": 1, "plan_name": plan,
+			"saved_at": str(header) if header else None,
+			"assignment_count": len(stored), "trip_names": {}, "modified": {},
+		}
+
+	# The vehicles this save touches, and every vehicle holding one of its trip groups:
+	# the only rule that looks across vehicles is the one-trip-one-vehicle rule.
+	groups = {group for _vehicle, group in runs}
+	vehicles = {vehicle for vehicle, _group in runs}
+	vehicles |= {row.vehicle for row in stored if row.trip_group in groups}
+
+	merged = []
+	for row in stored:
+		if cint(row.is_camp_leg):
+			if row.vehicle in vehicles and run_key(row) not in runs:
+				merged.append(frappe._dict(row))
+			continue
+		new = proposed.get(row.card_id)
+		if not new:
+			continue
+		if run_key(new) in runs:
+			merged.append(frappe._dict(new, name=row.name, idx=row.idx))
+		elif row.vehicle in vehicles:
+			merged.append(frappe._dict(row))
+	merged.extend(frappe._dict(proposed[card]) for card in inserts)
+
+	merged.extend(
+		frappe._dict(values)
+		for values in _stamp_leg_details(
+			[row for row in merged if run_key(row) in runs], legs
+		)
+	)
+
+	PlanRules(merged, [row for row in stored if row.vehicle in vehicles]).run()
+
+	by_name = {row.name: row for row in stored}
+	# Stored rows of the scope that this save re-stamped or the trip-name repair renamed;
+	# a camp leg with a name here belongs to a run the save did not touch.
+	to_update = [
+		row for row in merged
+		if row.get("name") and differs(by_name[row.name], row, PLANNER_FIELDS + DERIVED_FIELDS)
+	]
+	to_insert = [row for row in merged if not row.get("name") and not cint(row.is_camp_leg)]
+	to_delete = [stored_cards[card].name for card in deletes]
+
+	# A run's camp legs are replaced together, so they stay in the order the run makes
+	# its stops - the load reads the departure off the first of them.
+	new_legs, old_legs = {}, {}
+	for row in merged:
+		if cint(row.is_camp_leg) and not row.get("name"):
+			new_legs.setdefault(run_key(row), []).append(row)
+	for row in stored:
+		if cint(row.is_camp_leg) and run_key(row) in runs:
+			old_legs.setdefault(run_key(row), []).append(row)
+	for key in runs:
+		old, new = old_legs.get(key, []), new_legs.get(key, [])
+		if [r.card_id for r in old] == [r.card_id for r in new] and not any(
+			differs(o, n, WRITTEN_FIELDS) for o, n in zip(old, new)
+		):
+			continue
+		to_delete.extend(row.name for row in old)
+		to_insert.extend(new)
+
+	written = _write_plan_rows(plan, stored, to_delete, to_update, to_insert)
+
+	placed = {_shipment_from_card_id(card) for card in proposed}
+	_sync_shipment_statuses(
+		[items_by_card[card] for card in written if card in items_by_card],
+		{stored_cards[card].transportation_shipment for card in deletes} - placed - {None, ""},
+	)
+
+	# Last, so the plan row is locked only for the tail of the save.
+	saved_at = frappe.utils.now()
+	frappe.db.set_value(
+		"Route Plan", plan,
+		{"last_modified_by_user": frappe.session.user, "last_modified_at": saved_at},
+	)
+
+	return {
+		"status": "ok",
+		"plan_name": plan,
+		"saved_at": saved_at,
+		"assignment_count": len(stored) - len(to_delete) + len(to_insert),
+		"changed": {
+			"inserted": len(inserts), "updated": len(updates), "deleted": len(deletes),
+		},
+		# The trip names the plan actually STORED on the vehicles this save touched: a
+		# duplicate on a vehicle, or a name in another lane's series, is repaired on save,
+		# and the board would otherwise keep showing the old name. "vehicle|trip_group",
+		# because one trip_group can sit on two vehicles under two names.
+		"trip_names": {
+			f"{row.vehicle}|{row.trip_group}": row.trip_name
+			for row in merged
+			if row.vehicle and row.trip_group and row.trip_name
+		},
+		"modified": written,
+	}
+
+
+def _write_plan_rows(plan, stored, to_delete, to_update, to_insert) -> dict:
+	"""Deletes first, so a card id a delete frees can be inserted again. Returns the
+	``{card_id: modified}`` of the card rows written."""
+	for name in to_delete:
+		frappe.delete_doc(
+			"Route Plan Assignment", name, ignore_permissions=True, delete_permanently=True
+		)
+
+	written = {}
+	for row in to_update:
+		doc = frappe.get_doc("Route Plan Assignment", row.name)
+		doc.update({field: row.get(field) for field in WRITTEN_FIELDS})
+		doc.flags.plan_checked = True
+		doc.save(ignore_permissions=True)
+		if not cint(doc.is_camp_leg):
+			written[doc.card_id] = str(doc.modified)
+
+	idx = max((cint(row.idx) for row in stored), default=0)
+	for row in to_insert:
+		idx += 1
+		doc = frappe.get_doc({
+			"doctype": "Route Plan Assignment",
+			"route_plan": plan,
+			"idx": idx,
+			**{field: row.get(field) for field in WRITTEN_FIELDS},
+		})
+		doc.flags.plan_checked = True
+		doc.insert(ignore_permissions=True)
+		if not cint(doc.is_camp_leg):
+			written[doc.card_id] = str(doc.modified)
+	return written

@@ -18,7 +18,6 @@ those two still hold, so a future change to the removal path cannot quietly stra
 card as Assigned with no block on any lane.
 """
 
-import inspect
 import pathlib
 
 import frappe
@@ -153,8 +152,32 @@ class TestRemovalStillReachesTheDocuments(FrappeTestCase):
 		self.assertIn("this.persistAssignments();", body)
 
 	def test_the_plan_rewrites_its_rows_from_what_is_left(self):
-		from one_fm.one_fm.page.transportation_schedule import transportation_schedule
+		# The board posts what is left; the removed card's record goes, and its shipment
+		# goes back to the pool while the one still on the lane stays Assigned.
+		import json
 
-		source = inspect.getsource(transportation_schedule.save_assignments)
-		self.assertIn("doc.assignments = []", source)
-		self.assertIn("_sync_shipment_statuses(items, previously_linked)", source)
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			save_assignments,
+		)
+		from one_fm.operations.doctype.route_plan.route_plan import get_plan_rows
+		from one_fm.operations.doctype.route_plan_assignment.test_route_plan_assignment import (
+			make_route_plan,
+		)
+
+		vehicle = frappe.get_all("Vehicle", limit=1, pluck="name")
+		if not vehicle:
+			self.skipTest("no Vehicle on this site")
+		kept, removed = self._card(), self._card()
+		items = [
+			{"cardId": f"TSHIP-{name}", "vehicleId": vehicle[0], "direction": "OUTBOUND",
+			 "start": "2026-08-18T05:00:00.000Z", "end": "2026-08-18T06:00:00.000Z"}
+			for name in (kept, removed)
+		]
+		plan = make_route_plan()
+		save_assignments(plan, json.dumps(items), "[]")
+
+		save_assignments(plan, json.dumps(items[:1]), "[]")
+
+		self.assertEqual([row.card_id for row in get_plan_rows(plan)], [f"TSHIP-{kept}"])
+		self.assertEqual(frappe.db.get_value("Transportation Shipment", removed, "status"), "Unassigned")
+		self.assertEqual(frappe.db.get_value("Transportation Shipment", kept, "status"), "Assigned")
