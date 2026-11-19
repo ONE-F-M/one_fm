@@ -34,7 +34,7 @@ class TestTheBusHome(FrappeTestCase):
 		"""Run the generator up to _reconcile and return the targets it was handed."""
 		yesterday = add_days(today(), -1)
 
-		def grouped(skipped=None, on_date=None):
+		def grouped(skipped=None, on_date=None, skipped_sites=None):
 			if skipped is not None:
 				skipped.update(skipped_today or {})
 			return {"day": yesterday if on_date == yesterday else "today"}

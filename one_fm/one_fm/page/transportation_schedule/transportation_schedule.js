@@ -5741,6 +5741,13 @@ function mountRoutePlannerApp(wrapper, data) {
                 // Blocks whose card today's roster no longer produces. They are outlined on
                 // the board and need removing by hand.
                 if (s.flagged) extra.push(__('{0} block(s) need re-planning', [s.flagged]));
+                // Sites left without cards because Transport Required = No, as
+                // {site: riders skipped}. Absent or empty adds no text.
+                const skippedSites = Object.entries(s.skipped_sites || {});
+                if (skippedSites.length) {
+                    extra.push(__('Skipped sites (Transport Required = No): {0}',
+                        [skippedSites.map(([site, n]) => `${site} (${n})`).join(', ')]));
+                }
                 const table = rows.length
                     ? `<table class="table table-sm table-bordered mt-3 mb-0">
                         <thead><tr>${[__('Result'), __('Employee'), __('Name'), __('Reason')].map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>

@@ -41,6 +41,7 @@ def classify(employee_ctx) -> dict:
 	* ``availabilities`` - Employee Schedule ``employee_availability`` values for the date
 	* ``is_driver`` - drives the bus, never a passenger
 	* ``missing_reason`` - why they are eligible but unplaced, when known
+	* ``transport_not_required`` - the rostered shift's site has Transport Required = No
 
 	Order matters: Stale, Assigned, Pool, Exempt, Missing.
 	"""
@@ -85,6 +86,9 @@ def classify(employee_ctx) -> dict:
 
 	if ctx.get("is_driver"):
 		return _result(STATUS_EXEMPT, _("Self-Commuting / Exempt"), _("Driver"))
+
+	if ctx.get("transport_not_required"):
+		return _result(STATUS_EXEMPT, _("Self-Commuting / Exempt"), _("Site does not need transport"))
 
 	return _result(
 		STATUS_MISSING,
@@ -322,6 +326,7 @@ def _build_rows(on_date, plan=None) -> list:
 	)
 	from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import SKIP_REASONS_CACHE_KEY
 	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import driver_employees
+	from one_fm.one_fm.page.transportation_schedule.transportation_schedule import sites_without_transport
 
 	card_status, cards_of, card_direction = _live_cards()
 	employees = _employees(list(cards_of))
@@ -358,9 +363,10 @@ def _build_rows(on_date, plan=None) -> list:
 			for s in frappe.get_all(
 				"Operations Shift",
 				filters={"name": ["in", list(shift_names)]},
-				fields=["name", "start_time", "end_time", "project"],
+				fields=["name", "start_time", "end_time", "project", "site"],
 			)
 		}
+	no_transport = sites_without_transport()
 
 	on_leave = absent_employees(on_date, set(ids))
 	relievers = relieving_assignments(on_date)
@@ -396,6 +402,7 @@ def _build_rows(on_date, plan=None) -> list:
 			"on_leave": emp_id in on_leave,
 			"availabilities": [r.employee_availability for r in emp_rows],
 			"is_driver": emp_id in drivers,
+			"transport_not_required": bool(times and times.site in no_transport),
 			"missing_reason": _missing_reason(
 				reliever, reliever_name, emp.shift, roster_shift, skip_reasons.get(emp_id)
 			),
