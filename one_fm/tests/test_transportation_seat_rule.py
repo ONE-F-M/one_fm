@@ -205,7 +205,9 @@ class TestATripNameIsUniqueOnItsLane(FrappeTestCase):
 		# The save is silent, so a server-side repair would otherwise not show until
 		# the next reload and would then look like the run renaming itself.
 		self.assertIn("_applyStoredTripNames(result)", self.source)
-		self.assertIn("callback: (r) => { this._applyStoredTripNames(r.message); },", self.source)
+		self.assertIn("callback: (r) => { this._applySaveResult(r.message); },", self.source)
+		result = self.source.split("_applySaveResult(result) {", 1)[1].split("\n            },", 1)[0]
+		self.assertIn("this._applyStoredTripNames(result);", result)
 		self.assertIn("Trip renamed to match its vehicle", self.source)
 
 
@@ -219,7 +221,7 @@ class TestTheTripNamePatchIsRegistered(FrappeTestCase):
 		# about what a correct lane looks like.
 		patch = pathlib.Path(frappe.get_app_path(
 			"one_fm", "patches", "v15_0", "rename_duplicate_trip_names.py")).read_text()
-		self.assertIn("doc._rename_duplicate_trip_names()", patch)
+		self.assertIn("PlanRules(rows)._rename_duplicate_trip_names()", patch)
 		# Saving the plan would re-run capacity validation on months-old lanes.
 		self.assertIn("frappe.db.set_value(", patch)
 		self.assertNotIn("doc.save(", patch)

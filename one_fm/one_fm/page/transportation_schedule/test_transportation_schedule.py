@@ -337,13 +337,13 @@ class TestARunThatStoppedBeingMixedSaysSo(FrappeTestCase):
 	def test_the_unmerge_runs_before_the_rows_are_written(self):
 		import inspect
 
-		from one_fm.one_fm.page.transportation_schedule import transportation_schedule
+		from one_fm.operations.doctype.route_plan import route_plan
 
-		source = inspect.getsource(transportation_schedule.save_assignments)
-		self.assertIn("_unmerge_unmixed_placements(items)", source)
+		source = inspect.getsource(route_plan.apply_plan_changes)
+		self.assertIn("_unmerge_unmixed_placements(", source)
 		# Before, not after: the row direction is read off the shipment.
 		self.assertLess(
-			source.index("_unmerge_unmixed_placements(items)"),
+			source.index("_unmerge_unmixed_placements("),
 			source.index("directions = _shipment_direction_flags(items)"),
 		)
 
@@ -393,7 +393,7 @@ class TestAPlacedBlockCanAlwaysBeOpened(FrappeTestCase):
 
 		from one_fm.one_fm.page.transportation_schedule import transportation_schedule
 
-		source = inspect.getsource(transportation_schedule.load_assignments)
+		source = inspect.getsource(transportation_schedule.plan_payload)
 		self.assertIn('"_shift":         row.shift or held.get("shift") or ""', source)
 		self.assertIn('"_stopLocation":  row.stop_location or held.get("stop_location") or ""',
 					  source)
@@ -874,8 +874,8 @@ class TestManifestDataRestrictFlag(FrappeTestCase):
 	"""get_manifest_data_for_plan tells the client whether the reliever list is Rambo-only."""
 
 	def _manifest_data(self, flag):
-		plan = frappe._dict(name="PLAN-1", title="Plan", assignments=[])
-		plan.check_permission = lambda *_a, **_k: None
+		plan = frappe._dict(name="PLAN-1", title="Plan")
+		real_get_value = _ts.frappe.db.get_value
 		row = frappe._dict(
 			vehicle=None, shift=None, transportation_shipment=None, card_id="C1",
 			direction="OUTBOUND", accommodation="ACC", stop_location="STOP",
@@ -884,8 +884,10 @@ class TestManifestDataRestrictFlag(FrappeTestCase):
 			buffer_minutes=0, origin_location=None,
 		)
 		with patch.object(_ts, "_route_plan_exists", return_value=True), \
-			patch.object(_ts.frappe, "get_doc", return_value=plan), \
-			patch.object(_ts, "card_rows", return_value=[row]), \
+			patch.object(_ts.frappe.db, "get_value", side_effect=lambda doctype, *a, **k: (
+				plan if doctype == "Route Plan" else real_get_value(doctype, *a, **k))), \
+			patch.object(_ts.frappe, "has_permission", return_value=True), \
+			patch.object(_ts, "get_plan_rows", return_value=[row]), \
 			patch.object(_ts, "get_route_planner_data", return_value={"status": "error"}), \
 			patch.object(_ts.frappe.db, "get_single_value", return_value=flag) as setting:
 			result = _ts.get_manifest_data_for_plan("PLAN-1")

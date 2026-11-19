@@ -318,7 +318,7 @@ class TestTheSeatCheck(FrappeTestCase):
 
 		seats = gen._SeatCheck()
 		seen = []
-		with patch.object(gen.frappe, "get_all", return_value=[frappe._dict(parent="RP", vehicle="V")]), \
+		with patch.object(gen.frappe, "get_all", return_value=[frappe._dict(route_plan="RP", vehicle="V")]), \
 				patch.object(seats, "_fits", side_effect=lambda plan, vehicle: seen.append(
 					frappe.db.get_value("Transportation Shipment", card.name, "headcount")) or seen[-1] <= 6):
 			room = seats.room(card.name, staying=3, wanted=10)
@@ -329,7 +329,7 @@ class TestTheSeatCheck(FrappeTestCase):
 
 	def test_a_bus_already_over_takes_nobody(self):
 		seats = gen._SeatCheck()
-		with patch.object(gen.frappe, "get_all", return_value=[frappe._dict(parent="RP", vehicle="V")]), \
+		with patch.object(gen.frappe, "get_all", return_value=[frappe._dict(route_plan="RP", vehicle="V")]), \
 				patch.object(gen.frappe.db, "get_value", return_value=5), \
 				patch.object(gen.frappe.db, "set_value"), \
 				patch.object(seats, "_fits", return_value=False):

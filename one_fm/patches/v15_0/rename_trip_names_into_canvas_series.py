@@ -7,7 +7,7 @@ from frappe.utils import getdate, nowdate
 #
 # A trip name is the lane's row on the board plus a two-digit sequence. The save now
 # renames a run into the series of the lane it is on - see
-# RoutePlan._rename_into_series - and this clears what earlier saves already wrote.
+# PlanRules._rename_into_series - and this clears what earlier saves already wrote.
 #
 # The repair is the same code the save runs, so the patch and the live rule cannot
 # disagree. Draft and Active plans are repaired; Expired ones are history and are left.
@@ -25,18 +25,20 @@ def execute():
 	if not frappe.db.exists("DocType", "Route Plan Assignment"):
 		return
 
+	from one_fm.operations.doctype.route_plan.route_plan import PlanRules, get_plan_rows
+
 	today = getdate(nowdate())
 	runs = {}  # (plan, vehicle, trip_group, old name) -> new name
 
 	for plan in frappe.get_all(
 		"Route Plan", filters={"status": ["in", ["Draft", "Active"]]}, pluck="name"
 	):
-		doc = frappe.get_doc("Route Plan", plan)
-		before = {row.name: row.trip_name for row in doc.assignments}
+		rows = get_plan_rows(plan)
+		before = {row.name: row.trip_name for row in rows}
 
-		doc._rename_duplicate_trip_names()
+		PlanRules(rows)._rename_duplicate_trip_names()
 
-		for row in doc.assignments:
+		for row in rows:
 			old = before.get(row.name)
 			if old == row.trip_name:
 				continue

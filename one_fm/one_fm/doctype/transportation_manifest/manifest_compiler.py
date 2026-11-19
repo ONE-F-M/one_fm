@@ -37,6 +37,7 @@ from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
 	_normalize_direction,
 	get_manifest_data_for_plan,
 )
+from one_fm.operations.doctype.route_plan.route_plan import get_plan_rows
 
 # Mirror the camp-collapse used across the transport scheduling stack so a
 # reliever checked in at any Mahboula sub-camp reads as the one "Mahboula Camp"
@@ -160,7 +161,7 @@ def _accommodation_labels(acc_ids: list) -> dict:
 	return labels
 
 
-def _outbound_assignments_by_shift(plan_doc) -> dict:
+def _outbound_assignments_by_shift(plan_name) -> dict:
 	"""Group the plan's outbound assignment rows by the shift they serve.
 
 	Only outbound (pickup) legs matter for boarding instructions. Returns
@@ -168,7 +169,7 @@ def _outbound_assignments_by_shift(plan_doc) -> dict:
 	vehicle(s)/trip group(s) already carrying that shift's workers.
 	"""
 	by_shift = {}
-	for row in plan_doc.assignments:
+	for row in get_plan_rows(plan_name):
 		if _normalize_direction(row.direction) != "OUTBOUND":
 			continue
 		if not row.shift:
@@ -258,8 +259,7 @@ def compile_daily_manifests(schedule_date: str | None = None) -> dict:
 	if not relievers:
 		return summary
 
-	plan_doc = frappe.get_doc("Route Plan", plan_name)
-	by_shift = _outbound_assignments_by_shift(plan_doc)
+	by_shift = _outbound_assignments_by_shift(plan_name)
 
 	live_camps = _live_accommodation([r.employee for r in relievers])
 	labels = _accommodation_labels(list({c for c in live_camps.values() if c}))

@@ -484,19 +484,16 @@ class TestRemovingRiders(FrappeTestCase):
 		return doc.name
 
 	def _place(self, card, headcount):
-		plan = frappe.new_doc("Route Plan")
-		plan.title = frappe.generate_hash("RP-TM", 8)
-		plan.status = "Draft"
-		plan.effective_from = today()
-		plan.append("assignments", {
+		from one_fm.operations.doctype.route_plan_assignment.test_route_plan_assignment import (
+			make_route_plan,
+		)
+
+		plan = make_route_plan([{
 			"card_id": f"TSHIP-{card}", "transportation_shipment": card,
 			"vehicle": "VHL-0005", "direction": "OUTBOUND", "headcount": headcount,
 			"start_time": f"{today()}T06:00:00Z", "end_time": f"{today()}T07:00:00Z",
-		})
-		plan.flags.ignore_mandatory = True
-		plan.flags.ignore_links = True
-		plan.insert(ignore_permissions=True)
-		return plan.name, plan.assignments[0].name
+		}], title=frappe.generate_hash("RP-TM", 8))
+		return plan, frappe.db.get_value("Route Plan Assignment", {"route_plan": plan}, "name")
 
 	def _depart(self, card):
 		manifest = frappe.generate_hash("TM-TEST", 10)
