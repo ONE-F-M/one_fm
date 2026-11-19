@@ -12,22 +12,30 @@
   "designation",
   "department",
   "project_allocation",
+  "column_break_6b5e37",
   "column_break_a5243e",
   "workflow_state",
   "effective_date_of_change",
   "line_manager",
   "line_manager_user",
+  "section_break_eb1767",
   "section_break_18485f",
   "salary_update_required",
   "current_salary_structure",
   "salary_new_value",
+  "column_break_f9f85b",
   "column_break_6d1cd0",
   "employee_appraisal_required",
   "current_base_salary",
   "base_new_value",
   "employee_appraisal_form",
+  "section_break_6159e6",
   "section_break_b3899f",
   "salary_structure_components",
+  "section_break_04ca7f",
+  "term_changes_required",
+  "employment_terms",
+  "section_break_855019",
   "section_break_5307d1",
   "properties_changes_required",
   "properties",
@@ -35,16 +43,20 @@
   "day_off_terms_required",
   "day_off_category_current_value",
   "day_off_category_new_value",
+  "column_break_9d3cd5",
   "column_break_5f45d8",
   "number_of_days_off_current_value",
   "number_of_days_off_new_value",
+  "section_break_e2abba",
   "section_break_8bc0f8",
   "benefits_changes_required",
   "benefit",
+  "section_break_dea5e3",
   "reason_for_changes_section",
   "reason_for_changes",
   "remarks",
-  "amended_from"
+  "amended_from",
+  "section_break_84793f"
  ],
  "fields": [
   {
@@ -56,7 +68,6 @@
    "fieldname": "employee",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee",
@@ -94,6 +105,10 @@
    "options": "Project"
   },
   {
+   "fieldname": "column_break_6b5e37",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "column_break_a5243e",
    "fieldtype": "Column Break"
   },
@@ -108,25 +123,30 @@
    "fieldname": "effective_date_of_change",
    "fieldtype": "Date",
    "label": "Effective Date of Change",
-   "reqd": 1
+   "reqd": 1,
+   "in_list_view": 1
   },
   {
-   "fetch_from": "employee.reports_to",
+   "fetch_from": "department.custom_department_head",
    "fieldname": "line_manager",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "label": "Line Manager",
-   "options": "Employee",
+   "options": "User",
    "read_only": 1
   },
   {
-   "fetch_from": "line_manager.user_id",
    "fieldname": "line_manager_user",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "label": "Line Manager User",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_eb1767",
+   "fieldtype": "Section Break",
+   "label": "Salary Update"
   },
   {
    "fieldname": "section_break_18485f",
@@ -141,11 +161,10 @@
   },
   {
    "depends_on": "eval:doc.salary_update_required",
-   "fetch_from": "current_base_salary.salary_structure",
    "fieldname": "current_salary_structure",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Salary Structure - Current Details",
-   "options": "Salary Structure Assignment"
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.salary_update_required",
@@ -153,6 +172,10 @@
    "fieldtype": "Link",
    "label": "Salary Structure - New Details",
    "options": "Salary Structure"
+  },
+  {
+   "fieldname": "column_break_f9f85b",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "column_break_6d1cd0",
@@ -167,11 +190,10 @@
   },
   {
    "depends_on": "eval:doc.salary_update_required",
-   "fetch_from": "current_salary_structure.base",
+   "fetch_from": "current_salary_structure_assignment.base",
    "fieldname": "current_base_salary",
-   "fieldtype": "Data",
-   "label": "Base Salary - Current Details",
-   "options": "Salary Structure Assignment"
+   "fieldtype": "Currency",
+   "label": "Base Salary - Current Details"
   },
   {
    "depends_on": "eval:doc.salary_update_required",
@@ -187,6 +209,12 @@
   },
   {
    "depends_on": "eval:doc.salary_update_required",
+   "fieldname": "section_break_6159e6",
+   "fieldtype": "Section Break",
+   "label": "Salary Structure Components"
+  },
+  {
+   "depends_on": "eval:doc.salary_update_required",
    "fieldname": "section_break_b3899f",
    "fieldtype": "Section Break",
    "label": "Salary Structure Components"
@@ -197,6 +225,29 @@
    "fieldtype": "Table",
    "label": "Salary Structure Components",
    "options": "Employee Record Update Request Salary Structure Compone Item"
+  },
+  {
+   "fieldname": "section_break_04ca7f",
+   "fieldtype": "Section Break",
+   "label": "Changes to Update"
+  },
+  {
+   "default": "0",
+   "fieldname": "term_changes_required",
+   "fieldtype": "Check",
+   "label": "Terms Changes Required"
+  },
+  {
+   "depends_on": "eval:doc.term_changes_required",
+   "fieldname": "employment_terms",
+   "fieldtype": "Table",
+   "label": "Employment Terms",
+   "options": "Employee Record Update Request Properties Item"
+  },
+  {
+   "fieldname": "section_break_855019",
+   "fieldtype": "Section Break",
+   "label": "Day Off Terms"
   },
   {
    "fieldname": "section_break_5307d1",
@@ -243,6 +294,10 @@
    "options": "\nMonthly\nWeekly"
   },
   {
+   "fieldname": "column_break_9d3cd5",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "column_break_5f45d8",
    "fieldtype": "Column Break"
   },
@@ -260,6 +315,11 @@
    "fieldtype": "Select",
    "label": "Number of Days Off - New Value",
    "options": "\n1\n2\n3\n4"
+  },
+  {
+   "fieldname": "section_break_e2abba",
+   "fieldtype": "Section Break",
+   "label": "Benefits"
   },
   {
    "fieldname": "section_break_8bc0f8",
@@ -280,6 +340,11 @@
    "options": "Employee Record Update Request Benefits Item"
   },
   {
+   "fieldname": "section_break_dea5e3",
+   "fieldtype": "Section Break",
+   "label": "Reason for Changes"
+  },
+  {
    "fieldname": "reason_for_changes_section",
    "fieldtype": "Section Break",
    "label": "Reason for Changes"
@@ -288,14 +353,13 @@
    "fieldname": "reason_for_changes",
    "fieldtype": "Select",
    "label": "Reason for Changes",
-   "options": "\nIncrement\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits\nOthers",
+   "options": "Increment\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits\nOthers",
    "reqd": 1
   },
   {
    "fieldname": "remarks",
    "fieldtype": "Small Text",
-   "label": "Remarks",
-   "reqd": 1
+   "label": "Remarks"
   },
   {
    "fieldname": "amended_from",
@@ -306,6 +370,11 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "section_break_84793f",
+   "fieldtype": "Section Break",
+   "label": "Employee"
   }
  ],
  "is_submittable": 1,
