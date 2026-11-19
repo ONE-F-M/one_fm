@@ -1,0 +1,155 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-11-19 10:30:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_m7dg",
+  "amended_from",
+  "patrolling_date_and_time",
+  "name_of_security_officer",
+  "email_address",
+  "patrol_shift",
+  "shift_time",
+  "shift_end_time",
+  "accommodation_buildingarea_covered",
+  "floor_number",
+  "condition_of_entryexit_points",
+  "section_break_bzmd",
+  "accommodation_patrolling_checklist"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_m7dg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Accommodation Patrolling",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "patrolling_date_and_time",
+   "fieldtype": "Datetime",
+   "label": "Patrolling Date and Time"
+  },
+  {
+   "fieldname": "name_of_security_officer",
+   "fieldtype": "Link",
+   "label": "Name of Security Officer",
+   "options": "User"
+  },
+  {
+   "fetch_from": "name_of_security_officer.email",
+   "fieldname": "email_address",
+   "fieldtype": "Data",
+   "label": "Email Address"
+  },
+  {
+   "fieldname": "patrol_shift",
+   "fieldtype": "Link",
+   "label": "Patrol Shift",
+   "options": "Shift Type"
+  },
+  {
+   "fetch_from": "patrol_shift.start_time",
+   "fieldname": "shift_time",
+   "fieldtype": "Time",
+   "label": "Shift Start Time"
+  },
+  {
+   "fetch_from": "patrol_shift.end_time",
+   "fieldname": "shift_end_time",
+   "fieldtype": "Time",
+   "label": "Shift End Time"
+  },
+  {
+   "fieldname": "accommodation_buildingarea_covered",
+   "fieldtype": "Link",
+   "label": "Accommodation Building/Area Covered",
+   "options": "Accommodation"
+  },
+  {
+   "fieldname": "floor_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Floor Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "condition_of_entryexit_points",
+   "fieldtype": "Select",
+   "label": "Condition of Entry/Exit Points",
+   "options": "\nSecured\nUnsecured"
+  },
+  {
+   "fieldname": "section_break_bzmd",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "accommodation_patrolling_checklist",
+   "fieldtype": "Table",
+   "label": "Accommodation Patrolling Checklist",
+   "options": "Accommodation Patrolling Checklist"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-11-19 10:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Patrolling",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

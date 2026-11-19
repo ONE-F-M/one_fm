@@ -1,0 +1,114 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-11-19 10:30:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "is_the_corridor_clear",
+  "add_a_picture_of_the_corridor_captured_with_floor_number",
+  "is_the_right_side_stair_clear",
+  "add_a_picture_of_the_right_side_stair",
+  "is_the_left_side_stair_clear",
+  "add_a_picture_of_the_left_side_stair",
+  "number_of_incidents",
+  "observations_and_incidents",
+  "presence_of_unauthorized_persons",
+  "overall_summary_of_patrol",
+  "new_arrivals"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "is_the_corridor_clear",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is the corridor clear",
+   "options": "\nYes\nNo"
+  },
+  {
+   "columns": 1,
+   "fieldname": "add_a_picture_of_the_corridor_captured_with_floor_number",
+   "fieldtype": "Attach Image",
+   "label": "Add a picture of the corridor (captured with floor number)"
+  },
+  {
+   "columns": 1,
+   "fieldname": "is_the_right_side_stair_clear",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is the right side stair clear",
+   "options": "\nYes\nNo"
+  },
+  {
+   "columns": 1,
+   "fieldname": "add_a_picture_of_the_right_side_stair",
+   "fieldtype": "Attach Image",
+   "label": "Add a picture of the right side stair"
+  },
+  {
+   "columns": 1,
+   "fieldname": "is_the_left_side_stair_clear",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is the left side stair clear",
+   "options": "\nYes\nNo"
+  },
+  {
+   "columns": 1,
+   "fieldname": "add_a_picture_of_the_left_side_stair",
+   "fieldtype": "Attach Image",
+   "label": "Add a picture of the left side stair"
+  },
+  {
+   "fieldname": "number_of_incidents",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Number of Incidents",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.number_of_incidents == \"Yes\"",
+   "description": "Briefly describe any incidents, suspicious activities, or damages observed during the patrol.",
+   "fieldname": "observations_and_incidents",
+   "fieldtype": "Small Text",
+   "label": "Observations and Incidents",
+   "mandatory_depends_on": "eval:doc.number_of_incidents == \"Yes\""
+  },
+  {
+   "columns": 2,
+   "fieldname": "presence_of_unauthorized_persons",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Presence of Unauthorized Persons",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "overall_summary_of_patrol",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Overall Summary of Patrol"
+  },
+  {
+   "columns": 2,
+   "fieldname": "new_arrivals",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "New Arrivals",
+   "options": "\nYes\nNo"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-19 10:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Patrolling Checklist",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
