@@ -736,3 +736,4 @@ one_fm.patches.v15_0.add_request_for_quotation_workflow_state
 one_fm.patches.v15_0.move_attendance_approval_lifecycle_to_processa
 one_fm.patches.v15_0.move_request_for_purchase_lifecycle_to_processa
 one_fm.patches.v15_0.delete_poc_check_workflow_and_assignment_rules
+one_fm.patches.v15_0.processa_sync_employee_record_update_request___v1_9c10e5 #2026-11-19 Processa sync: Employee Record Update Request
