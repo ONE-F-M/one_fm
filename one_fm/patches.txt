@@ -736,3 +736,4 @@ one_fm.patches.v15_0.add_request_for_quotation_workflow_state
 one_fm.patches.v15_0.move_attendance_approval_lifecycle_to_processa
 one_fm.patches.v15_0.move_request_for_purchase_lifecycle_to_processa
 one_fm.patches.v15_0.delete_poc_check_workflow_and_assignment_rules
+one_fm.patches.v15_0.route_plan_assignment_standalone #2026-11-19 WI-004736

@@ -1,11 +1,12 @@
 {
  "actions": [],
- "autoname": "hash",
+ "allow_import": 1,
+ "autoname": "format:RPA-{#######}",
  "creation": "2026-05-04 10:00:00.000000",
  "doctype": "DocType",
- "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "route_plan",
   "card_id",
   "transportation_shipment",
   "vehicle",
@@ -41,6 +42,16 @@
  ],
  "fields": [
   {
+   "fieldname": "route_plan",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Route Plan",
+   "options": "Route Plan",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
    "fieldname": "card_id",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -52,7 +63,8 @@
    "fieldname": "transportation_shipment",
    "fieldtype": "Link",
    "label": "Transportation Shipment",
-   "options": "Transportation Shipment"
+   "options": "Transportation Shipment",
+   "search_index": 1
   },
   {
    "fieldname": "vehicle",
@@ -60,7 +72,9 @@
    "in_list_view": 1,
    "label": "Vehicle",
    "options": "Vehicle",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1,
+   "in_standard_filter": 1
   },
   {
    "fetch_from": "vehicle.custom_max_passenger_capacity",
@@ -99,7 +113,9 @@
    "description": "Groups multi-stop blocks into one trip",
    "fieldname": "trip_group",
    "fieldtype": "Data",
-   "label": "Trip Group"
+   "label": "Trip Group",
+   "search_index": 1,
+   "in_standard_filter": 1
   },
   {
    "description": "User-defined name for the trip",
@@ -237,17 +253,59 @@
   }
  ],
  "index_web_pages_for_search": 0,
- "istable": 1,
+ "istable": 0,
  "links": [],
- "modified": "2026-08-17 16:00:00.000000",
+ "modified": "2026-11-19 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Route Plan Assignment",
- "naming_rule": "Random",
+ "naming_rule": "Expression",
  "owner": "Administrator",
- "permissions": [],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "select": 1
+  },
+  {
+   "role": "Transportation Supervisor",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "select": 1
+  },
+  {
+   "role": "Transportation Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "select": 1
+  },
+  {
+   "role": "Operations Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "export": 1,
+   "delete": 1
+  }
+ ],
+ "search_fields": "card_id,trip_name,vehicle",
+ "show_title_field_in_link": 0,
  "sort_field": "creation",
  "sort_order": "ASC",
  "states": [],
+ "title_field": "card_id",
  "track_changes": 0
 }

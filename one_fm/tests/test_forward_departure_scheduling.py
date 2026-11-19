@@ -375,10 +375,9 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 								 limit=1, pluck="name")
 		if not vehicle:
 			self.skipTest("no transport vehicle on this site")
-		doc = frappe.new_doc("Route Plan")
-		doc.title = frappe.generate_hash("RP-LEG", 8)
+		rows = []
 		for index, shipment in enumerate((self.drop, self.collect), start=1):
-			doc.append("assignments", {
+			rows.append(frappe._dict({
 				"card_id": f"TSHIP-{shipment}",
 				"transportation_shipment": shipment,
 				"vehicle": vehicle[0],
@@ -389,9 +388,9 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 				"stop_location": self.site,
 				"start_time": "2026-08-18T05:00:00.000Z",
 				"end_time": "2026-08-18T06:00:00.000Z",
-			})
-		_stamp_leg_details(doc, leg_timings)
-		return doc
+			}))
+		camp_legs = _stamp_leg_details(rows, leg_timings)
+		return frappe._dict(assignments=rows + [frappe._dict(leg) for leg in camp_legs])
 
 	def test_the_camp_the_bus_loads_at_is_a_row_of_its_own(self):
 		# The plan lists every stop of the run, so the table reads like the sheet. The
