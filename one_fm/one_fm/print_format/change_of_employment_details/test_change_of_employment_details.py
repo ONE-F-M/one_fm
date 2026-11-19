@@ -62,16 +62,12 @@ def _text(html):
 	return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html))
 
 
-def _meta_field(*names):
-	meta = frappe.get_meta(DOCTYPE)
-	return next((name for name in names if meta.has_field(name)), names[0])
-
-
-TERMS_FLAG = _meta_field("term_changes_required", "properties_changes_required")
-TERMS_TABLE = _meta_field("employment_terms", "properties")
+TERMS_FLAG = "properties_changes_required"
+TERMS_TABLE = "properties"
 
 
 def _request(**values):
+	"""A request as the template sees it: the fields and child rows, without a database."""
 	data = {
 		"doctype": DOCTYPE,
 		"employee": "HR-EMP-90001",
@@ -81,9 +77,13 @@ def _request(**values):
 		"effective_date_of_change": "2026-04-01",
 	}
 	data.update(values)
-	doc = frappe.get_doc(data)
-	doc.creation = "2026-03-15 09:30:00"
-	return doc
+	data["creation"] = "2026-03-15 09:30:00"
+	return _Request(data)
+
+
+class _Request(frappe._dict):
+	def append(self, table, row):
+		self.setdefault(table, []).append(frappe._dict(row))
 
 
 def _term(doc, name, old, new):
@@ -224,6 +224,18 @@ class TestDayOffTerms(FrappeTestCase):
 
 		self.assertNotIn("Day Off Category", text)
 		self.assertNotIn("Number of Days Off", text)
+
+
+class TestBaFieldNames(FrappeTestCase):
+	def test_the_ba_spelling_of_the_terms_fields_is_read_too(self):
+		doc = _request(term_changes_required=1)
+		doc.append("employment_terms", {"terms": "Probation", "old_value": "3 months", "new_value": "Confirmed"})
+		doc.append("benefit", {"terms": "Car", "description": "Provided by Company"})
+		doc["benefits_changes_required"] = 1
+		text = _text(_render(doc))
+
+		self.assertIn("Probation 3 months Confirmed", text)
+		self.assertIn("Car Provided by Company", text)
 
 
 class TestBenefits(FrappeTestCase):
