@@ -21,19 +21,17 @@ class TestEmployeeRecordUpdateRequestPropertiesItem(FrappeTestCase):
 		self.assertEqual(
 			[(f.fieldname, f.fieldtype) for f in self.meta.fields],
 			[
-				("property", "Select"),
+				("terms", "Link"),
 				("old_value", "Data"),
 				("new_value", "Dynamic Link"),
 				("new_value_doctype", "Link"),
 			],
 		)
 
-	def test_property_select_options(self):
-		field = self.meta.get_field("property")
-		self.assertEqual(
-			field.options,
-			"\nDepartment\nDesignation\nDay Off Category\nNumber of Days Off\nEmployment Type\nReports to",
-		)
+	def test_terms_links_to_record_update_property(self):
+		field = self.meta.get_field("terms")
+		self.assertEqual(field.label, "Terms")
+		self.assertEqual(field.options, "Record Update Property")
 		self.assertEqual(field.reqd, 1)
 		self.assertEqual(field.in_list_view, 1)
 		self.assertEqual(field.columns, 1)
