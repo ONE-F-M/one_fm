@@ -23,6 +23,11 @@ from one_fm.operations.doctype.route_plan.route_plan import (
 	_time_windows_overlap,
 	_trips_share_the_road,
 	_windows_overlap,
+	get_plan_rows,
+	PlanRules,
+)
+from one_fm.operations.doctype.route_plan_assignment.test_route_plan_assignment import (
+	make_route_plan,
 )
 
 DAY = "2026-07-20"
@@ -55,6 +60,35 @@ def pin_three_passenger_seats(vehicle):
 		vehicle,
 		{"seats": 4, "custom_includes_driver_seat": 1, "custom_max_passenger_capacity": 3},
 	)
+
+
+class _PlanUnderTest:
+	"""A plan as these tests build it: rows, and a save that runs the plan-wide rules.
+
+	The rules used to run in Route Plan's own validate; they are PlanRules now, and the
+	rows are Route Plan Assignment records, so this is what "insert the plan" means.
+	"""
+
+	def __init__(self, rows, prefix, effective_from):
+		self.assignments = [frappe._dict(row) for row in rows]
+		self.prefix = prefix
+		self.effective_from = effective_from
+		self.name = None
+
+	def insert(self, ignore_permissions=False):
+		PlanRules(self.assignments).run()
+		self.name = make_route_plan(
+			self.assignments,
+			title=frappe.generate_hash(self.prefix, 8),
+			effective_from=self.effective_from,
+		)
+		return self
+
+	def _rename_duplicate_trip_names(self):
+		PlanRules(self.assignments)._rename_duplicate_trip_names()
+
+	def _logical_trips(self):
+		return PlanRules(self.assignments)._logical_trips()
 
 
 class TestRetentionOverlapLogic(FrappeTestCase):
@@ -208,15 +242,7 @@ class TestRoutePlanRetentionSave(FrappeTestCase):
 		Vehicle links and mandatory checks are skipped so the retention hook — which
 		runs first in the controller validate() — is what the save exercises.
 		"""
-		doc = frappe.new_doc("Route Plan")
-		doc.title = frappe.generate_hash("RP-TEST", 8)
-		doc.status = "Draft"
-		doc.effective_from = DAY
-		for row in rows:
-			doc.append("assignments", row)
-		doc.flags.ignore_mandatory = True
-		doc.flags.ignore_links = True
-		return doc
+		return _PlanUnderTest(rows, "RP-TEST", DAY)
 
 	def test_save_blocks_overlapping_drop_on_retained_vehicle(self):
 		lock = self._make_shipment(1, start="08:00:00", end="14:00:00", source="TRQ-FINGERPRINT")
@@ -280,15 +306,7 @@ class TestRoutePlanDatetimeLockSave(FrappeTestCase):
 		return doc.name
 
 	def _make_plan(self, rows):
-		doc = frappe.new_doc("Route Plan")
-		doc.title = frappe.generate_hash("RP-TEST", 8)
-		doc.status = "Draft"
-		doc.effective_from = today()
-		for row in rows:
-			doc.append("assignments", row)
-		doc.flags.ignore_mandatory = True
-		doc.flags.ignore_links = True
-		return doc
+		return _PlanUnderTest(rows, "RP-TEST", today())
 
 	def _row(self, shipment, vehicle, *, start_iso, end_iso, trip=None):
 		"""A run whose DATE span is the lock lifespan and TIME is the daily trip."""
@@ -408,15 +426,7 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		pin_three_passenger_seats(self.VEHICLE)
 
 	def _make_plan(self, rows):
-		doc = frappe.new_doc("Route Plan")
-		doc.title = frappe.generate_hash("RP-CAP", 8)
-		doc.status = "Draft"
-		doc.effective_from = today()
-		for row in rows:
-			doc.append("assignments", row)
-		doc.flags.ignore_mandatory = True
-		doc.flags.ignore_links = True
-		return doc
+		return _PlanUnderTest(rows, "RP-CAP", today())
 
 	def _row(self, vehicle, *, trip, direction="OUTBOUND", headcount, card=None, stop=None):
 		return {
@@ -727,15 +737,7 @@ class TestRoutePlanTimeWindowCapacitySave(FrappeTestCase):
 		pin_three_passenger_seats(self.VEHICLE)
 
 	def _make_plan(self, rows):
-		doc = frappe.new_doc("Route Plan")
-		doc.title = frappe.generate_hash("RP-TW", 8)
-		doc.status = "Draft"
-		doc.effective_from = today()
-		for row in rows:
-			doc.append("assignments", row)
-		doc.flags.ignore_mandatory = True
-		doc.flags.ignore_links = True
-		return doc
+		return _PlanUnderTest(rows, "RP-TW", today())
 
 	def _row(self, *, trip=None, headcount, start, end, direction="OUTBOUND", day=DAY):
 		return {
@@ -913,15 +915,7 @@ class TestRoutePlanSingleVehicleSave(FrappeTestCase):
 	"""MA4-13 AC2: a journey leg (trip_group + direction) must run on one vehicle."""
 
 	def _make_plan(self, rows):
-		doc = frappe.new_doc("Route Plan")
-		doc.title = frappe.generate_hash("RP-SV", 8)
-		doc.status = "Draft"
-		doc.effective_from = today()
-		for row in rows:
-			doc.append("assignments", row)
-		doc.flags.ignore_mandatory = True
-		doc.flags.ignore_links = True
-		return doc
+		return _PlanUnderTest(rows, "RP-SV", today())
 
 	def test_split_leg_across_vehicles_is_blocked(self):
 		plan = self._make_plan([
@@ -997,26 +991,25 @@ class TestAnUntouchedBusIsNotAWall(FrappeTestCase):
 	"""
 
 	def test_a_vehicle_whose_cards_did_not_move_is_left_alone(self):
-		plan = frappe.new_doc("Route Plan")
-		plan.get_doc_before_save = lambda: frappe._dict(assignments=[
+		plan = PlanRules([], [
 			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-1", stop_index=1,
 						 trip_group="T1", direction="OUTBOUND", headcount=27,
 						 start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z"),
 		])
-		rows = list(plan.get_doc_before_save().assignments)
+		rows = list(plan.before)
 
 		untouched = plan._vehicles_this_save_did_not_touch(plan._logical_trips(rows))
 
 		self.assertIn("BUS-A", untouched)
 
 	def test_a_vehicle_that_gained_a_card_is_judged(self):
-		plan = frappe.new_doc("Route Plan")
+		plan = PlanRules([])
 		before = [
 			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-1", stop_index=1,
 						 trip_group="T1", direction="OUTBOUND", headcount=27,
 						 start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z"),
 		]
-		plan.get_doc_before_save = lambda: frappe._dict(assignments=before)
+		plan.before = before
 		after = before + [
 			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-2", stop_index=2,
 						 trip_group="T1", direction="OUTBOUND", headcount=1,
@@ -1029,7 +1022,7 @@ class TestAnUntouchedBusIsNotAWall(FrappeTestCase):
 
 	def test_a_brand_new_plan_is_judged_in_full(self):
 		# Nothing to grandfather: every card in it is being placed by this save.
-		plan = frappe.new_doc("Route Plan")
+		plan = PlanRules([])
 
 		self.assertEqual(plan._vehicles_this_save_did_not_touch([]), set())
 
@@ -1053,9 +1046,9 @@ class TestOneRunDoesNotBlockAnother(FrappeTestCase):
 		)
 
 	def test_a_run_whose_cards_did_not_move_is_left_alone(self):
-		plan = frappe.new_doc("Route Plan")
+		plan = PlanRules([])
 		before = [self._row("TS-1", "T1", 26, "S-703"), self._row("TS-2", "T2", 4, "S-704")]
-		plan.get_doc_before_save = lambda: frappe._dict(assignments=before)
+		plan.before = before
 
 		untouched = plan._trips_this_save_did_not_touch(plan._logical_trips(list(before)))
 
@@ -1063,9 +1056,9 @@ class TestOneRunDoesNotBlockAnother(FrappeTestCase):
 
 	def test_the_run_that_gained_a_card_is_judged_and_the_other_is_not(self):
 		# The case from the report: one run changes, the overloaded one beside it did not.
-		plan = frappe.new_doc("Route Plan")
+		plan = PlanRules([])
 		before = [self._row("TS-1", "T1", 26, "S-703"), self._row("TS-2", "T2", 4, "S-704")]
-		plan.get_doc_before_save = lambda: frappe._dict(assignments=before)
+		plan.before = before
 		after = before + [self._row("TS-3", "T2", 1, "S-704")]
 
 		untouched = plan._trips_this_save_did_not_touch(plan._logical_trips(after))
@@ -1077,7 +1070,7 @@ class TestOneRunDoesNotBlockAnother(FrappeTestCase):
 		self.assertEqual(len(untouched), 1)
 
 	def test_a_brand_new_plan_grandfathers_nothing(self):
-		plan = frappe.new_doc("Route Plan")
+		plan = PlanRules([])
 
 		self.assertEqual(plan._trips_this_save_did_not_touch([]), set())
 
@@ -1135,18 +1128,18 @@ class TestTheOverloadMessageNamesTheRun(FrappeTestCase):
 	"""
 
 	def test_the_trip_name_is_read_off_the_rows(self):
-		plan = frappe.new_doc("Route Plan")
+		plan = PlanRules([])
 		trip = frappe._dict(rows=[frappe._dict(trip_name=None), frappe._dict(trip_name="S-703")])
 
 		self.assertEqual(plan._trip_label(trip), "S-703")
 
 	def test_a_run_with_no_name_still_reports(self):
-		plan = frappe.new_doc("Route Plan")
+		plan = PlanRules([])
 
 		self.assertEqual(plan._trip_label(frappe._dict(rows=[frappe._dict(trip_name=None)])), "")
 
 	def test_the_message_carries_the_name(self):
-		plan = frappe.new_doc("Route Plan")
+		plan = PlanRules([])
 		with self.assertRaises(frappe.ValidationError) as cm:
 			plan._throw_capacity_exceeded("VHL-L-0013", "OUTBOUND", 26, 22, "S-703")
 
@@ -1156,7 +1149,7 @@ class TestTheOverloadMessageNamesTheRun(FrappeTestCase):
 		self.assertIn("short 4", str(cm.exception))
 
 	def test_an_unnamed_run_still_reads_as_a_sentence(self):
-		plan = frappe.new_doc("Route Plan")
+		plan = PlanRules([])
 		with self.assertRaises(frappe.ValidationError) as cm:
 			plan._throw_capacity_exceeded("VHL-L-0013", "RETURN", 26, 22, None)
 
@@ -1199,15 +1192,7 @@ class TestSequentialRunsAreWeighedSeparately(FrappeTestCase):
 		}
 
 	def _plan(self, rows):
-		doc = frappe.new_doc("Route Plan")
-		doc.title = frappe.generate_hash("RP-SEQ", 8)
-		doc.status = "Draft"
-		doc.effective_from = today()
-		for row in rows:
-			doc.append("assignments", row)
-		doc.flags.ignore_mandatory = True
-		doc.flags.ignore_links = True
-		return doc
+		return _PlanUnderTest(rows, "RP-SEQ", today())
 
 	def test_two_sequential_runs_are_not_added_together(self):
 		# The AC's own numbers, scaled to a 3-seat bus: an early run of 1 and a later
@@ -1268,8 +1253,7 @@ class TestRenumberedStopsDoNotUnprotectAnUntouchedBus(FrappeTestCase):
 		]
 
 	def test_the_same_cards_under_different_stop_numbers_read_as_untouched(self):
-		plan = frappe.new_doc("Route Plan")
-		plan.get_doc_before_save = lambda: frappe._dict(assignments=self._rows(first_index=2))
+		plan = PlanRules([], self._rows(first_index=2))
 
 		# The identical placement, renumbered from 1 the way the canvas sends it back.
 		untouched = plan._vehicles_this_save_did_not_touch(
@@ -1279,8 +1263,7 @@ class TestRenumberedStopsDoNotUnprotectAnUntouchedBus(FrappeTestCase):
 		self.assertIn("BUS-A", untouched)
 
 	def test_a_card_that_actually_moved_is_still_judged(self):
-		plan = frappe.new_doc("Route Plan")
-		plan.get_doc_before_save = lambda: frappe._dict(assignments=self._rows(first_index=1))
+		plan = PlanRules([], self._rows(first_index=1))
 		moved = self._rows(first_index=1)
 		moved[1].vehicle = "BUS-B"
 
@@ -1301,15 +1284,7 @@ class TestATripNameNamesOneRun(FrappeTestCase):
 	"""
 
 	def _plan(self, rows):
-		doc = frappe.new_doc("Route Plan")
-		doc.title = frappe.generate_hash("RP-NAME", 8)
-		doc.status = "Draft"
-		doc.effective_from = today()
-		for row in rows:
-			doc.append("assignments", row)
-		doc.flags.ignore_mandatory = True
-		doc.flags.ignore_links = True
-		return doc
+		return _PlanUnderTest(rows, "RP-NAME", today())
 
 	def _row(self, *, vehicle="BUS-A", trip, name, start, end="23:00:00"):
 		return {
@@ -1442,7 +1417,7 @@ class TestATripNameNamesOneRun(FrappeTestCase):
 		])
 
 		doc.insert(ignore_permissions=True)
-		stored = frappe.get_doc("Route Plan", doc.name)
+		stored = get_plan_rows(doc.name)
 
 		# The lane's series depends on the vehicle's row on this site's board, so read
 		# it rather than assuming the row.
@@ -1451,7 +1426,7 @@ class TestATripNameNamesOneRun(FrappeTestCase):
 		)
 
 		series = canvas_trip_series().get(vehicle)
-		names = [row.trip_name for row in stored.assignments]
+		names = [row.trip_name for row in stored]
 		self.assertEqual(len(set(names)), 2)
 		if series:
 			self.assertTrue(all(name.startswith(series) for name in names), names)
@@ -1470,15 +1445,7 @@ class TestRoutePlanTripSeries(FrappeTestCase):
 	PATCH = "one_fm.operations.doctype.route_plan.route_plan._canvas_series"
 
 	def _plan(self, rows):
-		doc = frappe.new_doc("Route Plan")
-		doc.title = frappe.generate_hash("RP-SERIES", 8)
-		doc.status = "Draft"
-		doc.effective_from = today()
-		for row in rows:
-			doc.append("assignments", row)
-		doc.flags.ignore_mandatory = True
-		doc.flags.ignore_links = True
-		return doc
+		return _PlanUnderTest(rows, "RP-SERIES", today())
 
 	def _row(self, *, vehicle="V9", trip, name, start="05:30:00", end="06:30:00",
 			 direction="OUTBOUND", camp_leg=0, headcount=1):
