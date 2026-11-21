@@ -178,46 +178,54 @@ class TestSaveAssignmentsSurvivesAConcurrentWriter(FrappeTestCase):
 	def _rows(self):
 		return frappe.get_all(
 			"Route Plan Assignment",
-			filters={"parent": self.plan},
+			filters={"route_plan": self.plan},
 			fields=["card_id"],
 			order_by="idx",
 		)
 
 	def test_the_removal_persists_when_another_save_committed_first(self):
-		self._save([
-			{"cardId": "CARD-A", "vehicleId": "V-1", "direction": "OUTBOUND"},
-			{"cardId": "CARD-B", "vehicleId": "V-1", "direction": "OUTBOUND"},
-		])
+		vehicle = frappe.get_all("Vehicle", limit=1, pluck="name")
+		if not vehicle:
+			self.skipTest("no Vehicle on this site")
+
+		def card(card_id, start):
+			return {"cardId": card_id, "vehicleId": vehicle[0], "direction": "OUTBOUND",
+					"start": f"2026-08-18T{start}:00.000Z", "end": "2026-08-18T09:00:00.000Z"}
+
+		self._save([card("CARD-A", "06:00"), card("CARD-B", "07:00")])
+		row_a = frappe.db.get_value("Route Plan Assignment",
+									{"route_plan": self.plan, "card_id": "CARD-A"}, "name")
+
+		from one_fm.operations.doctype.route_plan import route_plan
 
 		real_get_doc = frappe.get_doc
+		real_apply = route_plan.apply_plan_changes
 		interfered = []
-		reads = []
+		attempts = []
 
 		def get_doc_then_interfere(*args, **kwargs):
 			doc = real_get_doc(*args, **kwargs)
-			# save_assignments' own read of the plan. Frappe makes a second, locking
-			# read inside save() (load_doc_before_save) - that one is the conflict
-			# check, not an attempt, so it is not counted.
-			if args and args[0] == "Route Plan" and not kwargs.get("for_update"):
-				reads.append(args[1])
-			if args and args[0] == "Route Plan" and not interfered:
+			if args[:2] == ("Route Plan Assignment", row_a) and not interfered:
 				interfered.append(True)
-				# Somebody else's save lands between this read and our save, exactly
-				# as it did on 2026-09-10: `modified` moves and this copy is stale.
-				frappe.db.set_value("Route Plan", self.plan, "last_modified_by_user",
-									"Administrator")
+				# Somebody else's save lands on the same record between this read and our
+				# save: its `modified` moves and this copy is stale.
+				frappe.db.set_value("Route Plan Assignment", row_a, "buffer_minutes", 9)
 			return doc
 
+		def counted_apply(*args, **kwargs):
+			attempts.append(1)
+			return real_apply(*args, **kwargs)
+
 		frappe.local.message_log = []
-		with patch.object(frappe, "get_doc", side_effect=get_doc_then_interfere):
-			result = self._save([
-				{"cardId": "CARD-A", "vehicleId": "V-1", "direction": "OUTBOUND"},
-			])
+		with patch.object(frappe, "get_doc", side_effect=get_doc_then_interfere), \
+			patch.object(route_plan, "apply_plan_changes", side_effect=counted_apply):
+			# CARD-A is retimed and CARD-B taken off the lane.
+			result = self._save([card("CARD-A", "06:30")])
 
 		self.assertTrue(interfered, "the test never simulated a competing save")
-		# Two reads of the plan means the first save really was rejected and replayed.
-		# Without this the test would still pass if the conflict never fired at all.
-		self.assertEqual(len(reads), 2, f"expected one replay, plan was read {len(reads)}x")
+		# Two attempts means the first save really was rejected and replayed. Without
+		# this the test would still pass if the conflict never fired at all.
+		self.assertEqual(len(attempts), 2, f"expected one replay, saved {len(attempts)}x")
 		self.assertEqual(result["status"], "ok")
 		# The board asked for one card on the lane, and one card is what is stored -
 		# the removal was not lost and no reload was needed to make it stick (AC2).
