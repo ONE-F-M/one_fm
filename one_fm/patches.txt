@@ -740,3 +740,4 @@ one_fm.patches.v15_0.delete_poc_check_workflow_and_assignment_rules
 one_fm.patches.v15_0.route_plan_assignment_standalone #2026-11-19 WI-004736
 one_fm.patches.v15_0.delete_accommodation_inspection #2026-11-18
 one_fm.patches.v15_0.processa_sync_employee_record_update_request___v1_9c10e5 #2026-11-19 Processa sync: Employee Record Update Request
+one_fm.patches.v15_0.sync_employee_record_update_request_with_ba
