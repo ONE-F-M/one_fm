@@ -1,0 +1,137 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-11-19 11:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "is_the_room_floor_neat_and_clean",
+  "is_the_room_organized",
+  "are_the_room_lights_working",
+  "is_the_ac_vent_clean_and_uncovered",
+  "is_the_room_ceiling_neat_and_clean",
+  "are_there_any_hangings_on_the_wall_ceiling_or_bed_frames",
+  "which_bed_is_not_organized_properly",
+  "upload_a_photo_of_beds_1_and_2",
+  "upload_a_photo_of_beds_3_and_4",
+  "upload_a_photo_of_beds_5_and_6",
+  "upload_a_photo_of_the_room",
+  "write_any_additional_comments_if_any"
+ ],
+ "fields": [
+  {
+   "fieldname": "is_the_room_floor_neat_and_clean",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is the room floor neat and clean?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "is_the_room_organized",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is the room organized?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "are_the_room_lights_working",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Are the room lights working?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "is_the_ac_vent_clean_and_uncovered",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is the AC vent clean and uncovered?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "is_the_room_ceiling_neat_and_clean",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is the room ceiling neat and clean?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "are_there_any_hangings_on_the_wall_ceiling_or_bed_frames",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Are there any hangings on the wall, ceiling or bed frames?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "which_bed_is_not_organized_properly",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Which Bed is not organized properly",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "upload_a_photo_of_beds_1_and_2",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Upload a photo of beds 1 and 2",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "upload_a_photo_of_beds_3_and_4",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Upload a photo of beds 3 and 4",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "upload_a_photo_of_beds_5_and_6",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Upload a photo of beds 5 and 6",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "upload_a_photo_of_the_room",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Upload a photo of the room",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "write_any_additional_comments_if_any",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Write any Additional comments if any",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-19 11:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Room Cleaning Checklist",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
