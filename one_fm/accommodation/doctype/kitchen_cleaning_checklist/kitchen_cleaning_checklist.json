@@ -1,0 +1,82 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-11-19 11:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "is_the_kitchen_clean",
+  "is_the_kitchen_exhaust_fan_working",
+  "are_the_kitchen_lights_working",
+  "is_the_kitchen_ceiling_clean",
+  "mention_any_damages_in_the_kitchen",
+  "upload_a_photo_of_the_kitchen"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "is_the_kitchen_clean",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is the kitchen clean?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "is_the_kitchen_exhaust_fan_working",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is the kitchen exhaust fan working?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "are_the_kitchen_lights_working",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Are the kitchen lights working?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "is_the_kitchen_ceiling_clean",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is the kitchen ceiling clean?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "mention_any_damages_in_the_kitchen",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Mention any damages in the kitchen",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "upload_a_photo_of_the_kitchen",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Upload a photo of the kitchen",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-19 11:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Kitchen Cleaning Checklist",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

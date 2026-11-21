@@ -1,0 +1,82 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-11-19 11:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "is_the_bathrooms_neat_and_clean",
+  "is_the_light_working",
+  "is_the_exhaust_fans_are_working",
+  "is_the_ceiling_neat_and_clean",
+  "upload_a_photo_of_bathroom_1",
+  "write_comments_if_any"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "is_the_bathrooms_neat_and_clean",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is the bathrooms neat and clean?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "is_the_light_working",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is the light working?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "is_the_exhaust_fans_are_working",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is the exhaust fans are working?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "is_the_ceiling_neat_and_clean",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Is the ceiling neat and clean?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "upload_a_photo_of_bathroom_1",
+   "fieldtype": "Attach",
+   "in_standard_filter": 1,
+   "label": "Upload a photo of bathroom 1",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "write_comments_if_any",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Write comments if any",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-19 11:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Bathroom Cleaning Checklist",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
