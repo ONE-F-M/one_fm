@@ -20,12 +20,13 @@ class TestEmployeeRecordUpdateRequestBenefitsItem(FrappeTestCase):
 	def test_field_list(self):
 		self.assertEqual(
 			[(f.fieldname, f.fieldtype) for f in self.meta.fields],
-			[("property", "Select"), ("description", "Select")],
+			[("terms", "Select"), ("description", "Select")],
 		)
 
-	def test_property_select_options(self):
-		field = self.meta.get_field("property")
-		self.assertEqual(field.options, "\nHealth Insurance\nAccommodation\nTransportation\nCar")
+	def test_terms_select_options(self):
+		field = self.meta.get_field("terms")
+		self.assertEqual(field.label, "Terms")
+		self.assertEqual(field.options, "\nHealth Insurance\nAccommodation\nTransportation\nCompany Car")
 		self.assertEqual(field.reqd, 1)
 		self.assertEqual(field.in_list_view, 1)
 
