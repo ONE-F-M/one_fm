@@ -253,13 +253,14 @@ class TestEmployeeRecordUpdateRequest(FrappeTestCase):
 		doc = make_request(employee, effective_date_of_change=None)
 		self.assertRaises(frappe.MandatoryError, doc.insert, ignore_permissions=True)
 
-	def test_missing_reason_for_changes_raises_mandatory_error(self):
+	def test_reason_for_changes_defaults_to_first_option(self):
+		# BA's Select has no blank first option, so Frappe fills "Increment".
 		employee = get_test_employee()
 		if not employee:
 			self.skipTest("Need at least 1 active employee for this test.")
 
-		doc = make_request(employee, reason_for_changes=None)
-		self.assertRaises(frappe.MandatoryError, doc.insert, ignore_permissions=True)
+		doc = make_request(employee, reason_for_changes=None).insert(ignore_permissions=True)
+		self.assertEqual(doc.reason_for_changes, "Increment")
 
 	def test_user_without_hr_roles_cannot_create(self):
 		employee = get_test_employee()
@@ -432,7 +433,7 @@ class TestDepartmentAccess(FrappeTestCase):
 		cls.it_a = make_employee("erur_it_a@example.com", company=company, department=cls.it_department)
 		cls.it_b = make_employee("erur_it_b@example.com", company=company, department=cls.it_department)
 		cls.hr_x = make_employee("erur_hr_x@example.com", company=company, department=cls.hr_department)
-		cls.no_dept = make_employee("erur_no_dept@example.com", company=company)
+		cls.no_dept = make_employee("erur_no_dept@example.com", company=company, department=cls.it_department)
 		frappe.db.set_value("Employee", cls.no_dept.name, "department", None)
 		cls.hr_user = cls.make_user("erur_hr_user@example.com", "HR User")
 		cls.hr_manager = cls.make_user("erur_hr_manager@example.com", "HR Manager")
@@ -562,7 +563,7 @@ class TestSyncWithBAPatch(FrappeTestCase):
 		table = frappe.qb.DocType(doctype)
 		query = frappe.qb.update(table).where(table.name == name)
 		for field, value in values.items():
-			query = query.set(table.field(field), value)
+			query = query.set(getattr(table, field), value)
 		query.run()
 
 	def run_patch(self):
