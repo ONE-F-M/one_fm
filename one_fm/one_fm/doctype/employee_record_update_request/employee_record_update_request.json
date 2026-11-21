@@ -6,61 +6,51 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "section_break_a50a2b",
+  "section_break_9abb4e",
   "employee",
   "employee_name",
   "designation",
   "department",
   "project_allocation",
-  "column_break_6b5e37",
-  "column_break_a5243e",
+  "column_break_82f0b6",
   "workflow_state",
   "effective_date_of_change",
   "line_manager",
   "line_manager_user",
-  "section_break_eb1767",
-  "section_break_18485f",
+  "reports_to",
+  "reports_to_user",
+  "section_break_4689e9",
   "salary_update_required",
   "current_salary_structure",
   "salary_new_value",
-  "column_break_f9f85b",
-  "column_break_6d1cd0",
+  "column_break_046288",
   "employee_appraisal_required",
   "current_base_salary",
   "base_new_value",
   "employee_appraisal_form",
-  "section_break_6159e6",
-  "section_break_b3899f",
+  "section_break_2cdcbe",
   "salary_structure_components",
-  "section_break_04ca7f",
+  "section_break_0d996c",
   "term_changes_required",
   "employment_terms",
-  "section_break_855019",
-  "section_break_5307d1",
-  "properties_changes_required",
-  "properties",
-  "section_break_6048f4",
+  "section_break_feb55e",
   "day_off_terms_required",
   "day_off_category_current_value",
   "day_off_category_new_value",
-  "column_break_9d3cd5",
-  "column_break_5f45d8",
+  "column_break_1ee87f",
   "number_of_days_off_current_value",
   "number_of_days_off_new_value",
-  "section_break_e2abba",
-  "section_break_8bc0f8",
+  "section_break_f71ff7",
   "benefits_changes_required",
   "benefit",
-  "section_break_dea5e3",
-  "reason_for_changes_section",
+  "section_break_bf2b31",
   "reason_for_changes",
   "remarks",
-  "amended_from",
-  "section_break_84793f"
+  "amended_from"
  ],
  "fields": [
   {
-   "fieldname": "section_break_a50a2b",
+   "fieldname": "section_break_9abb4e",
    "fieldtype": "Section Break",
    "label": "Employee"
   },
@@ -105,11 +95,7 @@
    "options": "Project"
   },
   {
-   "fieldname": "column_break_6b5e37",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_a5243e",
+   "fieldname": "column_break_82f0b6",
    "fieldtype": "Column Break"
   },
   {
@@ -122,9 +108,9 @@
   {
    "fieldname": "effective_date_of_change",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Effective Date of Change",
-   "reqd": 1,
-   "in_list_view": 1
+   "reqd": 1
   },
   {
    "fetch_from": "department.custom_department_head",
@@ -144,12 +130,26 @@
    "read_only": 1
   },
   {
-   "fieldname": "section_break_eb1767",
-   "fieldtype": "Section Break",
-   "label": "Salary Update"
+   "depends_on": "eval:doc.reports_to",
+   "fetch_from": "employee.reports_to",
+   "fieldname": "reports_to",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "ignore_user_permissions": 1,
+   "label": "Reports To",
+   "options": "Employee",
+   "read_only": 1
   },
   {
-   "fieldname": "section_break_18485f",
+   "fetch_from": "reports_to.user_id",
+   "fieldname": "reports_to_user",
+   "fieldtype": "Link",
+   "label": "Reports To User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_4689e9",
    "fieldtype": "Section Break",
    "label": "Salary Update"
   },
@@ -174,11 +174,7 @@
    "options": "Salary Structure"
   },
   {
-   "fieldname": "column_break_f9f85b",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_6d1cd0",
+   "fieldname": "column_break_046288",
    "fieldtype": "Column Break"
   },
   {
@@ -209,13 +205,7 @@
   },
   {
    "depends_on": "eval:doc.salary_update_required",
-   "fieldname": "section_break_6159e6",
-   "fieldtype": "Section Break",
-   "label": "Salary Structure Components"
-  },
-  {
-   "depends_on": "eval:doc.salary_update_required",
-   "fieldname": "section_break_b3899f",
+   "fieldname": "section_break_2cdcbe",
    "fieldtype": "Section Break",
    "label": "Salary Structure Components"
   },
@@ -227,7 +217,7 @@
    "options": "Employee Record Update Request Salary Structure Compone Item"
   },
   {
-   "fieldname": "section_break_04ca7f",
+   "fieldname": "section_break_0d996c",
    "fieldtype": "Section Break",
    "label": "Changes to Update"
   },
@@ -245,30 +235,7 @@
    "options": "Employee Record Update Request Properties Item"
   },
   {
-   "fieldname": "section_break_855019",
-   "fieldtype": "Section Break",
-   "label": "Day Off Terms"
-  },
-  {
-   "fieldname": "section_break_5307d1",
-   "fieldtype": "Section Break",
-   "label": "Changes to Update"
-  },
-  {
-   "default": "0",
-   "fieldname": "properties_changes_required",
-   "fieldtype": "Check",
-   "label": "Properties Changes Required"
-  },
-  {
-   "depends_on": "eval:doc.properties_changes_required==1",
-   "fieldname": "properties",
-   "fieldtype": "Table",
-   "label": "Properties",
-   "options": "Employee Record Update Request Properties Item"
-  },
-  {
-   "fieldname": "section_break_6048f4",
+   "fieldname": "section_break_feb55e",
    "fieldtype": "Section Break",
    "label": "Day Off Terms"
   },
@@ -294,11 +261,7 @@
    "options": "\nMonthly\nWeekly"
   },
   {
-   "fieldname": "column_break_9d3cd5",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_5f45d8",
+   "fieldname": "column_break_1ee87f",
    "fieldtype": "Column Break"
   },
   {
@@ -317,12 +280,7 @@
    "options": "\n1\n2\n3\n4"
   },
   {
-   "fieldname": "section_break_e2abba",
-   "fieldtype": "Section Break",
-   "label": "Benefits"
-  },
-  {
-   "fieldname": "section_break_8bc0f8",
+   "fieldname": "section_break_f71ff7",
    "fieldtype": "Section Break",
    "label": "Benefits"
   },
@@ -340,12 +298,7 @@
    "options": "Employee Record Update Request Benefits Item"
   },
   {
-   "fieldname": "section_break_dea5e3",
-   "fieldtype": "Section Break",
-   "label": "Reason for Changes"
-  },
-  {
-   "fieldname": "reason_for_changes_section",
+   "fieldname": "section_break_bf2b31",
    "fieldtype": "Section Break",
    "label": "Reason for Changes"
   },
@@ -370,16 +323,11 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
-  },
-  {
-   "fieldname": "section_break_84793f",
-   "fieldtype": "Section Break",
-   "label": "Employee"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-16 12:00:00.000000",
+ "modified": "2026-11-21 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Employee Record Update Request",
@@ -422,7 +370,9 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "select": 1,
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
