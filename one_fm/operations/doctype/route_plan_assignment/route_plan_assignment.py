@@ -6,7 +6,14 @@ from frappe.model.document import Document
 
 
 class RoutePlanAssignment(Document):
-	pass
+	def validate(self):
+		# The board save judges the whole set it writes and flags each record it has
+		# checked; anything else (the Desk form, Data Import) is judged here, one record
+		# at a time, against the same plan-wide rules.
+		if not self.flags.plan_checked:
+			from one_fm.operations.doctype.route_plan.route_plan import check_plan_rows
+
+			check_plan_rows(self.route_plan, [self])
 
 
 def on_doctype_update():
