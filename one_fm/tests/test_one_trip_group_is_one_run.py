@@ -22,6 +22,19 @@ ROUTE_PLAN = pathlib.Path(frappe.get_app_path(
 ))
 
 
+class _Plan:
+	"""A saved plan whose rows are read back from its records."""
+
+	def __init__(self, name):
+		self.name = name
+		self.reload()
+
+	def reload(self):
+		from one_fm.operations.doctype.route_plan.route_plan import get_plan_rows
+
+		self.assignments = get_plan_rows(self.name)
+
+
 class TestOneTripGroupIsOneRun(FrappeTestCase):
 	def setUp(self):
 		self.source = CANVAS.read_text()
@@ -177,13 +190,14 @@ class TestMarkUnflaggedMixedTripsPatch(FrappeTestCase):
 
 	def _plan(self, *legs):
 		"""One run on one vehicle; each leg is (direction, shipment)."""
+		from one_fm.operations.doctype.route_plan_assignment.test_route_plan_assignment import (
+			make_route_plan,
+		)
+
 		group = frappe.generate_hash("RUN", 8)
-		doc = frappe.new_doc("Route Plan")
-		doc.title = frappe.generate_hash("RP-MIX", 8)
-		doc.status = "Draft"
-		doc.effective_from = today()
+		rows = []
 		for index, (direction, shipment) in enumerate(legs, start=1):
-			doc.append("assignments", {
+			rows.append({
 				"card_id": f"TSHIP-{shipment}",
 				"transportation_shipment": shipment,
 				"vehicle": self.VEHICLE,
@@ -193,10 +207,7 @@ class TestMarkUnflaggedMixedTripsPatch(FrappeTestCase):
 				"stop_index": index,
 				"headcount": 1,
 			})
-		doc.flags.ignore_mandatory = True
-		doc.flags.ignore_links = True
-		doc.insert(ignore_permissions=True)
-		return doc
+		return _Plan(make_route_plan(rows, title=frappe.generate_hash("RP-MIX", 8)))
 
 	def _read(self, name):
 		return frappe.db.get_value(

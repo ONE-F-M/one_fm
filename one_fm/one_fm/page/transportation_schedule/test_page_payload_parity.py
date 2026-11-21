@@ -215,8 +215,7 @@ class TestManifestPayloadParity(FrappeTestCase):
 		"""Run the page builder for one vehicle against ``manifest``. Returns the result
 		and a log of the lookups made."""
 		employees = EMPLOYEES if employees is None else employees
-		plan = frappe._dict(name="PLAN-1", title="Plan", assignments=[])
-		plan.check_permission = lambda *_a, **_k: None
+		plan = frappe._dict(name="PLAN-1", title="Plan")
 		real_get_all = frappe.get_all
 		real_get_value = frappe.db.get_value
 		log = {"get_all": [], "get_value": []}
@@ -246,20 +245,23 @@ class TestManifestPayloadParity(FrappeTestCase):
 			return real_get_all(doctype, *args, **kwargs)
 
 		def fake_get_value(doctype, *args, **kwargs):
+			if doctype == "Route Plan":
+				# The plan header; the rows come from get_plan_rows below.
+				return plan
 			log["get_value"].append(doctype)
 			return real_get_value(doctype, *args, **kwargs)
 
 		real_get_doc = frappe.get_doc
 
 		def fake_get_doc(doctype, *args, **kwargs):
-			if doctype == "Route Plan":
-				return plan
 			if doctype == "Transportation Manifest":
 				return manifest
 			return real_get_doc(doctype, *args, **kwargs)
 
 		with patch.object(_ts, "_route_plan_exists", return_value=True), \
 			patch.object(_ts.frappe, "get_doc", side_effect=fake_get_doc), \
+			patch.object(_ts.frappe, "has_permission", return_value=True), \
+			patch.object(_ts, "get_plan_rows", return_value=[_plan_row()]), \
 			patch.object(_ts, "card_rows", return_value=[_plan_row()]), \
 			patch.object(_ts, "_local_seconds", return_value=6 * 3600 + 30 * 60), \
 			patch.object(_ts, "_inherit_trip_identity", return_value=False), \

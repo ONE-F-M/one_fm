@@ -23,13 +23,13 @@ def execute():
 	rows = frappe.get_all(
 		"Route Plan Assignment",
 		filters={"trip_group": ["!=", ""]},
-		fields=["name", "parent", "vehicle", "trip_group", "direction", "transportation_shipment"],
+		fields=["name", "route_plan", "vehicle", "trip_group", "direction", "transportation_shipment"],
 	)
 
 	runs = defaultdict(list)
 	for row in rows:
 		if row.vehicle and row.trip_group:
-			runs[(row.parent, row.vehicle, row.trip_group)].append(row)
+			runs[(row.route_plan, row.vehicle, row.trip_group)].append(row)
 
 	repaired = 0
 	for run in runs.values():

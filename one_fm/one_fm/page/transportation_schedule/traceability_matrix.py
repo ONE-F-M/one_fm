@@ -211,9 +211,9 @@ def _placements(plan) -> dict:
 
 	assignments = frappe.get_all(
 		"Route Plan Assignment",
-		filters={"parent": plan, "parenttype": "Route Plan", "is_camp_leg": 0},
+		filters={"route_plan": plan, "is_camp_leg": 0},
 		fields=["transportation_shipment", "card_id", "vehicle", "trip_name", "direction"],
-		order_by="idx asc",
+		order_by="idx asc, creation asc",
 	)
 	vehicle_names = list({a.vehicle for a in assignments if a.vehicle})
 	vehicles = {}
@@ -530,22 +530,22 @@ def _rider(emp, accommodation, stop_location, scope, on_date) -> dict:
 def _vehicle_load(shipment: str) -> dict:
 	"""The busiest vehicle the card is placed on: ``{vehicle, limit, load}``, load as it is now."""
 	from one_fm.operations.doctype.route_plan.route_plan import (
+		PlanRules,
 		_passenger_limits,
 		_peak_concurrent_headcount,
 		_trip_occupancy,
+		get_plan_rows,
 	)
 
 	worst = {}
-	plans = {}
 	for row in frappe.get_all(
 		"Route Plan Assignment",
-		filters={"transportation_shipment": shipment, "parenttype": "Route Plan", "is_camp_leg": 0},
-		fields=["parent", "vehicle"],
+		filters={"transportation_shipment": shipment, "route_plan": ["is", "set"], "is_camp_leg": 0},
+		fields=["route_plan", "vehicle"],
 	):
 		if not row.vehicle:
 			continue
-		plan = plans.setdefault(row.parent, frappe.get_doc("Route Plan", row.parent))
-		trips = plan._logical_trips([r for r in plan.assignments if r.vehicle == row.vehicle])
+		trips = PlanRules(get_plan_rows(row.route_plan, vehicles=[row.vehicle]))._logical_trips()
 		load = max([_peak_concurrent_headcount(trips)] + [_trip_occupancy(t) for t in trips])
 		if load >= worst.get("load", -1):
 			worst = {
@@ -687,16 +687,16 @@ def _refuse_other_plan(names, plan) -> None:
 	"""A card placed on another plan is released from that plan's canvas, not here."""
 	placed = frappe.get_all(
 		"Route Plan Assignment",
-		filters={"parenttype": "Route Plan", "parent": ["!=", plan or ""]},
+		filters=[["route_plan", "is", "set"], ["route_plan", "!=", plan or ""]],
 		or_filters={
 			"transportation_shipment": ["in", names],
 			"card_id": ["in", [f"TSHIP-{n}" for n in names]],
 		},
-		fields=["parent"],
+		fields=["route_plan"],
 		limit_page_length=1,
 	)
 	if placed:
-		frappe.throw(_("Open plan {0} to cancel this card.").format(placed[0].parent))
+		frappe.throw(_("Open plan {0} to cancel this card.").format(placed[0].route_plan))
 
 
 def _remove_riders(doc, employees, reason) -> list:

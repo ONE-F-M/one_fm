@@ -874,8 +874,8 @@ class TestManifestDataRestrictFlag(FrappeTestCase):
 	"""get_manifest_data_for_plan tells the client whether the reliever list is Rambo-only."""
 
 	def _manifest_data(self, flag):
-		plan = frappe._dict(name="PLAN-1", title="Plan", assignments=[])
-		plan.check_permission = lambda *_a, **_k: None
+		plan = frappe._dict(name="PLAN-1", title="Plan")
+		real_get_value = _ts.frappe.db.get_value
 		row = frappe._dict(
 			vehicle=None, shift=None, transportation_shipment=None, card_id="C1",
 			direction="OUTBOUND", accommodation="ACC", stop_location="STOP",
@@ -884,8 +884,10 @@ class TestManifestDataRestrictFlag(FrappeTestCase):
 			buffer_minutes=0, origin_location=None,
 		)
 		with patch.object(_ts, "_route_plan_exists", return_value=True), \
-			patch.object(_ts.frappe, "get_doc", return_value=plan), \
-			patch.object(_ts, "card_rows", return_value=[row]), \
+			patch.object(_ts.frappe.db, "get_value", side_effect=lambda doctype, *a, **k: (
+				plan if doctype == "Route Plan" else real_get_value(doctype, *a, **k))), \
+			patch.object(_ts.frappe, "has_permission", return_value=True), \
+			patch.object(_ts, "get_plan_rows", return_value=[row]), \
 			patch.object(_ts, "get_route_planner_data", return_value={"status": "error"}), \
 			patch.object(_ts.frappe.db, "get_single_value", return_value=flag) as setting:
 			result = _ts.get_manifest_data_for_plan("PLAN-1")

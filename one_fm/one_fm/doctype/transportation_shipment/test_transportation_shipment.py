@@ -400,19 +400,15 @@ class TestShipmentExpiry(SchedulerEntryPointTestCase):
 
 	def _assign_to_plan(self, shipment, *, start_iso, end_iso):
 		"""Place a shipment on a throwaway Route Plan with a lock window."""
-		doc = frappe.new_doc("Route Plan")
-		doc.title = frappe.generate_hash("RP-EXP", 8)
-		doc.status = "Draft"
-		doc.effective_from = "2026-07-01"
-		doc.append("assignments", {
+		from one_fm.operations.doctype.route_plan_assignment.test_route_plan_assignment import (
+			make_route_plan,
+		)
+
+		return make_route_plan([{
 			"card_id": f"TSHIP-{shipment}", "transportation_shipment": shipment,
 			"vehicle": "VHL-0005", "direction": "OUTBOUND",
 			"start_time": start_iso, "end_time": end_iso,
-		})
-		doc.flags.ignore_mandatory = True
-		doc.flags.ignore_links = True
-		doc.insert(ignore_permissions=True)
-		return doc.name
+		}], title=frappe.generate_hash("RP-EXP", 8), effective_from="2026-07-01")
 
 	def test_assigned_expires_on_edited_lock_end_not_to_date(self):
 		# Dispatcher SHORTENED the lock: to_date is still in the future, but the
@@ -504,19 +500,16 @@ class TestPlanRowsFollowTheShipment(FrappeTestCase):
 		return doc
 
 	def _place(self, shipment, headcount):
-		plan = frappe.new_doc("Route Plan")
-		plan.title = frappe.generate_hash("RP-HC", 8)
-		plan.status = "Draft"
-		plan.effective_from = "2026-07-01"
-		plan.append("assignments", {
+		from one_fm.operations.doctype.route_plan_assignment.test_route_plan_assignment import (
+			make_route_plan,
+		)
+
+		plan = make_route_plan([{
 			"card_id": f"TSHIP-{shipment}", "transportation_shipment": shipment,
 			"vehicle": "VHL-0005", "direction": "OUTBOUND", "headcount": headcount,
 			"start_time": "2026-07-01T06:00:00Z", "end_time": "2026-07-01T07:00:00Z",
-		})
-		plan.flags.ignore_mandatory = True
-		plan.flags.ignore_links = True
-		plan.insert(ignore_permissions=True)
-		return plan.assignments[0].name
+		}], title=frappe.generate_hash("RP-HC", 8), effective_from="2026-07-01")
+		return frappe.db.get_value("Route Plan Assignment", {"route_plan": plan}, "name")
 
 	def _row_headcount(self, row):
 		return frappe.db.get_value("Route Plan Assignment", row, "headcount")

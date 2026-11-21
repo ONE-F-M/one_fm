@@ -10,7 +10,7 @@ import frappe
 # The canvas used to mint a name by COUNTING the runs on the lane, which re-issued a name
 # the moment any run but the last was removed (fixed in WI-002160 by scanning for the next
 # free sequence). It now also cannot happen at all, because the rule is enforced on the
-# Route Plan itself - see RoutePlan._rename_duplicate_trip_names. This clears what the old
+# Route Plan itself - see PlanRules._rename_duplicate_trip_names. This clears what the old
 # behaviour already wrote.
 #
 # The repair is the same code the save runs, so the patch and the live rule can never
@@ -26,14 +26,16 @@ def execute():
 	if not frappe.db.exists("DocType", "Route Plan Assignment"):
 		return
 
+	from one_fm.operations.doctype.route_plan.route_plan import PlanRules, get_plan_rows
+
 	renamed = 0
 	for plan in frappe.get_all("Route Plan", pluck="name"):
-		doc = frappe.get_doc("Route Plan", plan)
-		before = {row.name: row.trip_name for row in doc.assignments}
+		rows = get_plan_rows(plan)
+		before = {row.name: row.trip_name for row in rows}
 
-		doc._rename_duplicate_trip_names()
+		PlanRules(rows)._rename_duplicate_trip_names()
 
-		for row in doc.assignments:
+		for row in rows:
 			if before.get(row.name) == row.trip_name:
 				continue
 			frappe.db.set_value(

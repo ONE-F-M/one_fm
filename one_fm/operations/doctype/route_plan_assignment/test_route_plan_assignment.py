@@ -54,6 +54,29 @@ def insert_assignment(plan, values, idx=None):
 	return doc
 
 
+def make_card_shipment(headcount, direction="Outward"):
+	"""A shipment the seat rules can weigh: it boards at a camp and drops at a site.
+
+	Returns None when the site has no Accommodation or Location to hang it on. Without a
+	camp and a stop the run's stop walk is empty and every bus reads as carrying nobody.
+	"""
+	camp = frappe.get_all("Accommodation", limit=1, pluck="name")
+	site = frappe.get_all("Location", limit=1, pluck="name")
+	if not (camp and site):
+		return None
+	doc = frappe.new_doc("Transportation Shipment")
+	doc.update({
+		"status": "Unassigned", "trip_direction": direction, "accommodation": camp[0],
+		"stop_location": site[0], "start_time": "08:00:00", "end_time": "17:00:00",
+		"generation_key": frappe.generate_hash("TS-RPA", 10),
+	})
+	doc.flags.ignore_mandatory = True
+	doc.flags.ignore_links = True
+	doc.insert(ignore_permissions=True)
+	frappe.db.set_value("Transportation Shipment", doc.name, "headcount", headcount)
+	return doc.name
+
+
 def _child_rows(plan, rows):
 	"""Write ``rows`` the way they were stored while this was a child table of ``plan``."""
 	now = now_datetime()

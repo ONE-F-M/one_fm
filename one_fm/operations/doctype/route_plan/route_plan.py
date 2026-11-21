@@ -91,6 +91,9 @@ def get_plan_rows(plan, vehicles=None, trip_groups=None, fields=None, for_update
 	``vehicles`` / ``trip_groups`` narrow the read, and ``for_update`` locks what it reads
 	until the transaction ends.
 	"""
+	if for_update and vehicles is not None and trip_groups is None:
+		return _lock_vehicle_rows(plan, vehicles, list(fields or plan_row_fields()))
+
 	filters = {"route_plan": plan}
 	if vehicles is not None:
 		filters["vehicle"] = ["in", list(vehicles) or [""]]
@@ -99,11 +102,33 @@ def get_plan_rows(plan, vehicles=None, trip_groups=None, fields=None, for_update
 	return frappe.db.get_values(
 		"Route Plan Assignment",
 		filters,
-		fields or plan_row_fields(),
+		list(fields or plan_row_fields()),
 		as_dict=True,
 		order_by="idx asc, creation asc",
 		for_update=for_update,
 	)
+
+
+def _lock_vehicle_rows(plan, vehicles, fields) -> list:
+	"""The rows of ``vehicles`` on ``plan``, locked until the transaction ends.
+
+	Forced onto the (route_plan, vehicle) index: on a small plan MariaDB prefers the
+	route_plan index or a scan, and a locking read through either locks every vehicle of
+	the plan, so two planners on different buses waited on each other.
+	"""
+	from frappe.query_builder import DocType
+
+	Assignment = DocType("Route Plan Assignment")
+	return (
+		frappe.qb.from_(Assignment)
+		.force_index("route_plan_vehicle_index")
+		.select(*[Assignment[field] for field in fields])
+		.where(Assignment.route_plan == plan)
+		.where(Assignment.vehicle.isin(list(vehicles) or [""]))
+		.orderby(Assignment.idx)
+		.orderby(Assignment.creation)
+		.for_update()
+	).run(as_dict=True)
 
 
 class PlanRules:
@@ -1248,6 +1273,12 @@ COPIED_FIELDS = (
 	"stop_location", "is_camp_leg", "is_home_leg",
 )
 WRITTEN_FIELDS = PLANNER_FIELDS + DERIVED_FIELDS + COPIED_FIELDS
+# The first, unlocked read of a save: identity, the planner's fields, the camp legs' timings
+# and what the board shows of a stale card.
+SNAPSHOT_FIELDS = (
+	"name", "idx", "modified", "is_home_leg", "origin_location", "qoa_time", "stop_index",
+	*PLANNER_FIELDS, *COPIED_FIELDS,
+)
 _STAMP_FIELDS = ("start_time", "end_time")
 _TIME_FIELDS = ("qoa_time", "shift_start_time")
 _TEXT_FIELDS = (
@@ -1270,7 +1301,11 @@ def _comparable(field, value):
 
 
 def differs(old, new, fields) -> bool:
-	return any(_comparable(f, old.get(f)) != _comparable(f, new.get(f)) for f in fields)
+	# Equal raw values need no parsing, which is nearly every field of nearly every card.
+	return any(
+		old.get(f) != new.get(f) and _comparable(f, old.get(f)) != _comparable(f, new.get(f))
+		for f in fields
+	)
 
 
 def run_group(row) -> str:
@@ -1346,7 +1381,9 @@ def apply_plan_changes(plan, items, leg_timings=None, known=None) -> dict:
 
 	frappe.has_permission("Route Plan", "write", plan, throw=True)
 	legs = leg_timings or {}
-	stored = get_plan_rows(plan)
+	# Only what deciding the diff needs: the vehicles a save touches are re-read in full,
+	# with a lock, before anything is judged or written.
+	stored = get_plan_rows(plan, fields=SNAPSHOT_FIELDS)
 	stored_cards = {row.card_id: row for row in card_rows(stored)}
 	items_by_card = {item.get("cardId", ""): item for item in items}
 
@@ -1590,10 +1627,11 @@ def check_plan_rows(plan, upserts):
 def _write_plan_rows(plan, stored, to_delete, to_update, to_insert) -> dict:
 	"""Deletes first, so a card id a delete frees can be inserted again. Returns the
 	``{card_id: modified}`` of the card rows written."""
-	for name in to_delete:
-		frappe.delete_doc(
-			"Route Plan Assignment", name, ignore_permissions=True, delete_permanently=True
-		)
+	# A plain delete: nothing links to an assignment and it has no on_trash, and
+	# delete_doc's feed and Deleted Document cost ~85 ms a row. The old child-table
+	# rebuild left no trail either.
+	if to_delete:
+		frappe.db.delete("Route Plan Assignment", {"name": ["in", to_delete]})
 
 	written = {}
 	for row in to_update:
