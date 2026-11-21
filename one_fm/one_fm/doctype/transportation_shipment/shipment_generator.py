@@ -442,12 +442,13 @@ def generate_transportation_shipments() -> dict:
 		frappe.only_for(GENERATE_ROLES)
 
 	skipped = {}  # employee -> why no demand was built for them
+	skipped_sites = {}  # Transport Required = No site -> its riders
 	failed = {}  # employee -> row, for riders of a demand that raised
 	try:
 		# First: a night with no demand must still expire them.
 		expired = _expire_single_day_rows(getdate(today()))
 
-		nested_map = get_grouped_employees_by_accommodation(skipped=skipped)
+		nested_map = get_grouped_employees_by_accommodation(skipped=skipped, skipped_sites=skipped_sites)
 		demands = build_demand_descriptors(nested_map, skipped=skipped)
 
 		# Resolved once for the whole run rather than per card: the overlay is a handful of
@@ -455,7 +456,8 @@ def generate_transportation_shipments() -> dict:
 		relievers = reliever_context()
 
 		summary = {"created": 0, "updated": 0, "refreshed": 0, "deleted": 0, "errors": 0,
-		           "repaired": 0, "overflowed": 0, "flagged": 0, "pruned": False, "expired": expired}
+		           "repaired": 0, "overflowed": 0, "flagged": 0, "pruned": False, "expired": expired,
+		           "skipped_sites": {site: len(emps) for site, emps in skipped_sites.items()}}
 
 		# A rider pinned to a card by hand rides that card only, so they leave the demand
 		# roster of that direction and no demand card seats them as well.
@@ -585,6 +587,15 @@ def _report(summary: dict, skipped: dict, failed: dict, scheduled: bool) -> None
 		expires_in_sec=2 * 24 * 60 * 60,
 	)
 
+	if scheduled and summary.get("skipped_sites"):
+		# Expected behaviour, so logged for the coordinators but never emailed.
+		frappe.log_error(
+			title=_("Transportation Shipment Generation: {0} sites skipped (Transport Required = No)").format(
+				len(summary["skipped_sites"])
+			),
+			message=_skipped_sites_table(summary["skipped_sites"]),
+		)
+
 	if not scheduled or not (summary["skipped"] or summary["failed"]):
 		return
 	title = _("Transportation Shipment Generation: {0} skipped, {1} failed").format(
@@ -624,6 +635,14 @@ def _report_table(skipped: list, failed: list) -> str:
 		) + "</tr>"
 		for result, rows in ((_("Skipped"), skipped), (_("Failed"), failed))
 		for row in rows
+	)
+	return f'<table class="table table-sm"><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
+
+
+def _skipped_sites_table(skipped_sites: dict) -> str:
+	head = f"<th>{_('Operations Site')}</th><th>{_('Riders')}</th>"
+	body = "".join(
+		f"<tr><td>{escape_html(site)}</td><td>{count}</td></tr>" for site, count in sorted(skipped_sites.items())
 	)
 	return f'<table class="table table-sm"><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
 
@@ -1146,6 +1165,40 @@ def _delete_card(name: str) -> None:
 	"""
 	release_split_lineage(name, frappe.db.get_value("Transportation Shipment", name, "split_parent"))
 	frappe.delete_doc("Transportation Shipment", name, ignore_permissions=True, force=True)
+
+
+def release_site_cards(site: str) -> dict:
+	"""Delete a site's Unassigned generated cards; list its Assigned ones.
+
+	Run when a site is switched to Transport Required = No. Overflow cards inherit
+	operations_site, so they go too. Manual, ad hoc and Trip Request cards are not touched.
+	"""
+	deleted = []
+	for name in frappe.get_all(
+		"Transportation Shipment",
+		filters={
+			"source_doctype": "Operations Shift",
+			"status": "Unassigned",
+			"operations_site": site,
+			"is_adhoc_journey": 0,
+		},
+		pluck="name",
+		order_by="is_split_overflow desc, creation desc",
+	):
+		_release_manifest_references(name)
+		_delete_card(name)
+		deleted.append(name)
+
+	assigned = set(frappe.get_all(
+		"Transportation Shipment", filters={"status": "Assigned", "operations_site": site}, pluck="name"
+	))
+	assigned.update(frappe.get_all(
+		"Transportation Shipment",
+		filters=[["status", "=", "Assigned"], ["Transportation Shipment Employee", "operation_site", "=", site]],
+		pluck="name",
+		distinct=True,
+	))
+	return {"deleted": deleted, "assigned": sorted(assigned)}
 
 
 def _release_manifest_references(shipment: str) -> None:

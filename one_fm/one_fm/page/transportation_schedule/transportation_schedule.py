@@ -261,11 +261,18 @@ def optimize_transportation_routes():
         frappe.log_error(frappe.get_traceback(), "Route Optimization API Error")
         return {"status": "error", "message": str(e)}
 
-def get_grouped_employees_by_accommodation(skipped: dict | None = None, on_date=None) -> dict:
+def sites_without_transport() -> set:
+    """Operations Sites marked Transport Required = No. Blank counts as Yes."""
+    return set(frappe.get_all("Operations Site", filters={"transport_required": "No"}, pluck="name"))
+
+
+def get_grouped_employees_by_accommodation(skipped: dict | None = None, on_date=None,
+        skipped_sites: dict | None = None) -> dict:
     """{camp key: {"lookup_id", "shifts": {shift: [employee]}}} for the riders of ``on_date`` (today).
 
     Demand comes from that day's Working Employee Schedule rows, not the master Employee.shift.
     ``skipped`` collects ``{employee: reason}`` for every Active employee dropped here.
+    ``skipped_sites`` collects ``{site: [employee]}`` for riders of sites that need no transport.
     """
     def skip(emp_ids, reason):
         if skipped is not None:
@@ -307,6 +314,19 @@ def get_grouped_employees_by_accommodation(skipped: dict | None = None, on_date=
     if skipped is not None:
         for emp in emp_shift_map:
             skipped.pop(emp, None)
+
+    # After the overlay, so a reliever is judged by the site of the shift they cover.
+    no_transport = sites_without_transport()
+    if no_transport:
+        shift_site = {s.name: s.site for s in active_shifts}
+        for emp, shift in list(emp_shift_map.items()):
+            site = shift_site.get(shift)
+            if site in no_transport:
+                skip([emp], _("Site {0} does not need transport (Transport Required = No)").format(site))
+                if skipped_sites is not None:
+                    skipped_sites.setdefault(site, []).append(emp)
+                del emp_shift_map[emp]
+
     emp_ids = list(emp_shift_map)
     if not emp_ids:
         return {}

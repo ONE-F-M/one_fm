@@ -121,11 +121,29 @@ class OperationsSite(Document):
 		if doc_before_save and doc_before_save.project != self.project:	
 			update_on_field_change(self,doc_before_save)
 		self.update_site_manager_name()
+		if doc_before_save and self.transport_required == "No" and doc_before_save.transport_required != "No":
+			self.release_transport_cards()
 		# changes = self.get_changes()
 		# self.notify_changes()
 		# self.update_permissions(doc_before_save)
 		# self.notify_poc_changes(changes)
 
+
+	def release_transport_cards(self):
+		"""Drop the Unassigned generated cards of a site that no longer needs transport."""
+		from frappe.utils import get_link_to_form
+		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import release_site_cards
+
+		result = release_site_cards(self.name)
+		if not (result["deleted"] or result["assigned"]):
+			return
+		message = _("Transport Required is now No: {0} Unassigned shipment card(s) removed.").format(len(result["deleted"]))
+		if result["assigned"]:
+			links = "".join(
+				f"<li>{get_link_to_form('Transportation Shipment', name)}</li>" for name in result["assigned"]
+			)
+			message += "<br>" + _("These Assigned cards are left unchanged and need re-planning:") + f"<ul>{links}</ul>"
+		frappe.msgprint(message, title=_("Transportation Shipments"), indicator="orange")
 
 	def get_changes(self):
 		doc_before_save = self.get_doc_before_save()
