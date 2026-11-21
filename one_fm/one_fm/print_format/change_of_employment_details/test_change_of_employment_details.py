@@ -65,7 +65,7 @@ def _request(**values):
 
 
 def _term(doc, name, old, new, new_doctype=None):
-	doc.append("properties", {"property": name, "old_value": old, "new_value": new, "new_value_doctype": new_doctype})
+	doc.append("employment_terms", {"terms": name, "old_value": old, "new_value": new, "new_value_doctype": new_doctype})
 
 
 class TestTheFormatIsRegistered(FrappeTestCase):
@@ -152,7 +152,7 @@ class TestHrManager(FrappeTestCase):
 
 class TestEmploymentTerms(FrappeTestCase):
 	def test_every_changed_term_is_listed_with_current_and_new_values(self):
-		doc = _request(properties_changes_required=1)
+		doc = _request(term_changes_required=1)
 		for number in range(1, 26):
 			_term(doc, "Term %d" % number, "Old %d" % number, "New %d" % number)
 		text = _text(_render(doc))
@@ -165,13 +165,13 @@ class TestEmploymentTerms(FrappeTestCase):
 		employee = frappe.db.get_value("Employee", {"employee_name": ["is", "set"]}, ["name", "employee_name"], as_dict=True)
 		if not employee:
 			self.skipTest("no Employee on this site")
-		doc = _request(properties_changes_required=1)
+		doc = _request(term_changes_required=1)
 		_term(doc, "Reports To", "Someone Old", employee.name, "Employee")
 
 		self.assertIn("{0} - {1}".format(employee.name, employee.employee_name), _text(_render(doc)))
 
 	def test_no_table_when_terms_changes_are_not_required(self):
-		doc = _request(properties_changes_required=0)
+		doc = _request(term_changes_required=0)
 		_term(doc, "Hidden Term", "Old", "New")
 		text = _text(_render(doc))
 
@@ -211,17 +211,17 @@ class TestDayOffTerms(FrappeTestCase):
 class TestBenefits(FrappeTestCase):
 	def test_benefits_table_lists_every_benefit(self):
 		doc = _request(benefits_changes_required=1)
-		for name in ("Health Insurance", "Accommodation", "Transportation", "Car"):
-			doc.append("benefit", {"property": name, "description": "Provided by Company"})
+		for name in ("Health Insurance", "Accommodation", "Transportation", "Company Car"):
+			doc.append("benefit", {"terms": name, "description": "Provided by Company"})
 		text = _text(_render(doc))
 
 		self.assertIn("Benefits Benefit Description", text)
-		for name in ("Health Insurance", "Accommodation", "Transportation", "Car"):
+		for name in ("Health Insurance", "Accommodation", "Transportation", "Company Car"):
 			self.assertIn(name + " Provided by Company", text)
 
 	def test_no_benefits_section_when_not_required(self):
 		doc = _request(benefits_changes_required=0)
-		doc.append("benefit", {"property": "Car", "description": "Provided by Company"})
+		doc.append("benefit", {"terms": "Company Car", "description": "Provided by Company"})
 
 		self.assertNotIn("Benefit", _text(_render(doc)))
 
