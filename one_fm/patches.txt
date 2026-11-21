@@ -314,6 +314,7 @@ one_fm.patches.v15_0.drop_absence_case_workflow_state_custom_field #2026-10-05 W
 one_fm.patches.v15_0.drop_temporary_deployment_workflow_state_custom_field
 one_fm.patches.v15_0.remove_resignation_request_relieving_date_change
 one_fm.patches.v15_0.rename_attendance_amendment_to_attendance_approval
+one_fm.patches.v15_0.clean_employee_record_update_request_current_base_salary #2026-11-19 not null
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
 one_fm.patches.v15_0.add_assignment_rule_returning_to_operations_supervisor_of_client_event #2
@@ -737,3 +738,5 @@ one_fm.patches.v15_0.move_attendance_approval_lifecycle_to_processa
 one_fm.patches.v15_0.move_request_for_purchase_lifecycle_to_processa
 one_fm.patches.v15_0.delete_poc_check_workflow_and_assignment_rules
 one_fm.patches.v15_0.route_plan_assignment_standalone #2026-11-19 WI-004736
+one_fm.patches.v15_0.delete_accommodation_inspection #2026-11-18
+one_fm.patches.v15_0.processa_sync_employee_record_update_request___v1_9c10e5 #2026-11-19 Processa sync: Employee Record Update Request

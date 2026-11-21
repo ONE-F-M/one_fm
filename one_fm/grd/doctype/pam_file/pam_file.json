@@ -153,18 +153,19 @@
      {
       "fieldname": "delegates_on_the_file",
       "fieldtype": "Table",
-      "label": "Delegates on the File",
+      "label": "Public Relations Officer",
       "options": "Delegates on the File"
      },
      {
       "fieldname": "housing_details",
       "fieldtype": "Table",
+      "hidden": 1,
       "label": "Housing Details",
       "options": "Housing Details"
      }
     ],
     "links": [],
-    "modified": "2026-11-02 10:00:00.000000",
+    "modified": "2026-11-18 14:00:00.000000",
     "modified_by": "Administrator",
     "module": "GRD",
     "name": "PAM File",

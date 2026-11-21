@@ -1,0 +1,159 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-11-19 11:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_ppv1",
+  "amended_from",
+  "workflow_state",
+  "accommodation",
+  "accommodation_unit",
+  "accommodation_name",
+  "owner_reference_number",
+  "accommodation_cleaning_checklist_section",
+  "is_the_flat_passage_clean",
+  "kitchen_cleaning_checklist_section",
+  "kitchen_cleaning_checklist",
+  "room_cleaning_checklist_section",
+  "room_cleaning_checklist",
+  "bathroom_cleaning_checklist_section",
+  "bathroom_cleaning_checklist",
+  "section_break_osvb",
+  "reason_for_rejection"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_ppv1",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Accommodation Inspections",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "options": "Workflow State"
+  },
+  {
+   "fieldname": "accommodation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Accommodation",
+   "options": "Accommodation",
+   "reqd": 1
+  },
+  {
+   "fieldname": "accommodation_unit",
+   "fieldtype": "Link",
+   "label": "Accommodation Unit",
+   "link_filters": "[[\"Accommodation Unit\", \"accommodation\", \"=\", \"eval:doc.accommodation\"]]",
+   "options": "Accommodation Unit",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "accommodation_unit.accommodation_name",
+   "fieldname": "accommodation_name",
+   "fieldtype": "Data",
+   "label": "Accommodation Name"
+  },
+  {
+   "fetch_from": "accommodation_unit.owner_reference_number",
+   "fieldname": "owner_reference_number",
+   "fieldtype": "Data",
+   "label": "Owner Reference Number"
+  },
+  {
+   "fieldname": "accommodation_cleaning_checklist_section",
+   "fieldtype": "Section Break",
+   "label": "Accommodation Cleaning Checklist"
+  },
+  {
+   "fieldname": "is_the_flat_passage_clean",
+   "fieldtype": "Select",
+   "label": "Is the flat passage clean?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "fieldname": "kitchen_cleaning_checklist_section",
+   "fieldtype": "Section Break",
+   "label": "Kitchen Cleaning Checklist"
+  },
+  {
+   "fieldname": "kitchen_cleaning_checklist",
+   "fieldtype": "Table",
+   "label": "Kitchen Cleaning Checklist",
+   "options": "Kitchen Cleaning Checklist"
+  },
+  {
+   "fieldname": "room_cleaning_checklist_section",
+   "fieldtype": "Section Break",
+   "label": "Room Cleaning Checklist"
+  },
+  {
+   "fieldname": "room_cleaning_checklist",
+   "fieldtype": "Table",
+   "label": "Room Cleaning Checklist",
+   "options": "Room Cleaning Checklist"
+  },
+  {
+   "fieldname": "bathroom_cleaning_checklist_section",
+   "fieldtype": "Section Break",
+   "label": "Bathroom Cleaning Checklist"
+  },
+  {
+   "fieldname": "bathroom_cleaning_checklist",
+   "fieldtype": "Table",
+   "label": "Bathroom Cleaning Checklist",
+   "options": "Bathroom Cleaning Checklist"
+  },
+  {
+   "fieldname": "section_break_osvb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state == \"Pending Approval\" ||doc.workflow_state == \"Draft\"",
+   "fieldname": "reason_for_rejection",
+   "fieldtype": "Small Text",
+   "label": "Reason for Rejection",
+   "read_only_depends_on": "eval:doc.workflow_state == \"Draft\""
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-11-19 11:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Inspections",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
