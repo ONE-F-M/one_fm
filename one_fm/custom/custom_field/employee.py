@@ -83,6 +83,13 @@ def get_employee_custom_fields():
 				"insert_after": "bank_name",
 			},
 			{
+				"fieldname": "iban",
+				"fieldtype": "Data",
+				"insert_after": "one_fm_basic_salary",
+				"label": "IBAN",
+				"translatable": 1,
+			},
+			{
 				"fieldname": "custom_employee_image",
 				"fieldtype": "Image",
 				# was pam_type, which this story removes
