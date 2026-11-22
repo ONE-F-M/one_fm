@@ -1,27 +1,42 @@
 import frappe
-from frappe.email.doctype.email_queue.email_queue import send_now, EmailQueue
+from frappe.email.doctype.email_queue.email_queue import send_now
 
 
-def _force_send_email(name):
-	"""Send a queued email from a background job without the whitelisted-API
-	permission gate.
+FLUSH_JOB_ID = "one_fm_flush_email_queue"
 
-	``send_now`` is a whitelisted method that runs ``check_permission()`` first.
-	Background jobs run as the enqueuing session user, so when a non-privileged
-	user (e.g. an employee) triggers the mail, that permission check fails on the
-	System-Manager-only Email Queue DocType. Sending is a system operation — the
-	queue doc is created with ``ignore_permissions`` and the framework scheduler
-	itself calls ``EmailQueue.send()`` directly — so we do the same here.
+
+def _force_send_email(name=None):
+	"""Flush the whole pending email queue from a background job.
+
+	Previously this sent one named queue row per job. With one job per mail,
+	a notification burst (e.g. the 12:15 Roster Day Off Checker run, which
+	creates several hundred assignments in a couple of minutes) opened a fresh
+	authenticated SMTP connection per mail, dozens per minute from one IP. The
+	outgoing relay throttles that and drops the connections, which surfaces as
+	"Invalid Outgoing Mail Server or Port: Connection unexpectedly closed" and,
+	after three retries, as permanently lost mail.
+
+	``frappe.email.queue.flush`` instead walks the pending batch sequentially
+	through a single reused SMTP session (the Email Account doc is cached, so
+	its ``_smtp_server_instance`` is shared for the whole batch) and aborts the
+	batch once failures pass its own threshold rather than hammering on. It
+	needs no permission gate: like the scheduler, it calls ``EmailQueue.send()``
+	directly rather than the whitelisted ``send_now``.
+
+	``name`` is accepted and ignored so that jobs already queued with the old
+	signature still run after a deploy.
 	"""
-	record = EmailQueue.find(name)
-	if record:
-		record.send()
+	from frappe.email.queue import flush
+
+	flush()
 
 
 def after_insert(doc, event):
 	"""
 	1. Inject AMP HTML into the email MIME if ``frappe.flags.amp_html`` is set.
-	2. Force push the email if the recipients is not more than 19 records.
+	2. Ask for an immediate queue flush if the recipients are not more than 19
+	   records, so transactional mail does not wait for the scheduler's minute
+	   tick. Bulk mail (20+ recipients) is left to the scheduler, as before.
 	"""
 	# ── AMP Injection ─────────────────────────────────────────────────
 	# Grab the AMP content set by one_bpmn's compose_and_send_task_email
@@ -37,15 +52,26 @@ def after_insert(doc, event):
 				message=frappe.get_traceback(),
 			)
 
-	# ── Force-send for small queues ───────────────────────────────────
+	# ── Immediate flush for small queues ──────────────────────────────
 	found = True
 	if len(doc.recipients) >= 20:
 		found = False
 	if found:
-		# Enqueue it safely in the background rather than blocking the main transaction
+		# Enqueue it safely in the background rather than blocking the main transaction.
+		# Deduplicated on a fixed job id: a burst of inserts asks for one flush, not
+		# one job (and one SMTP connection) per mail. Whatever is pending when the
+		# flush runs goes out in that same batch, so delivery stays immediate.
 		frappe.enqueue(
 			_force_send_email,
-			name=doc.name,
+			queue="short",
+			# A flush walks up to email_queue_batch_size (500 by default) rows in
+			# one job, so give it more than the 300s the short queue assumes. A
+			# timeout here would not lose mail (sent rows are marked Sent, the row
+			# left in "Sending" is reset by frappe's retry_sending_emails, the rest
+			# stay pending), but it would delay the tail of a large batch.
+			timeout=900,
+			job_id=FLUSH_JOB_ID,
+			deduplicate=True,
 			now=frappe.flags.in_test,
 			enqueue_after_commit=True
 		)

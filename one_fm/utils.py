@@ -108,7 +108,7 @@ def send_gp_letter_attachment_reminder2(is_scheduled_event=True):
                 cc = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
 
                 sendemail(sender=sender, recipients= recipient,
-                    content=msg, subject="GP Letter Upload Reminder" ,cc=cc, delayed=False, is_scheduler_email=is_scheduled_event)
+                    content=msg, subject="GP Letter Upload Reminder" ,cc=cc, is_scheduler_email=is_scheduled_event)
 
                 gp_letter_doc.upload_reminder2 = frappe.utils.now()
                 gp_letter_doc.save(ignore_permissions = True)
@@ -138,7 +138,7 @@ def send_gp_letter_attachment_reminder3(is_scheduled_event=True):
                 cc = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
 
                 sendemail(sender=sender, recipients= recipient,
-                    content=msg, subject="GP Letter Upload Reminder" ,cc=cc, delayed=False, is_scheduler_email=is_scheduled_event)
+                    content=msg, subject="GP Letter Upload Reminder" ,cc=cc, is_scheduler_email=is_scheduled_event)
 
                 gp_letter_doc.upload_reminder3 = frappe.utils.now()
                 gp_letter_doc.save(ignore_permissions = True)
@@ -164,7 +164,7 @@ def send_gp_letter_attachment_no_response(is_scheduled_event=True):
             sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
             recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
             sendemail(sender=sender, recipients= recipient,
-                content=msg, subject="GP Letter Upload No Response", delayed=False, is_scheduler_email=is_scheduled_event)
+                content=msg, subject="GP Letter Upload No Response", is_scheduler_email=is_scheduled_event)
 
 def send_travel_agent_email(is_scheduled_event=True):
     """
@@ -242,7 +242,7 @@ def send_gp_letter_reminder(is_scheduled_event=True):
                     sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
                     recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
                     sendemail(sender=sender, recipients= recipient,
-                        content=msg, subject="GP Letter Request No Response", delayed=False, is_scheduler_email=is_scheduled_event)
+                        content=msg, subject="GP Letter Request No Response", is_scheduler_email=is_scheduled_event)
 
 
 
@@ -270,7 +270,7 @@ def send_gp_email(pid, candidates, gp_letter_request, is_scheduler_email=False):
     }]
 
     sendemail(sender=sender, recipients= recipient,
-        content=msg, subject="Request for GP Letter | {0}".format(gp_letter_request), attachments=attachments ,delayed=False, is_scheduler_email=is_scheduler_email)
+        content=msg, subject="Request for GP Letter | {0}".format(gp_letter_request), attachments=attachments, is_scheduler_email=is_scheduler_email)
 
 
 def create_gp_letter_request():
@@ -2024,11 +2024,11 @@ def generate_roster_report(is_scheduled_event=False):
 
     # Send Roster Post report email to Operations Managers
     post_report_subject = "Roster Post Report from {start_date} to {end_date}".format(start_date=start_date, end_date=end_date)
-    sendemail(recipients= recipients, content=post_report_table, subject=post_report_subject ,delayed=False, is_scheduler_email=is_scheduled_event)
+    sendemail(recipients= recipients, content=post_report_table, subject=post_report_subject, is_scheduler_email=is_scheduled_event)
 
     # Send Roster Employee report email to Operations Managers
     employee_report_subject = "Roster Employee Report from {start_date} to {end_date}".format(start_date=start_date, end_date=end_date)
-    sendemail(recipients= recipients, content=employee_report_table, subject=employee_report_subject ,delayed=False, is_scheduler_email=is_scheduled_event)
+    sendemail(recipients= recipients, content=employee_report_table, subject=employee_report_subject, is_scheduler_email=is_scheduled_event)
 
 
 
@@ -2256,7 +2256,8 @@ def send_verification_code(doctype, document_name):
             If this was not you, ignore this email.<br>
             """.format(doctype=doctype, document=document_name, verification_code=verification_code)
         header = [_('Verfication Code'), 'blue']
-        sendemail([employee_user_email], subject=subject, header=header,message=message, reference_doctype=doctype, reference_name=document_name, delayed=False)
+        # send_priority 2: the user is waiting on this code to finish signing.
+        sendemail([employee_user_email], subject=subject, header=header,message=message, reference_doctype=doctype, reference_name=document_name, send_priority=2)
 
         cache_key = hashlib.md5((employee_user_email + doctype + document_name).encode('utf-8')).hexdigest()
         cache_value = hashlib.md5((employee_user_email + doctype + document_name + str(verification_code)).encode('utf-8')).hexdigest()
@@ -2370,7 +2371,7 @@ def notify_on_close(doc, method):
             # striphtml is used to get data without html tags, text editor will have a Defualt html <div class="ql-editor read-mode"><p><br></p></div>
             msg += f"""<b>Issue Description:</b><br/>{doc.description}"""
 
-        sendemail( recipients= doc.raised_by, content=msg, subject=subject, delayed=False, is_external_mail=True)
+        sendemail( recipients= doc.raised_by, content=msg, subject=subject, is_external_mail=True)
 
 
 def assign_issue(doc, method):
@@ -4507,7 +4508,6 @@ def send_enrollment_status():
 			recipients=[email],
 			subject=subject,
 			content=message,
-			delayed=False,
 			is_scheduler_email=True
 		)
 

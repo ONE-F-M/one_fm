@@ -50,6 +50,17 @@ jobs:
             exec 9>"$BENCH/config/deploy.lock"
             flock -w 1500 9
 
+            # A running long job holds the stop below for up to stopwaitsecs with every worker down.
+            REDIS_QUEUE="$(jq -r .redis_queue $BENCH/sites/common_site_config.json)"
+            LONG_RUNNING="rq:wip:home-frappe-frappe-bench:long"
+            for attempt in $(seq 1 40); do
+              JOB="$(redis-cli -u "$REDIS_QUEUE" zrangebyscore "$LONG_RUNNING" "$(date +%s)" +inf limit 0 1)"
+              if [ -z "$JOB" ]; then break; fi
+              echo "Long job $JOB running since $(redis-cli -u "$REDIS_QUEUE" hget "rq:job:$JOB" started_at): $(redis-cli -u "$REDIS_QUEUE" hget "rq:job:$JOB" description | cut -c1-160)"
+              if [ "$attempt" -eq 40 ]; then echo "Deploy stopped: the long job did not finish in 20 minutes. Nothing was changed."; exit 1; fi
+              sleep 30
+            done
+
             cd $BENCH/apps/one_fm
             git pull upstream version-15
             cd $BENCH

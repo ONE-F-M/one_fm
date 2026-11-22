@@ -67,7 +67,9 @@ class ProjectManpowerRequest(Document):
 			self.actual_recruiters_deployment_date = None
 
 	def validate_project_allocation(self):
-		exempt_reasons = ["Annual Leave Reliever", "Day OFF Reliever", "Reliever"]
+		# "Reliever" was retired from the Reason select (HD-1927006) and its records
+		# folded into "Day OFF Reliever", which is exempt here in its place.
+		exempt_reasons = ["Annual Leave Reliever", "Day OFF Reliever"]
 		if self.reason and self.reason not in exempt_reasons:
 			if not self.project_allocation:
 				frappe.throw(
