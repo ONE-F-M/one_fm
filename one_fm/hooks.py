@@ -412,14 +412,6 @@ doc_events = {
 		"on_update_after_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_rfp",
 	},
 	"Purchase Receipt": {
-		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt",
-		"on_submit": [
-			"one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit",
-			"one_fm.overrides.purchase_receipt.update_received_qty",
-			"one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_receipt",
-			"one_fm.purchase.doctype.request_for_material.request_for_material.notify_requester_on_full_receipt",
-			"one_fm.one_fm.doctype.transit_log.transit_log_utils.update_transit_log_from_purchase_receipt"
-		],
 		"on_cancel": [
             "one_fm.overrides.purchase_receipt.update_received_qty",
             "one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_receipt"
@@ -644,7 +636,6 @@ override_doctype_class = {
     "Stock Entry": "one_fm.overrides.stock_entry.StockEntryOverride",
     "Sales Invoice": "one_fm.overrides.sales_invoice.SalesInvoiceOverride",
     "Purchase Invoice": "one_fm.overrides.purchase_invoice.PurchaseInvoiceOverride",
-    "Purchase Receipt": "one_fm.overrides.purchase_receipt.PurchaseReceiptOverride",
     "Asset": "one_fm.overrides.asset.AssetOverride",
     "Asset Movement": "one_fm.overrides.asset_movement.AssetMovement",
     "Project": "one_fm.overrides.project.ProjectOverride",

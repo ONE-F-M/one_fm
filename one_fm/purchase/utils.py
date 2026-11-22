@@ -137,11 +137,6 @@ def get_payment_details_for_po(po):
                 payment_amount = schedule.payment_amount
     return {'mode_of_payment':mode_of_payment, 'payment_amount':payment_amount}
 
-def before_submit_purchase_receipt(doc, method):
-    if not doc.one_fm_attach_delivery_note:
-        frappe.throw(_('Please Attach Signed and Stamped Delivery Note'))
-
-
 def filter_description_specific_for_item_group(doctype, txt, searchfield, start, page_len, filters):
     description_values = False
     query = "select name from `tab{0}` where"

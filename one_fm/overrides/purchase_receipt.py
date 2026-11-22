@@ -4,9 +4,6 @@ from frappe.model.mapper import get_mapped_doc
 from frappe.utils import flt
 import json
 
-from erpnext.stock.doctype.purchase_receipt.purchase_receipt import PurchaseReceipt
-
-
 
 def get_rfm_in_purchase_receipt(doc):
     po = None
@@ -190,60 +187,3 @@ def make_purchase_receipt_invoice(source_name, target_doc=None, args=None):
 	)
 
 	return doc
-
-
-class PurchaseReceiptOverride(PurchaseReceipt):
-    def on_submit(self):
-        super(PurchaseReceiptOverride, self).on_submit()
-        self.update_refundable_assets()
-
-
-    def update_refundable_assets(self):
-        for item in self.items:
-            if not item.get('custom_refundable'):
-                continue
-
-            item_master = frappe.db.get_value(
-                'Item', 
-                item.item_code, 
-                ['is_fixed_asset', 'auto_create_assets'], 
-                as_dict=True
-            )
-            
-            if not item_master.is_fixed_asset:
-                continue
-            
-            if not item_master.auto_create_assets:
-                continue
-            
-            asset_name = frappe.db.get_value(
-                'Asset',
-                {
-                    'purchase_receipt': self.name,
-                    'purchase_receipt_item': item.name,
-                    'item_code': item.item_code
-                }
-            )
-            
-            if asset_name:
-                self.update_asset_for_refundable(asset_name, item)
-                frappe.msgprint(
-                    _("Updated asset {0} for refundable item {1}").format(asset_name, item.item_code),
-                    alert=True
-                )
-    
-    
-    def update_asset_for_refundable(self, asset_name, item):
-        asset = frappe.get_doc('Asset', asset_name)
-        
-        asset.custom_is_refundable = 1
-        asset.asset_owner = 'Customer'
-        asset.customer = self.custom_customer if self.custom_customer else None
-        
-        if not asset.available_for_use_date:
-            asset.available_for_use_date = self.posting_date
-        
-        asset.flags.ignore_validate_update_after_submit = True
-        asset.save(ignore_permissions=True)
-        
-        return asset.name
