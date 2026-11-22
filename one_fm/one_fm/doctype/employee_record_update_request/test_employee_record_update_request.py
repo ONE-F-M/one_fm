@@ -16,9 +16,11 @@ from one_fm.tests.utils import make_employee
 DOCTYPE = "Employee Record Update Request"
 
 REASON_OPTIONS = (
-	"Increment\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits\nOthers"
+	"\nIncrement\nDecrement\nPromotion\nChange in Designation\nChange in Department"
+	"\nChange in Employment Terms\nAddition of Benefits\nOthers"
 )
 DAY_OFF_DEPENDS = "eval:doc.day_off_terms_required==1"
+DEPARTMENT_TERM_DEPENDS = "eval:(doc.employment_terms || []).some(r => r.terms == 'Department')"
 
 # (fieldname, fieldtype, options, reqd, read_only, depends_on, fetch_from) in BA order.
 # Layout fields (Section/Column Breaks) are checked separately.
@@ -28,6 +30,8 @@ EXPECTED_FIELDS = [
 	("designation", "Link", "Designation", 0, 1, "", "employee.designation"),
 	("department", "Link", "Department", 0, 1, "", "employee.department"),
 	("project_allocation", "Link", "Project", 0, 0, "", "employee.project"),
+	("new_line_manager", "Link", "Employee", 0, 0, DEPARTMENT_TERM_DEPENDS, ""),
+	("new_line_manager_user", "Link", "User", 0, 1, DEPARTMENT_TERM_DEPENDS, "new_line_manager.user_id"),
 	("workflow_state", "Link", "Workflow State", 0, 1, "", ""),
 	("effective_date_of_change", "Date", "", 1, 0, "", ""),
 	("line_manager", "Link", "User", 0, 1, "", "department.custom_department_head"),
@@ -73,13 +77,13 @@ LAYOUT_TYPES = ("Section Break", "Column Break", "Tab Break")
 
 PERMISSION_FLAGS = (
 	"read", "write", "create", "delete", "submit", "cancel", "amend",
-	"report", "export", "print", "email", "share",
+	"report", "export", "print", "email", "share", "select",
 )
 _HR_MANAGER = {"read", "write", "create", "delete", "submit", "report", "export", "print", "email", "share"}
 EXPECTED_PERMISSIONS = {
-	"HR User": _HR_MANAGER | {"amend"},
-	"HR Manager": _HR_MANAGER,
-	"System Manager": _HR_MANAGER,
+	"HR User": _HR_MANAGER | {"amend", "select"},
+	"HR Manager": _HR_MANAGER | {"select"},
+	"System Manager": _HR_MANAGER | {"select"},
 	"Employee": {"read", "write", "create", "print", "email", "share"},
 }
 
@@ -253,14 +257,27 @@ class TestEmployeeRecordUpdateRequest(FrappeTestCase):
 		doc = make_request(employee, effective_date_of_change=None)
 		self.assertRaises(frappe.MandatoryError, doc.insert, ignore_permissions=True)
 
-	def test_reason_for_changes_defaults_to_first_option(self):
-		# BA's Select has no blank first option, so Frappe fills "Increment".
+	def test_reason_for_changes_is_mandatory(self):
 		employee = get_test_employee()
 		if not employee:
 			self.skipTest("Need at least 1 active employee for this test.")
 
-		doc = make_request(employee, reason_for_changes=None).insert(ignore_permissions=True)
-		self.assertEqual(doc.reason_for_changes, "Increment")
+		doc = make_request(employee, reason_for_changes=None)
+		self.assertRaises(frappe.MandatoryError, doc.insert, ignore_permissions=True)
+
+	def test_new_line_manager_user_is_fetched(self):
+		employee = get_test_employee()
+		if not employee:
+			self.skipTest("Need at least 1 active employee for this test.")
+
+		manager = frappe.db.get_value(
+			"Employee", {"status": "Active", "user_id": ["is", "set"], "name": ["!=", employee]}, ["name", "user_id"]
+		)
+		if not manager:
+			self.skipTest("Need a second active employee with a user for this test.")
+
+		doc = make_request(employee, new_line_manager=manager[0]).insert(ignore_permissions=True)
+		self.assertEqual(doc.new_line_manager_user, manager[1])
 
 	def test_user_without_hr_roles_cannot_create(self):
 		employee = get_test_employee()

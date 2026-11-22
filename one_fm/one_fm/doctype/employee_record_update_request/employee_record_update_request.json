@@ -12,6 +12,8 @@
   "designation",
   "department",
   "project_allocation",
+  "new_line_manager",
+  "new_line_manager_user",
   "column_break_82f0b6",
   "workflow_state",
   "effective_date_of_change",
@@ -93,6 +95,24 @@
    "fieldtype": "Link",
    "label": "Project Allocation",
    "options": "Project"
+  },
+  {
+   "depends_on": "eval:(doc.employment_terms || []).some(r => r.terms == 'Department')",
+   "fieldname": "new_line_manager",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "New Line Manager",
+   "options": "Employee"
+  },
+  {
+   "depends_on": "eval:(doc.employment_terms || []).some(r => r.terms == 'Department')",
+   "fetch_from": "new_line_manager.user_id",
+   "fieldname": "new_line_manager_user",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "New Line Manager User",
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_82f0b6",
@@ -306,7 +326,7 @@
    "fieldname": "reason_for_changes",
    "fieldtype": "Select",
    "label": "Reason for Changes",
-   "options": "Increment\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits\nOthers",
+   "options": "\nIncrement\nDecrement\nPromotion\nChange in Designation\nChange in Department\nChange in Employment Terms\nAddition of Benefits\nOthers",
    "reqd": 1
   },
   {
@@ -327,7 +347,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-21 12:00:00.000000",
+ "modified": "2026-11-22 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Employee Record Update Request",
@@ -344,6 +364,7 @@
    "read": 1,
    "report": 1,
    "role": "HR User",
+   "select": 1,
    "share": 1,
    "submit": 1,
    "write": 1
@@ -357,6 +378,7 @@
    "read": 1,
    "report": 1,
    "role": "HR Manager",
+   "select": 1,
    "share": 1,
    "submit": 1,
    "write": 1
