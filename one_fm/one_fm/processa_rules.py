@@ -16,7 +16,7 @@ def site_rules(script_name):
 	the map. Returns None, after logging it, when the script is missing, so a save is never
 	failed by it.
 	"""
-	from one_bpmn.one_bpmn.engine import _check_script_permissions
+	from processa.processa_engine.engine import _check_script_permissions
 
 	script = frappe.db.get_value("Server Script", script_name, "script")
 	if script is None:

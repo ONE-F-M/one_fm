@@ -10,7 +10,7 @@ from one_fm.utils import response
 from frappe.utils.password import get_decrypted_password
 from frappe.utils.caching import redis_cache
 try:
-    from one_bpmn.api import send_message as send_processa_message
+    from processa.api import send_message as send_processa_message
 except ImportError:
     send_processa_message = None
 

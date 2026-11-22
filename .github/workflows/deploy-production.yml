@@ -46,7 +46,7 @@ jobs:
             NAME="$(basename "$BENCH")"
             # facerec and redis run on this server too and are left alone.
             WORKERS="$NAME-workers: $NAME-bpmn-workers:"
-            # One deploy at a time per bench, across one_fm, one_bpmn and frappe_agile.
+            # One deploy at a time per bench, across one_fm, processa and frappe_agile.
             exec 9>"$BENCH/config/deploy.lock"
             flock -w 1500 9
 

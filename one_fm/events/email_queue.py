@@ -39,7 +39,7 @@ def after_insert(doc, event):
 	   tick. Bulk mail (20+ recipients) is left to the scheduler, as before.
 	"""
 	# ── AMP Injection ─────────────────────────────────────────────────
-	# Grab the AMP content set by one_bpmn's compose_and_send_task_email
+	# Grab the AMP content set by processa's compose_and_send_task_email
 	# or dispatchers.dispatch_email before the force-send fires.
 	amp_html = getattr(frappe.flags, "amp_html", None)
 	frappe.flags.amp_html = None  # Always clear — even if falsy (e.g. empty string)

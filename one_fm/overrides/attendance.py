@@ -53,6 +53,41 @@ def get_overlapping_shift_attendance(employee, attendance_date, shift, roster_ty
 	return {}
 
 
+RELIEF_FLAG_FIELDS = (
+    "custom_is_day_off_reliever",
+    "custom_is_weekend_reliever",
+    "custom_is_annual_leave_reliever",
+)
+
+
+def set_relief_flags_for_date(attendance_date):
+    """Copy relief flags from the linked Shift Assignment onto attendance written by raw SQL."""
+    attendance = frappe.qb.DocType("Attendance")
+    shift_assignment = frappe.qb.DocType("Shift Assignment")
+    any_flag = None
+    for field in RELIEF_FLAG_FIELDS:
+        condition = shift_assignment[field] == 1
+        any_flag = condition if any_flag is None else (any_flag | condition)
+    rows = (
+        frappe.qb.from_(attendance)
+        .join(shift_assignment).on(attendance.shift_assignment == shift_assignment.name)
+        .select(attendance.name, *[shift_assignment[field] for field in RELIEF_FLAG_FIELDS])
+        .where(
+            (attendance.attendance_date == attendance_date)
+            & (shift_assignment.docstatus == 1)
+            & any_flag
+        )
+    ).run(as_dict=True)
+    # MariaDB rejects a joined UPDATE here (pypika drops the table from SET), so group by flag set
+    groups = {}
+    for row in rows:
+        groups.setdefault(tuple(row[field] for field in RELIEF_FLAG_FIELDS), []).append(row.name)
+    for flags, names in groups.items():
+        frappe.db.set_value(
+            "Attendance", {"name": ["in", names]}, dict(zip(RELIEF_FLAG_FIELDS, flags)), update_modified=False
+        )
+
+
 class AttendanceOverride(Attendance):
     def validate(self):
         from erpnext.controllers.status_updater import validate_status
@@ -75,6 +110,22 @@ class AttendanceOverride(Attendance):
 
     def after_insert(self):
         self.set_day_off_ot()
+        self.set_relief_flags()
+
+    def set_relief_flags(self):
+        """Inherit relief flags from this attendance's own Shift Assignment (per roster type)."""
+        shift_assignment = self.shift_assignment or frappe.db.get_value("Shift Assignment", {
+            "employee": self.employee,
+            "start_date": self.attendance_date,
+            "roster_type": self.roster_type or "Basic",
+            "docstatus": 1
+        })
+        if not shift_assignment:
+            return
+        values = frappe.db.get_value("Shift Assignment", shift_assignment, list(RELIEF_FLAG_FIELDS), as_dict=True) or {}
+        flags = {field: 1 for field in RELIEF_FLAG_FIELDS if values.get(field)}
+        if flags:
+            self.db_set(flags)
 
     def set_day_off_ot(self):
         if self.shift_assignment:
@@ -981,6 +1032,10 @@ def mark_daily_attendance(start_date, end_date):
             """
             frappe.db.sql(query, values=[], as_dict=1)
             frappe.db.commit()
+
+        # The raw insert and set_value above bypass the controller
+        set_relief_flags_for_date(start_date)
+        frappe.db.commit()
 
         # # remark missing attendance for shifts
         end_date = add_days(start_date, 1)

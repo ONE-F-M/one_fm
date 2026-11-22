@@ -15,7 +15,7 @@ demand has disappeared. Assigned shipments are never touched.
 
 import frappe
 from frappe import _
-from frappe.utils import escape_html, get_datetime, getdate, today
+from frappe.utils import add_days, escape_html, get_datetime, getdate, today
 
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
 	driver_employees,
@@ -465,22 +465,37 @@ def generate_transportation_shipments() -> dict:
 		# leg on its own card. Collecting a different shift's crew on the same run is a
 		# Mixed trip the dispatcher builds on the canvas, not something a card's roster says.
 		targets = {}
+
+		def target(demand, direction, crew_relievers):
+			roster = [emp for emp in demand["employees"] if (emp["id"], direction) not in pinned]
+			gen_key, pair_group = _generation_key(demand, direction)
+			targets[gen_key] = (demand, direction, roster, pair_group, crew_relievers)
+			return roster
+
 		for demand in demands:
 			if not demand["employees"]:
 				continue
-			for direction in ("Outward", "Return"):
-				roster = [emp for emp in demand["employees"] if (emp["id"], direction) not in pinned]
-				gen_key, pair_group = _generation_key(demand, direction)
-				targets[gen_key] = (demand, direction, roster, pair_group)
-		current_keys = set(targets)
+			target(demand, "Outward", relievers)
+			if not _overnight(demand):
+				target(demand, "Return", relievers)
 
 		# A run that computed NO demand has no authority over any card. The demand builder
 		# returns {} for ordinary reasons (no Active Operations Shift, nobody allocated, or no
 		# Accommodation Checkin Checkout carrying an employee), indistinguishable from "nobody
 		# needs a bus today". Pruning on that deleted the whole pool once (551 cards), and
-		# taking riders off placed cards on it would empty every bus.
-		if current_keys:
-			_reconcile(targets, current_keys, relievers, summary, failed)
+		# taking riders off placed cards on it would empty every bus. Last night's crew
+		# going home does not count as demand for this check.
+		if targets:
+			# A shift that crosses midnight ends this morning, so its bus home carries the
+			# crew rostered on it yesterday, not the one starting tonight.
+			yesterday = add_days(today(), -1)
+			night_relievers = reliever_context(yesterday)
+			for demand in build_demand_descriptors(get_grouped_employees_by_accommodation(on_date=yesterday)):
+				if demand["employees"] and _overnight(demand):
+					for emp in target(demand, "Return", night_relievers):
+						skipped.pop(emp["id"], None)
+			_reconcile(targets, set(targets), summary, failed)
+		current_keys = set(targets)
 
 		_report(summary, skipped, failed, scheduled)
 		if current_keys or expired:
@@ -500,7 +515,13 @@ def generate_transportation_shipments() -> dict:
 	return summary
 
 
-def _reconcile(targets: dict, current_keys: set, relievers: dict, summary: dict, failed: dict) -> None:
+def _overnight(demand: dict) -> bool:
+	"""A shift whose end time is at or before its start time ends the next morning."""
+	start, end = demand.get("start_time"), demand.get("end_time")
+	return start is not None and end is not None and end <= start
+
+
+def _reconcile(targets: dict, current_keys: set, summary: dict, failed: dict) -> None:
 	"""Put today's demand on cards, settle orphaned placed cards and prune the pool."""
 	cards = _live_cards()
 	summary["repaired"] = _repair_mixed_keys(cards, current_keys)
@@ -508,7 +529,10 @@ def _reconcile(targets: dict, current_keys: set, relievers: dict, summary: dict,
 	seats = _SeatCheck()
 
 	owner = {}  # (employee, direction) -> the card that carries them today
-	for gen_key, (demand, direction, roster, pair_group) in targets.items():
+	# Every card that carries a rider. Not owner's values: a rider can ride home twice
+	# in one day (last night's shift and today's), so one card would overwrite the other.
+	carrying = set()
+	for gen_key, (demand, direction, roster, pair_group, relievers) in targets.items():
 		try:
 			family = families.get(gen_key)
 			if not family:
@@ -520,12 +544,14 @@ def _reconcile(targets: dict, current_keys: set, relievers: dict, summary: dict,
 				doc.insert(ignore_permissions=True)
 				summary["created"] += 1
 				owner.update({(emp["id"], direction): doc.name for emp in roster})
+				carrying.add(doc.name)
 				continue
 
 			carried = _distribute(
 				family, demand, direction, roster, gen_key, pair_group, relievers, seats, summary
 			)
 			owner.update({(emp, direction): card for emp, card in carried.items()})
+			carrying.update(carried.values())
 		except Exception as e:
 			summary["errors"] += 1
 			frappe.log_error(frappe.get_traceback(), "Transportation Shipment Generation Error")
@@ -537,9 +563,8 @@ def _reconcile(targets: dict, current_keys: set, relievers: dict, summary: dict,
 	summary["flagged"] = _settle_orphans(cards, produced, owner, summary)
 
 	summary["pruned"] = True
-	# owner holds every card that carries a rider today, including overflow cards made
-	# this run: their `#n` keys are never produced.
-	summary["deleted"] = _prune_stale(current_keys, keep=produced | set(owner.values()))
+	# carrying includes overflow cards made this run: their `#n` keys are never produced.
+	summary["deleted"] = _prune_stale(current_keys, keep=produced | carrying)
 
 
 # ─── What the run left undone ─────────────────────────────────────────────────

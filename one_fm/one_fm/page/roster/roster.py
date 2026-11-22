@@ -15,7 +15,7 @@ from frappe.utils import (
 )
 from frappe.query_builder import DocType, Order
 
-from one_fm.one_fm.page.roster.employee_map  import CreateMap, PostMap
+from one_fm.one_fm.page.roster.employee_map  import CreateMap, PostMap, WEEKEND_RELIEVER_DAYS
 from one_fm.api.v1.utils import response
 from one_fm.operations.doctype.operations_shift.operations_shift import resolve_shift_timing
 
@@ -1118,7 +1118,11 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			start_datetime= VALUES(start_datetime),
 			end_datetime= VALUES(end_datetime),
 			is_relieving_schedule = 0,
-			relieving_employee_schedule = NULL
+			relieving_employee_schedule = NULL,
+			is_day_off_reliever = 0,
+			is_weekend_reliever = 0,
+			is_annual_leave_reliever = 0,
+			leave_application = NULL
 		"""
 		if can_create:
 			frappe.db.sql(query, values=query_params)
@@ -2439,6 +2443,8 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 				event_location = "",
 				is_event_schedule = 0,
 				on_the_job_training = NULL,
+				is_annual_leave_reliever = 0,
+				leave_application = NULL,
 				employee_availability = "{employee_availability}"
 			"""
 			frappe.db.sql(query_main)
@@ -2463,6 +2469,12 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 		frappe.db.rollback()
 		frappe.log_error(message=frappe.get_traceback(), title="Day Off Error")
 		return response("error", 200, None, str(e))
+
+
+def get_relief_type_flags(date):
+	"""Day Off modal relief type, by the covered day's weekday: Friday/Saturday is weekend relief."""
+	is_weekend = getdate(date).weekday() in WEEKEND_RELIEVER_DAYS
+	return {"is_day_off_reliever": cint(not is_weekend), "is_weekend_reliever": cint(is_weekend)}
 
 
 def reliever_roster_assignment(reliver_emp_name, roster_list_arg):
@@ -2553,7 +2565,8 @@ def reliever_roster_assignment(reliver_emp_name, roster_list_arg):
 			if original_rdo_name:
 				frappe.db.set_value("Employee Schedule", reliever_sch_name, {
 					"is_relieving_schedule": 1,
-					"relieving_employee_schedule": original_rdo_name
+					"relieving_employee_schedule": original_rdo_name,
+					**get_relief_type_flags(date_val_str),
 				})
 		else:
 			frappe.log_error(message=f"Skipping reliever assignment due to incomplete roster_data: {roster_data_item}", title="Reliever Assignment")
@@ -2602,6 +2615,229 @@ def get_shift_details_of_employee(emp_name_arg, date_arg):
 
 	dict_value = {"date":getdate(date_str),"shift":emp_shift,"operations_role":operation_role_name,"start_datetime":start_datetime,"end_datetime":end_datetime}
 	return dict_value
+
+
+ROSTER_EDIT_ROLES = ("Operations Manager", "Site Supervisor", "Shift Manager", "Shift Supervisor", "Projects Manager", "System Manager")
+
+
+class AnnualLeaveReliefOvertimeError(frappe.ValidationError):
+	"""The reliever has Over-Time schedules in the relief range and cancel_overtime was not set."""
+
+
+def validate_al_relief(employee, from_date, to_date, leave_application=None):
+	"""Shared role, leave and covered-post checks for annual leave relief.
+
+	Without leave_application, the covered employee's approved leave spanning the range is used.
+	Returns (leave, post) as dicts.
+	"""
+	if not set(ROSTER_EDIT_ROLES) & set(frappe.get_roles()):
+		frappe.throw(_("You are not permitted to assign an annual leave reliever."), frappe.PermissionError)
+	check_employee_roster_permission([{"employee": employee}])
+
+	from_date, to_date = getdate(from_date), getdate(to_date)
+	if from_date > to_date:
+		frappe.throw(_("From Date cannot be after To Date."))
+	if from_date <= getdate(today()):
+		frappe.throw(_("Annual leave relief can only be assigned for future dates."))
+
+	if not leave_application:
+		leave_application = frappe.db.get_value("Leave Application", {
+			"employee": employee,
+			"docstatus": 1,
+			"status": "Approved",
+			"from_date": ["<=", from_date],
+			"to_date": [">=", to_date],
+		}, "name")
+		if not leave_application:
+			frappe.throw(_("{0} has no approved leave application covering {1} to {2}.").format(employee, from_date, to_date))
+
+	leave = frappe.db.get_value(
+		"Leave Application", leave_application,
+		["name", "employee", "leave_type", "docstatus", "status", "from_date", "to_date"], as_dict=True,
+	)
+	if not leave or leave.employee != employee:
+		frappe.throw(_("Leave Application {0} does not belong to {1}.").format(leave_application, employee))
+	if leave.docstatus != 1 or leave.status != "Approved":
+		frappe.throw(_("Leave Application {0} is not approved.").format(leave_application))
+	if not (getdate(leave.from_date) <= from_date and to_date <= getdate(leave.to_date)):
+		frappe.throw(_("Leave Application {0} does not cover {1} to {2}.").format(leave_application, from_date, to_date))
+
+	post = frappe.db.get_value(
+		"Employee", employee,
+		["employee_name", "project", "site", "shift", "custom_operations_role_allocation"], as_dict=True,
+	)
+	missing = [label for fieldname, label in (
+		("project", _("Project")), ("site", _("Site")), ("shift", _("Shift")),
+		("custom_operations_role_allocation", _("Operations Role")),
+	) if not post.get(fieldname)]
+	if missing:
+		frappe.throw(_("{0} has no {1} on the Employee record, so the covered post is unknown.").format(employee, ", ".join(missing)))
+
+	return leave, post
+
+
+@frappe.whitelist()
+def get_al_relief_context(employee: str, from_date: str, to_date: str, leave_application: str | None = None) -> dict:
+	"""Covered employee, leave and post shown in the Assign Annual Leave Reliever dialog."""
+	leave, post = validate_al_relief(employee, from_date, to_date, leave_application)
+	return {
+		"employee": employee,
+		"employee_name": post.employee_name,
+		"leave_application": leave.name,
+		"leave_type": leave.leave_type,
+		"from_date": cstr(getdate(from_date)),
+		"to_date": cstr(getdate(to_date)),
+		"project": post.project,
+		"site": post.site,
+		"shift": post.shift,
+		"operations_role": post.custom_operations_role_allocation,
+	}
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_al_relievers_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Reliever options for the Assign Annual Leave Reliever dialog as (name, employee_name, tag).
+
+	filters: employee (the covered employee), from_date, to_date. Lists active shift-working
+	employees not on Open/Approved leave and not already relieving in the range; the tag warns
+	when the reliever's Basic schedule in the range will be overridden.
+	"""
+	if not set(ROSTER_EDIT_ROLES) & set(frappe.get_roles()):
+		frappe.throw(_("You are not permitted to assign an annual leave reliever."), frappe.PermissionError)
+
+	filters = filters or {}
+	from_date, to_date = getdate(filters.get("from_date")), getdate(filters.get("to_date"))
+
+	Employee = frappe.qb.DocType("Employee")
+	LeaveApplication = frappe.qb.DocType("Leave Application")
+	EmployeeSchedule = frappe.qb.DocType("Employee Schedule")
+
+	# isnotnull: a NULL in a NOT IN subquery would exclude every employee.
+	on_leave = (
+		frappe.qb.from_(LeaveApplication)
+		.select(LeaveApplication.employee)
+		.where(LeaveApplication.employee.isnotnull())
+		.where(LeaveApplication.status.isin(["Open", "Approved"]))
+		.where(LeaveApplication.docstatus < 2)
+		.where(LeaveApplication.from_date <= to_date)
+		.where(LeaveApplication.to_date >= from_date)
+	)
+	relieving = (
+		frappe.qb.from_(EmployeeSchedule)
+		.select(EmployeeSchedule.employee)
+		.where(EmployeeSchedule.employee.isnotnull())
+		.where(EmployeeSchedule.date[from_date:to_date])
+		.where((EmployeeSchedule.is_annual_leave_reliever == 1) | (EmployeeSchedule.is_relieving_schedule == 1))
+	)
+	query = (
+		frappe.qb.from_(Employee)
+		.select(Employee.name, Employee.employee_name)
+		.where(Employee.status == "Active")
+		.where(Employee.shift_working == 1)
+		.where(Employee.attendance_by_timesheet == 0)
+		.where(Employee.name != cstr(filters.get("employee")))
+		.where(Employee.name.notin(on_leave))
+		.where(Employee.name.notin(relieving))
+		.orderby(Employee.name)
+		.limit(page_len)
+		.offset(start)
+	)
+	if txt:
+		query = query.where(Employee.name.like(f"%{txt}%") | Employee.employee_name.like(f"%{txt}%"))
+
+	rows = query.run(as_dict=True)
+	if not rows:
+		return []
+
+	scheduled = set(
+		frappe.qb.from_(EmployeeSchedule)
+		.select(EmployeeSchedule.employee)
+		.distinct()
+		.where(EmployeeSchedule.employee.isin([row.name for row in rows]))
+		.where(EmployeeSchedule.roster_type == "Basic")
+		.where(EmployeeSchedule.date[from_date:to_date])
+		.run(pluck=True)
+	)
+	override_tag = _("Schedule will be overridden")
+	return [(row.name, row.employee_name, override_tag if row.name in scheduled else "") for row in rows]
+
+
+@frappe.whitelist(methods=["POST"])
+def assign_annual_leave_reliever(employee: str, leave_application: str, from_date: str, to_date: str, reliever: str, cancel_overtime: int = 0) -> dict:
+	"""Roster `reliever` on the on-leave `employee`'s post for every day from from_date to to_date.
+
+	Each day's Basic schedule of the reliever is created or updated (never duplicated) and
+	marked is_annual_leave_reliever with the leave_application; the day off / weekend relief
+	flags and the relieving link are cleared.
+
+	Over-Time contract: if the reliever has Over-Time schedules in the range (not Rejected)
+	and cancel_overtime is 0, nothing is written and AnnualLeaveReliefOvertimeError is raised
+	(response exc_type "AnnualLeaveReliefOvertimeError", message lists the dates). Call again
+	with cancel_overtime=1 to delete them and proceed.
+
+	Returns {"schedules": [names], "deleted_overtime": [names]}.
+	"""
+	leave, post = validate_al_relief(employee, from_date, to_date, leave_application)
+	from_date, to_date = getdate(from_date), getdate(to_date)
+
+	if reliever == employee:
+		frappe.throw(_("An employee cannot be assigned as their own reliever."))
+	if not frappe.db.exists("Employee", {"name": reliever, "status": "Active", "shift_working": 1}):
+		frappe.throw(_("Reliever {0} must be an active shift-working employee.").format(reliever))
+
+	overtime = frappe.get_all(
+		"Employee Schedule",
+		filters={
+			"employee": reliever,
+			"roster_type": "Over-Time",
+			"date": ["between", [from_date, to_date]],
+			"workflow_state": ["!=", "Rejected"],
+		},
+		fields=["name", "date"],
+		order_by="date asc",
+	)
+	if overtime and not cint(cancel_overtime):
+		frappe.throw(
+			_("{0} has overtime on {1}. Confirm to cancel it and assign the relief.").format(
+				reliever, ", ".join(cstr(row.date) for row in overtime)
+			),
+			exc=AnnualLeaveReliefOvertimeError,
+			title=_("Reliever Has Overtime"),
+		)
+	for row in overtime:
+		frappe.delete_doc("Employee Schedule", row.name, ignore_permissions=True)
+
+	operations_shift = frappe.db.get_value("Operations Shift", post.shift, "shift_type")
+	post_abbrv = frappe.db.get_value("Operations Role", post.custom_operations_role_allocation, "post_abbrv")
+	schedules = []
+	for day in pd.date_range(from_date, to_date):
+		day = day.date()
+		existing = frappe.db.get_value("Employee Schedule", {"employee": reliever, "date": day, "roster_type": "Basic"}, "name")
+		schedule = frappe.get_doc("Employee Schedule", existing) if existing else frappe.new_doc("Employee Schedule")
+		schedule.update({
+			"employee": reliever,
+			"date": day,
+			"roster_type": "Basic",
+			"employee_availability": "Working",
+			"project": post.project,
+			"site": post.site,
+			"shift": post.shift,
+			"shift_type": operations_shift,
+			"operations_role": post.custom_operations_role_allocation,
+			"post_abbrv": post_abbrv,
+			"is_annual_leave_reliever": 1,
+			"leave_application": leave.name,
+			"is_day_off_reliever": 0,
+			"is_weekend_reliever": 0,
+			"is_relieving_schedule": 0,
+			"relieving_employee_schedule": None,
+		})
+		schedule.save(ignore_permissions=True)
+		schedules.append(schedule.name)
+
+	# The request commits once on success; any throw above rolls the whole range back.
+	return {"schedules": schedules, "deleted_overtime": [row.name for row in overtime]}
 
 
 @frappe.whitelist()
