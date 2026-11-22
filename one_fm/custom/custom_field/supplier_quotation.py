@@ -16,6 +16,15 @@ def get_supplier_quotation_custom_fields():
                 "insert_after": "custom_request_for_quotation",
                 "options": "Request for Material",
                 "read_only": 1
+            },
+            {
+                "fieldname": "workflow_state",
+                "label": "Workflow State",
+                "fieldtype": "Link",
+                "options": "Workflow State",
+                "hidden": 1,
+                "no_copy": 1,
+                "allow_on_submit": 1
             }
         ]
     }
