@@ -317,6 +317,8 @@ one_fm.patches.v15_0.rename_attendance_amendment_to_attendance_approval
 one_fm.patches.v15_0.set_ccp_arriving_for_submitted_arrivals #2026-10-19
 one_fm.patches.v15_0.fill_ccp_created_visa_request_drafts #2026-10-20
 one_fm.patches.v15_0.allow_bulk_edit_on_ccp_and_arrival_list_views #2026-10-22
+one_fm.patches.v15_0.seed_manpower_request_reason_options #2026-11-16 HD-1927006 seed Manpower Request Reason from the Project Manpower Request Reason select options before the field is converted to a Link
+one_fm.patches.v15_0.clean_employee_record_update_request_current_base_salary #2026-11-19 not null
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
 one_fm.patches.v15_0.add_assignment_rule_returning_to_operations_supervisor_of_client_event #2
@@ -751,10 +753,15 @@ one_fm.patches.v15_0.reassign_rfm_hd_1910279_to_reliever #2026-11-01 HD-1910279 
 one_fm.patches.v15_0.force_close_bonus_request_br_2026_0286 #2026-10-28 HD-1903486 close BR-2026-0286 stranded in Pending General Manager by the workflow deactivation
 one_fm.patches.v15_0.add_helpdesk_notification_emails_to_hr_settings #2026-11-01 HD-1892786 Helpdesk reminder recipients become a table of addresses so night-shift operators can be added
 one_fm.patches.v15_0.merge_employee_forth_name_into_fourth #2026-10-29 HD-1903520 merge the duplicate Employee "Forth Name" fields into the correctly spelled fourth_name fields and delete them
-one_fm.patches.v15_0.create_missing_documents_pre_onb_2026_00008 #2026-10-25 HD-1898774 the 3 rows + 1 PCC the killed submit request left PRE-ONB-2026-00008 short
 one_fm.patches.v15_0.reactivate_arrival_and_deployment_workflow #2026-11-04 Processa move reverted
 one_fm.patches.v15_0.add_recruiter_bpmn_process_instance_permission #2026-11-04 Recruiter actions the Job Applicant map tasks; BPMN Process Instance gave write to System Manager, Process Owner and Employee only
 one_fm.patches.v15_0.add_job_applicant_graded_by_field #2026-11-04 Graded By on Job Applicant, the recruiter the Job Applicant map assigns its tasks to
 one_fm.patches.v15_0.backfill_attendance_check_nov02_2026 #2026-11-05 HD-1914594 the Attendance Checks for 2 November 2026 the daily job dropped and can never regenerate
 one_fm.patches.v15_0.reset_pmr_pr01135_to_in_process #2026-11-05 HD-1915979 unlink the wrong employee from PR01135 and reopen it from Completed back to In Process
 one_fm.patches.v15_0.backfill_rfm_2026_000955_item_description #2026-11-11 HD-1925621 the 2 lines of RFM-2026-000955 the blank requested_description left unconvertible
+one_fm.patches.v15_0.set_informed_applicant_emp_onb_2026_00479 #2026-11-15 HD-1927134 EMP-ONB-2026-00479 stuck in Applicant Attended with informed_applicant unset, so Create > Work Contract throws and the onboarding cannot move
+one_fm.patches.v15_0.remap_removed_pmr_reasons #2026-11-15 HD-1927006 fold the retired Project Manpower Request reasons Subcontractor Replacement and Reliever into Sub Contractor and Day OFF Reliever
+one_fm.patches.v15_0.approve_pending_attendance_check_nov2026 #2026-11-16 HD-1925623 approve the Attendance Checks left in Pending Approval for 2 to 13 November 2026 as Present, per HR request
+one_fm.patches.v15_0.backfill_attendance_check_nov15_2026 #2026-11-17 HD-1933504 WI-004742 the Attendance Checks for 15 November 2026 the daily job dropped when a deploy recreated its Scheduled Job Type across the 13:15 slot, 16 November guarded the same way
+one_fm.patches.v15_0.processa_sync_employee_record_update_request___v1_9c10e5 #2026-11-19 Processa sync: Employee Record Update Request
+one_fm.patches.v15_0.sync_employee_record_update_request_with_ba

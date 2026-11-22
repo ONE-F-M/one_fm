@@ -6,49 +6,53 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "section_break_a50a2b",
+  "section_break_9abb4e",
   "employee",
   "employee_name",
   "designation",
   "department",
   "project_allocation",
-  "column_break_a5243e",
+  "new_line_manager",
+  "new_line_manager_user",
+  "column_break_82f0b6",
   "workflow_state",
   "effective_date_of_change",
   "line_manager",
   "line_manager_user",
-  "section_break_18485f",
+  "reports_to",
+  "reports_to_user",
+  "section_break_4689e9",
   "salary_update_required",
   "current_salary_structure",
   "salary_new_value",
-  "column_break_6d1cd0",
+  "column_break_046288",
   "employee_appraisal_required",
   "current_base_salary",
   "base_new_value",
   "employee_appraisal_form",
-  "section_break_b3899f",
+  "section_break_2cdcbe",
   "salary_structure_components",
-  "section_break_5307d1",
-  "properties_changes_required",
-  "properties",
-  "section_break_6048f4",
+  "section_break_0d996c",
+  "term_changes_required",
+  "employment_terms",
+  "section_break_feb55e",
   "day_off_terms_required",
   "day_off_category_current_value",
   "day_off_category_new_value",
-  "column_break_5f45d8",
+  "column_break_1ee87f",
   "number_of_days_off_current_value",
   "number_of_days_off_new_value",
-  "section_break_8bc0f8",
+  "section_break_f71ff7",
   "benefits_changes_required",
   "benefit",
-  "reason_for_changes_section",
+  "section_break_bf2b31",
   "reason_for_changes",
   "remarks",
   "amended_from"
  ],
  "fields": [
   {
-   "fieldname": "section_break_a50a2b",
+   "fieldname": "section_break_9abb4e",
    "fieldtype": "Section Break",
    "label": "Employee"
   },
@@ -56,7 +60,6 @@
    "fieldname": "employee",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee",
@@ -94,7 +97,25 @@
    "options": "Project"
   },
   {
-   "fieldname": "column_break_a5243e",
+   "depends_on": "eval:(doc.employment_terms || []).some(r => r.terms == 'Department')",
+   "fieldname": "new_line_manager",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "New Line Manager",
+   "options": "Employee"
+  },
+  {
+   "depends_on": "eval:(doc.employment_terms || []).some(r => r.terms == 'Department')",
+   "fetch_from": "new_line_manager.user_id",
+   "fieldname": "new_line_manager_user",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "New Line Manager User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_82f0b6",
    "fieldtype": "Column Break"
   },
   {
@@ -107,20 +128,20 @@
   {
    "fieldname": "effective_date_of_change",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Effective Date of Change",
    "reqd": 1
   },
   {
-   "fetch_from": "employee.reports_to",
+   "fetch_from": "department.custom_department_head",
    "fieldname": "line_manager",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "label": "Line Manager",
-   "options": "Employee",
+   "options": "User",
    "read_only": 1
   },
   {
-   "fetch_from": "line_manager.user_id",
    "fieldname": "line_manager_user",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
@@ -129,7 +150,26 @@
    "read_only": 1
   },
   {
-   "fieldname": "section_break_18485f",
+   "depends_on": "eval:doc.reports_to",
+   "fetch_from": "employee.reports_to",
+   "fieldname": "reports_to",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "ignore_user_permissions": 1,
+   "label": "Reports To",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "reports_to.user_id",
+   "fieldname": "reports_to_user",
+   "fieldtype": "Link",
+   "label": "Reports To User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_4689e9",
    "fieldtype": "Section Break",
    "label": "Salary Update"
   },
@@ -141,11 +181,10 @@
   },
   {
    "depends_on": "eval:doc.salary_update_required",
-   "fetch_from": "current_base_salary.salary_structure",
    "fieldname": "current_salary_structure",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Salary Structure - Current Details",
-   "options": "Salary Structure Assignment"
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.salary_update_required",
@@ -155,7 +194,7 @@
    "options": "Salary Structure"
   },
   {
-   "fieldname": "column_break_6d1cd0",
+   "fieldname": "column_break_046288",
    "fieldtype": "Column Break"
   },
   {
@@ -167,11 +206,10 @@
   },
   {
    "depends_on": "eval:doc.salary_update_required",
-   "fetch_from": "current_salary_structure.base",
+   "fetch_from": "current_salary_structure_assignment.base",
    "fieldname": "current_base_salary",
-   "fieldtype": "Data",
-   "label": "Base Salary - Current Details",
-   "options": "Salary Structure Assignment"
+   "fieldtype": "Currency",
+   "label": "Base Salary - Current Details"
   },
   {
    "depends_on": "eval:doc.salary_update_required",
@@ -187,7 +225,7 @@
   },
   {
    "depends_on": "eval:doc.salary_update_required",
-   "fieldname": "section_break_b3899f",
+   "fieldname": "section_break_2cdcbe",
    "fieldtype": "Section Break",
    "label": "Salary Structure Components"
   },
@@ -199,25 +237,25 @@
    "options": "Employee Record Update Request Salary Structure Compone Item"
   },
   {
-   "fieldname": "section_break_5307d1",
+   "fieldname": "section_break_0d996c",
    "fieldtype": "Section Break",
    "label": "Changes to Update"
   },
   {
    "default": "0",
-   "fieldname": "properties_changes_required",
+   "fieldname": "term_changes_required",
    "fieldtype": "Check",
-   "label": "Properties Changes Required"
+   "label": "Terms Changes Required"
   },
   {
-   "depends_on": "eval:doc.properties_changes_required==1",
-   "fieldname": "properties",
+   "depends_on": "eval:doc.term_changes_required",
+   "fieldname": "employment_terms",
    "fieldtype": "Table",
-   "label": "Properties",
+   "label": "Employment Terms",
    "options": "Employee Record Update Request Properties Item"
   },
   {
-   "fieldname": "section_break_6048f4",
+   "fieldname": "section_break_feb55e",
    "fieldtype": "Section Break",
    "label": "Day Off Terms"
   },
@@ -243,7 +281,7 @@
    "options": "\nMonthly\nWeekly"
   },
   {
-   "fieldname": "column_break_5f45d8",
+   "fieldname": "column_break_1ee87f",
    "fieldtype": "Column Break"
   },
   {
@@ -262,7 +300,7 @@
    "options": "\n1\n2\n3\n4"
   },
   {
-   "fieldname": "section_break_8bc0f8",
+   "fieldname": "section_break_f71ff7",
    "fieldtype": "Section Break",
    "label": "Benefits"
   },
@@ -280,7 +318,7 @@
    "options": "Employee Record Update Request Benefits Item"
   },
   {
-   "fieldname": "reason_for_changes_section",
+   "fieldname": "section_break_bf2b31",
    "fieldtype": "Section Break",
    "label": "Reason for Changes"
   },
@@ -288,14 +326,13 @@
    "fieldname": "reason_for_changes",
    "fieldtype": "Select",
    "label": "Reason for Changes",
-   "options": "\nIncrement\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits\nOthers",
+   "options": "\nIncrement\nDecrement\nPromotion\nChange in Designation\nChange in Department\nChange in Employment Terms\nAddition of Benefits\nOthers",
    "reqd": 1
   },
   {
    "fieldname": "remarks",
    "fieldtype": "Small Text",
-   "label": "Remarks",
-   "reqd": 1
+   "label": "Remarks"
   },
   {
    "fieldname": "amended_from",
@@ -310,7 +347,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-16 12:00:00.000000",
+ "modified": "2026-11-22 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Employee Record Update Request",
@@ -327,6 +364,7 @@
    "read": 1,
    "report": 1,
    "role": "HR User",
+   "select": 1,
    "share": 1,
    "submit": 1,
    "write": 1
@@ -340,6 +378,7 @@
    "read": 1,
    "report": 1,
    "role": "HR Manager",
+   "select": 1,
    "share": 1,
    "submit": 1,
    "write": 1
@@ -353,7 +392,9 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "select": 1,
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {

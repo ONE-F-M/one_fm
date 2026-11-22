@@ -1079,7 +1079,7 @@ def notify_manager(manager):
     try:
         page_link = frappe.utils.get_url()+f'/app/todo?date={frappe.utils.get_date_str(frappe.utils.getdate())}&allocated_to={manager}'
         msg = frappe.render_template('one_fm/templates/emails/attendance_manager_todo_assignment.html', context={"manager": manager,'page_link':page_link})
-        sendemail(recipients= [manager], content=msg, subject="Pending Attendance Checks", delayed=False)
+        sendemail(recipients= [manager], content=msg, subject="Pending Attendance Checks")
     except:
         frappe.log_error(title = "Error Notifying  Attendance Manager",message = frappe.get_traceback())
 
