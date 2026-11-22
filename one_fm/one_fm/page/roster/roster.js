@@ -766,7 +766,7 @@ function setup_preset_filters(page) {
 // means by a "strictly Read-Only" roster view.
 const ROSTER_ACTION_SELECTORS = [
 	".changepost", ".change_ot", ".change_others", ".suspend_employee",
-	".assignchangemodal", ".dayoff", "#rosterEmployeeActions"
+	".assignchangemodal", ".dayoff", ".assign_al_reliever", "#rosterEmployeeActions"
 ].join(", ");
 
 function apply_roster_read_only(page) {
@@ -845,6 +845,11 @@ function setup_topbar_events(page) {
 	$(".dayoff").on("click", function () {
 		if (roster_action_blocked(page)) return;
 		dayoff(page);
+	});
+
+	$(".assign_al_reliever").on("click", function () {
+		if (roster_action_blocked(page)) return;
+		assign_al_reliever(page);
 	});
 
 	$(".clear_roster_filters").on("click", function () {
@@ -1465,6 +1470,7 @@ function render_roster(res, page) {
 			let is_pending_suspension = false;
 			// Indexes (k) of this day's records that are relief shifts.
 			let relief_slots = [];
+			let al_relief_slots = [];
 
 			let is_relieved_this_day = employee_relieving_date && current_day_iter.isAfter(employee_relieving_date);
 			is_not_relieving_day = false;
@@ -1473,6 +1479,7 @@ function render_roster(res, page) {
 				for (let k = 0; k < employees_data[employee_key][date_key].length; k++) {
 					let record = employees_data[employee_key][date_key][k];
 					if (cint(record.is_relief_shift)) relief_slots.push(k);
+					if (cint(record.is_al_relief_shift)) al_relief_slots.push(k);
 					let { employee, date, operations_role, post_abbrv, employee_availability, shift, start_datetime, end_datetime, start_time, end_time, roster_type, attendance, day_off_ot, leave_type, leave_application, event_location, actual_site, client_event, on_the_job_training, project, site, reference_doctype, reference_docname, workflow_state } = record;
 					// Tooltip details for Client Interview (same for scheduled/attended cases)
 					let client_interview_tooltip = `Client Interview`;
@@ -1628,6 +1635,9 @@ function render_roster(res, page) {
 							else { bgclass = "absentbasic" }
 						}
 						else { bgclass = classmap[attendance] }
+						if (attendance == "On Leave" && leave_application) {
+							data_extra_attrs = ` data-leave-application="${frappe.utils.escape_html(leave_application)}"`;
+						}
 					}
 					else if (attendance && attendance == "Present") {
 						data_selectid = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
@@ -1725,16 +1735,8 @@ function render_roster(res, page) {
 			}
 
 			// One record -> whole cell; stacked records -> top (Basic) and/or bottom (Over-Time) half.
-			let relief_class = ``;
-			if (relief_slots.length) {
-				if (employees_data[employee_key][date_key].length == 1) {
-					relief_class = "relief-full";
-				} else {
-					if (relief_slots.includes(0)) relief_class += "relief-top ";
-					if (relief_slots.some(slot => slot > 0)) relief_class += "relief-bottom";
-					relief_class = relief_class.trim();
-				}
-			}
+			let day_record_count = (employees_data[employee_key][date_key] || []).length;
+			let relief_class = `${relief_border_class(relief_slots, day_record_count, "relief")} ${relief_border_class(al_relief_slots, day_record_count, "al-relief")}`.trim();
 
 			const isToday = current_day_iter.isSame(moment(), 'day');
 
@@ -3464,6 +3466,125 @@ function update_roster_view(element, page) {
 }
 
 
+
+// Border classes for the relief records (slots) of one day: "<prefix>-full" for a single
+// record, else "<prefix>-top" (Basic) and/or "<prefix>-bottom" (Over-Time).
+function relief_border_class(slots, record_count, prefix) {
+	if (!slots.length) return "";
+	if (record_count == 1) return `${prefix}-full`;
+	let classes = [];
+	if (slots.includes(0)) classes.push(`${prefix}-top`);
+	if (slots.some(slot => slot > 0)) classes.push(`${prefix}-bottom`);
+	return classes.join(" ");
+}
+
+// Selected cells must be consecutive OL days of one employee under one leave application.
+function assign_al_reliever(page) {
+	const selected = [...new Set(classgrt)];
+	const $cells = $(".rosterMonth [data-selectid]").filter((i, el) => selected.includes(el.getAttribute("data-selectid")));
+	const employees = new Set(selected.map(id => id.split("|")[0]));
+	const leave_applications = new Set($cells.toArray().map(el => el.getAttribute("data-leave-application")));
+	const dates = selected.map(id => id.split("|")[1]).sort();
+
+	let error = "";
+	if (!selected.length) {
+		error = __("Select the On Leave (OL) days to cover.");
+	} else if (employees.size !== 1) {
+		error = __("Select the On Leave (OL) days of one employee only.");
+	} else if ($cells.length !== selected.length || leave_applications.has(null)) {
+		error = __("Select only On Leave (OL) days that belong to a leave application.");
+	} else if (leave_applications.size !== 1) {
+		error = __("The selected days belong to more than one leave application. Select the days of one leave only.");
+	} else if (dates.some((date, i) => i && moment(date).diff(moment(dates[i - 1]), "days") !== 1)) {
+		error = __("Select consecutive days only.");
+	}
+	if (error) {
+		frappe.msgprint(error);
+		return;
+	}
+
+	frappe.call({
+		method: "one_fm.one_fm.page.roster.roster.get_al_relief_context",
+		args: {
+			employee: [...employees][0],
+			from_date: dates[0],
+			to_date: dates[dates.length - 1],
+			leave_application: [...leave_applications][0],
+		},
+		freeze: true,
+		callback: function (r) {
+			if (r.message) show_al_reliever_dialog(page, r.message);
+		}
+	});
+}
+
+function show_al_reliever_dialog(page, context) {
+	const read_only = (label, fieldname, fieldtype, options) => ({ label, fieldname, fieldtype, options, read_only: 1, default: context[fieldname] });
+	const d = new frappe.ui.Dialog({
+		title: __("Assign Annual Leave Reliever"),
+		fields: [
+			read_only(__("Employee"), "employee", "Link", "Employee"),
+			read_only(__("Employee Name"), "employee_name", "Data"),
+			read_only(__("Leave Application"), "leave_application", "Link", "Leave Application"),
+			read_only(__("Leave Type"), "leave_type", "Data"),
+			{ fieldtype: "Column Break" },
+			read_only(__("From Date"), "from_date", "Date"),
+			read_only(__("To Date"), "to_date", "Date"),
+			{ fieldtype: "Section Break", label: __("Covered Post") },
+			read_only(__("Project"), "project", "Link", "Project"),
+			read_only(__("Site"), "site", "Link", "Operations Site"),
+			{ fieldtype: "Column Break" },
+			read_only(__("Shift"), "shift", "Link", "Operations Shift"),
+			read_only(__("Operations Role"), "operations_role", "Link", "Operations Role"),
+			{ fieldtype: "Section Break" },
+			{
+				label: __("Reliever"), fieldname: "reliever", fieldtype: "Link", options: "Employee", reqd: 1,
+				get_query: () => ({
+					query: "one_fm.one_fm.page.roster.roster.get_al_relievers_query",
+					filters: { employee: context.employee, from_date: context.from_date, to_date: context.to_date }
+				})
+			},
+		],
+		primary_action_label: __("Assign"),
+		primary_action: function (values) {
+			assign(values.reliever, 0);
+		}
+	});
+
+	function assign(reliever, cancel_overtime) {
+		frappe.call({
+			method: "one_fm.one_fm.page.roster.roster.assign_annual_leave_reliever",
+			type: "POST",
+			args: {
+				employee: context.employee,
+				leave_application: context.leave_application,
+				from_date: context.from_date,
+				to_date: context.to_date,
+				reliever,
+				cancel_overtime,
+			},
+			freeze: true,
+			error_handlers: {
+				// The server wrote nothing; it lists the overtime dates and waits for confirmation.
+				AnnualLeaveReliefOvertimeError: function (r) {
+					const messages = JSON.parse(r._server_messages || "[]").map(m => JSON.parse(m).message);
+					frappe.confirm(
+						`${messages.join("<br>")}<br><br>${__("Confirming will cancel these overtime schedules.")}`,
+						() => assign(reliever, 1)
+					);
+				}
+			},
+			callback: function () {
+				d.hide();
+				frappe.show_alert({ message: __("Annual leave reliever assigned."), indicator: "green" }, 5);
+				clear_selection(page);
+				page[get_wrapper_element().slice(1)](page);
+			}
+		});
+	}
+
+	d.show();
+}
 
 function dayoff(page) {
 	let employees = [];

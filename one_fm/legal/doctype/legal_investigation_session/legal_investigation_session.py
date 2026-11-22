@@ -1,31 +1,13 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2020, ONE FM and contributors
 # For license information, please see license.txt
+"""A session held for a Legal Investigation.
 
-from __future__ import unicode_literals
-import frappe
+The Conduct Legal Investigation Session process moves it through review and submission, and
+adds the submitted session to the investigation's Session Summary.
+"""
+
 from frappe.model.document import Document
 
+
 class LegalInvestigationSession(Document):
-	def on_submit(self):
-		self.update_session()
-
-	def update_session(self):
-		attendees = ""
-		for employee in self.session_parties:
-			if employee.attended == "Yes":
-				attendees += "{emp_name},".format(emp_name=employee.employee_name)
-
-		legal_inv = frappe.get_doc("Legal Investigation", self.legal_investigation_code)
-		legal_inv.append("session_summary", {
-			"session_datetime": self.session_datetime,
-			"subject": self.subject,
-			"conducted_by": self.conductor_name,
-			"attendees": attendees.rstrip(","),
-			"issues": self.notes,
-			"attachment": "<a href='{attachment}' target='_blank'>Session Attachment (Click here)</a>".format(attachment=self.attachment)
-		})	
-		legal_inv.save(ignore_permissions=True)
-		print(attendees)
-
-		frappe.db.commit()
+	pass

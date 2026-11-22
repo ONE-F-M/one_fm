@@ -261,10 +261,10 @@ def optimize_transportation_routes():
         frappe.log_error(frappe.get_traceback(), "Route Optimization API Error")
         return {"status": "error", "message": str(e)}
 
-def get_grouped_employees_by_accommodation(skipped: dict | None = None) -> dict:
-    """{camp key: {"lookup_id", "shifts": {shift: [employee]}}} for today's riders.
+def get_grouped_employees_by_accommodation(skipped: dict | None = None, on_date=None) -> dict:
+    """{camp key: {"lookup_id", "shifts": {shift: [employee]}}} for the riders of ``on_date`` (today).
 
-    Demand comes from today's Working Employee Schedule rows, not the master Employee.shift.
+    Demand comes from that day's Working Employee Schedule rows, not the master Employee.shift.
     ``skipped`` collects ``{employee: reason}`` for every Active employee dropped here.
     """
     def skip(emp_ids, reason):
@@ -283,7 +283,7 @@ def get_grouped_employees_by_accommodation(skipped: dict | None = None) -> dict:
     active = set(shift_names)
     rows_of = {}
     for row in frappe.get_all("Employee Schedule",
-        filters={"date": frappe.utils.today(), "employee_availability": "Working"},
+        filters={"date": on_date or frappe.utils.today(), "employee_availability": "Working"},
         fields=["employee", "shift", "employee_availability", "roster_type"]
     ):
         rows_of.setdefault(row.employee, []).append(row)
@@ -303,7 +303,7 @@ def get_grouped_employees_by_accommodation(skipped: dict | None = None) -> dict:
 
     # The overlay drops anyone on approved leave or being relieved, and files a reliever
     # under the shift they cover. It is resolved per date and stored nowhere.
-    emp_shift_map = apply_to_shift_map(emp_shift_map)
+    emp_shift_map = apply_to_shift_map(emp_shift_map, on_date)
     if skipped is not None:
         for emp in emp_shift_map:
             skipped.pop(emp, None)
@@ -2434,7 +2434,14 @@ def get_manifest_data_for_plan(plan_name: str):
 			"shipmentShiftNames": ship_shift,
 			"shipmentOwnDirections": ship_own_dir,
 			"vehicleMeta": v_meta
-		}
+		},
+		# The client cannot read Transportation Settings, so the manifest page gets the
+		# state from here; it hides the Rambo chip when the list is already Rambo-only.
+		"restrict_reliever_search_to_rambo": cint(
+			frappe.db.get_single_value(
+				"Transportation Settings", "restrict_reliever_search_to_rambo_employees_only"
+			)
+		),
 	}
 
 
@@ -2546,6 +2553,7 @@ def _fetch_rambo_employees():
             Employee.designation,
             Employee.cell_number,
             Employee.shift,
+            Employee.custom_is_rambo_reliever,
         )
         .where(Employee.status == "Active")
         .where(Employee.custom_is_rambo_reliever == 1)
@@ -2577,6 +2585,7 @@ def _fetch_shift_working_employees(camps, exclude):
             Employee.designation,
             Employee.cell_number,
             Employee.shift,
+            Employee.custom_is_rambo_reliever,
         )
         .where(Employee.status == "Active")
         .where(Employee.shift_working == 1)
@@ -2773,6 +2782,8 @@ def _build_reliever(employee, rows, date, shift_times, window):
         "shift_start_time": _hhmm(basic_interval[0]) if basic_interval else None,
         "shift_end_time": _hhmm(basic_interval[1]) if basic_interval else None,
         "master_shift": employee.shift or None,
+        # Lets the manifest page filter by Rambo without a call per card.
+        "is_rambo_reliever": bool(employee.get("custom_is_rambo_reliever")),
         "ot_shift": ot.shift if ot else None,
         "ot_start_time": _hhmm(ot_interval[0]) if ot_interval else None,
         "ot_end_time": _hhmm(ot_interval[1]) if ot_interval else None,

@@ -19,7 +19,8 @@
   "summary_section",
   "notes",
   "attachment",
-  "amended_from"
+  "amended_from",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -112,16 +113,27 @@
    "options": "Legal Investigation Session",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2020-07-09 15:55:22.001910",
+ "modified": "2026-11-16 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Legal Investigation Session",
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -131,6 +143,35 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Legal Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Legal User",
+   "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],

@@ -216,7 +216,50 @@ def get_shift_assignment_custom_fields():
                 "read_only": 1,
                 "search_index": 1
             },
-
-
+            {
+                "fieldname": "custom_relieving_details",
+                "fieldtype": "Section Break",
+                "label": "Relieving Details",
+                "insert_after": "roster_type"
+            },
+            {
+                "fieldname": "custom_is_day_off_reliever",
+                "fieldtype": "Check",
+                "label": "Is Day Off Reliever",
+                "insert_after": "custom_relieving_details",
+                "read_only": 1
+            },
+            {
+                "fieldname": "custom_column_break_52ziv",
+                "fieldtype": "Column Break",
+                "insert_after": "custom_is_day_off_reliever"
+            },
+            {
+                "fieldname": "custom_is_weekend_reliever",
+                "fieldtype": "Check",
+                "label": "Is Weekend Reliever",
+                "insert_after": "custom_column_break_52ziv",
+                "read_only": 1
+            },
+            {
+                "fieldname": "custom_column_break_0oc2o",
+                "fieldtype": "Column Break",
+                "insert_after": "custom_is_weekend_reliever"
+            },
+            {
+                "fieldname": "custom_is_annual_leave_reliever",
+                "fieldtype": "Check",
+                "label": "Is Annual Leave Reliever",
+                "insert_after": "custom_column_break_0oc2o",
+                "read_only": 1
+            },
+            {
+                "fieldname": "custom_leave_application",
+                "fieldtype": "Link",
+                "label": "Leave Application",
+                "insert_after": "custom_is_annual_leave_reliever",
+                "options": "Leave Application",
+                "read_only": 1
+            },
         ]
     }

@@ -71,6 +71,59 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 		erw.save()
 		self.assertEqual(erw.workflow_state, "Rejected")
 
+	def test_a_supervisor_cannot_raise_a_withdrawal_for_their_employee(self):
+		# Supervisors hold "Employee", which the DocType grants create.
+		frappe.db.set_value("Employee", self.employee.name, "user_id", _make_user("test_erw_employee@example.com"))
+		erw = frappe.get_doc({
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+			"reason": "Raised by supervisor",
+		})
+
+		with self._acting_as("test_erw_supervisor@example.com"):
+			with self.assertRaises(frappe.PermissionError):
+				erw.insert()
+
+		self.assertFalse(frappe.db.exists("Employee Resignation Withdrawal", {"employee_resignation": self.resignation.name}))
+
+	def test_an_employee_can_raise_a_withdrawal_for_their_own_resignation(self):
+		frappe.db.set_value("Employee", self.employee.name, "user_id", _make_user("test_erw_employee@example.com"))
+
+		with self._acting_as("test_erw_employee@example.com"):
+			erw = frappe.get_doc({
+				"doctype": "Employee Resignation Withdrawal",
+				"employee_resignation": self.resignation.name,
+				"reason": "Changed my mind",
+			}).insert()
+
+		self.assertEqual(erw.employee, self.employee.name)
+
+	def test_the_offboarding_officer_can_raise_a_withdrawal_on_an_employee_behalf(self):
+		frappe.db.set_value("Employee", self.employee.name, "user_id", _make_user("test_erw_employee@example.com"))
+
+		with self._acting_as("test_erw_offboarding@example.com", roles=("Employee", "Offboarding Officer")):
+			erw = frappe.get_doc({
+				"doctype": "Employee Resignation Withdrawal",
+				"employee_resignation": self.resignation.name,
+				"reason": "Employee asked HR to withdraw",
+			}).insert()
+
+		self.assertEqual(erw.employee, self.employee.name)
+
+	def test_a_withdrawal_cannot_name_a_different_employee_than_its_resignation(self):
+		# Naming yourself as employee on someone else's resignation must not pass the ownership check.
+		other_employee = _make_employee("test_erw_other_employee@example.com", "Test ERW Other Employee")
+
+		with self.assertRaises(frappe.ValidationError) as context:
+			frappe.get_doc({
+				"doctype": "Employee Resignation Withdrawal",
+				"employee_resignation": self.resignation.name,
+				"employee": other_employee,
+				"reason": "Test",
+			}).insert()
+
+		self.assertTrue("is not the employee on resignation" in str(context.exception))
+
 	def test_reject_through_the_workflow_without_a_stored_reason_is_blocked(self):
 		# apply_workflow() reloads the document from the database, so a reason that
 		# only exists on the approver's form never reaches validate_rejection_reason().

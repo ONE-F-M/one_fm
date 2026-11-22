@@ -1,7 +1,7 @@
 {
   "permissions": {
-    "allow": ["Bash(bash scripts/claude-pr.sh:*)"],
-    "ask": ["Bash(bash scripts/claude-pr.sh --update:*)"],
+    "allow": ["Bash(bash .claude/open-pr-via-github-app.sh:*)"],
+    "ask": ["Bash(bash .claude/open-pr-via-github-app.sh --update:*)"],
     "deny": ["Bash(git push:*)", "Bash(gh pr create:*)"]
   }
 }
