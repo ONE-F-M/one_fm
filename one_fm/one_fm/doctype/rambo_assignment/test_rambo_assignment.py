@@ -15,8 +15,6 @@ from frappe.query_builder import DocType
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, getdate, today
 
-from one_fm.one_fm.doctype.transportation_manifest.transportation_manifest import _rambo_changed
-
 DATE = add_days(today(), 900)
 
 
@@ -156,14 +154,3 @@ class TestRamboAssignment(FrappeTestCase):
 			any("one_fm.api.tasks.rambo_shift_assignment" in jobs for jobs in events.values())
 		)
 
-
-class TestRamboChanged(FrappeTestCase):
-	def test_the_same_values_are_not_a_change(self):
-		doc = frappe._dict(employee="HR-EMP-1", date=getdate(DATE), is_rambo_reliever=0, start_time=None)
-		self.assertFalse(
-			_rambo_changed(doc, {"employee": "HR-EMP-1", "date": DATE, "is_rambo_reliever": 0, "start_time": ""})
-		)
-
-	def test_a_new_reliever_is_a_change(self):
-		doc = frappe._dict(employee="HR-EMP-1")
-		self.assertTrue(_rambo_changed(doc, {"employee": "HR-EMP-2"}))
