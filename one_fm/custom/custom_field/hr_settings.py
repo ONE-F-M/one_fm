@@ -187,12 +187,12 @@ def get_hr_settings_custom_fields():
                 "description": "Who receives the monthly penalty report. TO rows are addressed directly, CC rows are copied. With no rows here the monthly job sends nothing rather than broadcasting to nobody."
             },
             {
-                "fieldname": "helpdesk_email",
-                "fieldtype": "Data",
-                "options": "Email",
+                "fieldname": "helpdesk_notification_emails",
+                "fieldtype": "Table",
+                "options": "Helpdesk Notification Email",
                 "insert_after": "sender",
-                "label": "Helpdesk Email",
-                "description": "Email ID of helpdesk user to send reminders or notifications"
+                "label": "Helpdesk Notification Emails",
+                "description": "Who receives the Helpdesk reminders - the open HD ticket count and the employees whose leave ends in a week. Every address listed here is a recipient. With no rows here the jobs send nothing rather than broadcasting to nobody."
             },
             {
                 "fieldname": "onboarding_settings_tab",

@@ -49,7 +49,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Reference",
-   "options": "Name",
+   "options": "",
    "read_only": 1
   },
   {

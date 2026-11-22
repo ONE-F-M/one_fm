@@ -174,6 +174,8 @@ frappe.ui.form.on("Preparation", {
 		// The full list, kept so it can be put back when the Category is cleared.
 		frm._all_actions = frm.fields_dict.preparation_record.grid
 			.get_docfield('renewal_or_extend').options;
+
+		listen_for_created_documents(frm);
 	},
 	category: frm => {
 		set_action_options(frm);
@@ -182,6 +184,7 @@ frappe.ui.form.on("Preparation", {
 	refresh : frm=>{
 		set_action_options(frm);
 		set_pcc_connection_visibility(frm);
+		show_missing_documents(frm);
 
 		if(frm.doc.docstatus==1){
 			if(!frappe.user.has_role("HR Manager")){
@@ -211,6 +214,93 @@ frappe.ui.form.on("Preparation", {
 		})
 	},
 });
+
+
+// HD-1898774: the stages are written straight onto the rows with db.set_value and the
+// parent's modified is deliberately left alone, so nothing about the write reaches this
+// form - it keeps its copy in locals even when the operator routes away and back, and
+// only a hard reload shows the values. PRE-REN-2026-00010 had all 48 of its documents and
+// all 12 of its stages in the database while the operator was looking at blank cells.
+// Since the creation moved to a job the stages land minutes after the submit response, so
+// the server says when it has written them and the form picks them up here.
+function listen_for_created_documents(frm) {
+	if (frm._prep_documents_listener) {
+		return;
+	}
+	frm._prep_documents_listener = true;
+
+	frappe.realtime.on("preparation_documents_created", function (data) {
+		if (!data || data.preparation !== frm.doc.name) {
+			return;
+		}
+		if (frm.is_dirty()) {
+			// Reloading would throw away what the operator is in the middle of typing.
+			// The indicator is enough to tell them the rows have moved on.
+			frm.dashboard.set_headline_alert(
+				__("Documents were created for this Preparation. Reload to see the current stages."),
+				"blue"
+			);
+			return;
+		}
+		frm.reload_doc();
+	});
+}
+
+
+// HD-1898774: a submitted batch whose documents were never opened looks exactly like a
+// complete one - the only sign is a blank Current Stage on the rows that missed out.
+// PRE-ONB-2026-00008 lost its last three rows when the submit request was killed at the
+// web server's 120-second timeout, and nobody saw it for a day. The indicator says how
+// many rows are short and the button opens only what is missing, so it is safe to press
+// twice.
+function show_missing_documents(frm) {
+	if (frm.doc.docstatus !== 1) {
+		return;
+	}
+
+	frappe.call({
+		method: "one_fm.grd.doctype.preparation.preparation.get_missing_document_summary",
+		args: { preparation: frm.doc.name },
+		callback: function (r) {
+			if (!r.message || !r.message.count) {
+				return;
+			}
+
+			frm.dashboard.add_indicator(
+				__("{0} row(s) missing documents", [r.message.count]), "red");
+
+			frm.add_custom_button(__("Create Missing Documents"), function () {
+				frappe.confirm(
+					__("Open the missing documents for {0} row(s)? Rows that already have theirs are left alone.",
+						[r.message.count]),
+					function () {
+						frappe.call({
+							method: "one_fm.grd.doctype.preparation.preparation.create_missing_documents_now",
+							args: { preparation: frm.doc.name },
+							freeze: true,
+							freeze_message: __("Queueing document creation..."),
+							callback: function (response) {
+								if (response.message && response.message.queued) {
+									frappe.msgprint({
+										title: __("Queued"),
+										indicator: "blue",
+										message: __("Documents for {0} row(s) are being created in the background. Reload in a few minutes to see them.",
+											[response.message.count])
+									});
+								} else {
+									frappe.show_alert({
+										message: __("Nothing missing - every row already has its documents."),
+										indicator: "green"
+									});
+								}
+							}
+						});
+					}
+				);
+			});
+		}
+	});
+}
 
 
 function fetch_employee_dates_batch(frm){

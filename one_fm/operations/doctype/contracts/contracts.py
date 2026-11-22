@@ -30,6 +30,7 @@ CASCADE_DOCTYPES = ("Operations Site", "Operations Shift", "Operations Role", "O
 class Contracts(Document):
     def validate(self):
         self.validate_dates_out_of_draft()
+        self.validate_contract_date_order()
         self.calculate_contract_duration()
         self.sync_contract_item_operations()
         self.validate_no_of_days_off()
@@ -61,6 +62,29 @@ class Contracts(Document):
                     ", ".join(missing)
                 ),
                 title=_("Missing Required Fields")
+            )
+
+    def validate_contract_date_order(self):
+        """Block saving a contract whose End Date falls before its Start Date.
+
+        `validate_dates_out_of_draft` only checks that the dates are present, so an
+        inverted pair used to save cleanly — typically when an already renewed
+        contract (start rolled forward) is closed by back-dating the end date.
+        `update_project_start_end_date` then mirrors that pair onto the Project with
+        `db.set_value`, which bypasses Project validation, and the Project can never
+        be saved again because `ProjectOverride.validate` rejects the stored dates.
+        Stopping the inverted pair here is what keeps the Project editable.
+        """
+        if not (self.start_date and self.end_date):
+            return
+
+        if getdate(self.end_date) < getdate(self.start_date):
+            frappe.throw(
+                _("Contract End Date ({0}) cannot be before Contract Start Date ({1}).").format(
+                    frappe.format(self.end_date, {"fieldtype": "Date"}),
+                    frappe.format(self.start_date, {"fieldtype": "Date"})
+                ),
+                title=_("Invalid Contract Dates")
             )
 
     def validate_items_on_active_transition(self):
@@ -430,6 +454,19 @@ class Contracts(Document):
                 )
 
         if not changed:
+            return
+
+        # Second line of defence behind validate_contract_date_order: this write
+        # bypasses Project validation, so an inverted pair reaching it would lock
+        # the Project out of every future save.
+        if getdate(self.end_date) < getdate(self.start_date):
+            frappe.log_error(
+                title="Contract to Project date sync skipped",
+                message=(
+                    f"Contract {self.name} has end_date {self.end_date} before "
+                    f"start_date {self.start_date}; Project {self.project} was not updated."
+                )
+            )
             return
 
         frappe.db.set_value(
@@ -3096,6 +3133,30 @@ def get_due_contracts():
     #Get all the contracts that are due to expire today and send a reminder to the relevant parties
     pass
 
+def get_contract_notification_cc():
+    """
+    Return the list of email addresses configured to be CC'd on contract
+    expiry/renewal notifications.
+
+    Configured on "ONEFM General Setting" -> "Contract Notification CC" as a
+    comma, semicolon or newline separated list (e.g. the Finance and Legal
+    group mailboxes). Returns an empty list when nothing is configured.
+    """
+    # The field ships with this change; guard so that a deploy landing before
+    # "bench migrate" degrades to "no CC" instead of raising and killing the
+    # whole notification run (get_single_value raises on an unknown fieldname).
+    if not frappe.get_meta("ONEFM General Setting").has_field("contract_notification_cc"):
+        return []
+
+    raw = frappe.db.get_single_value("ONEFM General Setting", "contract_notification_cc") or ""
+    emails = []
+    for part in raw.replace("\n", ",").replace(";", ",").split(","):
+        email = part.strip()
+        if email and email not in emails:
+            emails.append(email)
+    return emails
+
+
 @frappe.whitelist()
 def send_contract_reminders(is_scheduled_event=True):
     """
@@ -3159,8 +3220,13 @@ def send_contract_reminders(is_scheduled_event=True):
                         message=frappe.get_traceback(),
                         title="Contract Reminder Error: {0}".format(i.name)
                     )
-    except Exception as e:
-        frappe.log_error(message=str(e), title="Contract Reminder Error")
+    except Exception:
+        # Individual contract failures are already isolated above, so anything
+        # reaching here broke the whole run (no email was sent at all). Re-raise
+        # after logging so the Scheduled Job Log records "Failed" instead of
+        # reporting a successful run while every notification was dropped.
+        frappe.log_error(message=frappe.get_traceback(), title="Contract Reminder Error")
+        raise
 
 @frappe.whitelist()
 def renew_contracts_by_termination_date():
