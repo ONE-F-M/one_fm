@@ -316,6 +316,7 @@ one_fm.patches.v15_0.set_ccp_arriving_for_submitted_arrivals #2026-10-19
 one_fm.patches.v15_0.fill_ccp_created_visa_request_drafts #2026-10-20
 one_fm.patches.v15_0.allow_bulk_edit_on_ccp_and_arrival_list_views #2026-10-22
 one_fm.patches.v15_0.seed_manpower_request_reason_options #2026-11-16 HD-1927006 seed Manpower Request Reason from the Project Manpower Request Reason select options before the field is converted to a Link
+one_fm.patches.v15_0.clean_employee_record_update_request_current_base_salary #2026-11-19 not null
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
 one_fm.patches.v15_0.add_assignment_rule_returning_to_operations_supervisor_of_client_event #2
@@ -739,3 +740,7 @@ one_fm.patches.v15_0.set_informed_applicant_emp_onb_2026_00479 #2026-11-15 HD-19
 one_fm.patches.v15_0.remap_removed_pmr_reasons #2026-11-15 HD-1927006 fold the retired Project Manpower Request reasons Subcontractor Replacement and Reliever into Sub Contractor and Day OFF Reliever
 one_fm.patches.v15_0.approve_pending_attendance_check_nov2026 #2026-11-16 HD-1925623 approve the Attendance Checks left in Pending Approval for 2 to 13 November 2026 as Present, per HR request
 one_fm.patches.v15_0.backfill_attendance_check_nov15_2026 #2026-11-17 HD-1933504 WI-004742 the Attendance Checks for 15 November 2026 the daily job dropped when a deploy recreated its Scheduled Job Type across the 13:15 slot, 16 November guarded the same way
+one_fm.patches.v15_0.copy_employee_record_update_request_reason_to_remarks #2026-11-11 WI-004577
+one_fm.patches.v15_0.seed_record_update_properties
+one_fm.patches.v15_0.processa_sync_employee_record_update_request___v1_9c10e5 #2026-11-19 Processa sync: Employee Record Update Request
+one_fm.patches.v15_0.sync_employee_record_update_request_with_ba

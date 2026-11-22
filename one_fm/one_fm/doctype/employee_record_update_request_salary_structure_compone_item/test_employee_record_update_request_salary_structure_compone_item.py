@@ -20,12 +20,12 @@ class TestEmployeeRecordUpdateRequestSalaryStructureComponeItem(FrappeTestCase):
 	def test_field_list(self):
 		self.assertEqual(
 			[(f.fieldname, f.fieldtype) for f in self.meta.fields],
-			[("salary_component", "Link"), ("amount", "Currency")],
+			[("salary_component", "Data"), ("amount", "Currency")],
 		)
 
 	def test_salary_component(self):
 		field = self.meta.get_field("salary_component")
-		self.assertEqual(field.options, "Salary Component")
+		self.assertFalse(field.options)
 		self.assertEqual(field.read_only, 1)
 		self.assertEqual(field.allow_on_submit, 1)
 		self.assertEqual(field.in_list_view, 1)
