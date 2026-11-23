@@ -5,8 +5,6 @@ from dateutil.relativedelta import relativedelta
 from datetime import date,timedelta,datetime
 from frappe.utils import getdate,cstr,get_first_day,get_last_day,add_days,add_months,flt, add_to_date
 from one_fm.overrides.timesheet import timesheet_automation,calculate_hourly_rate,days_of_month
-from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
-from one_fm.one_fm.payroll_utils import get_user_list_by_role
 from erpnext.accounts.utils import get_balance_on
 from frappe.desk.form.linked_with import get as get_linked_docs
 
@@ -940,14 +938,6 @@ def calculate_total_working_days(project = None, item_code = None, first_day =No
     total_working_day = len(total_days) - days_off_month
     return total_working_day
 
-def before_submit_sales_invoice(doc, method):
-    if not doc.custom_client_confirmation_copy:
-        frappe.throw('Please Attach Client Confirmation Copy')
-    if doc.contracts:
-        is_po_for_invoice = frappe.db.get_value('Contracts', doc.contracts, 'is_po_for_invoice')
-        if is_po_for_invoice == 1 and not doc.po:
-            frappe.throw('Please Attach Customer Purchase Order')
-
 def add_contracts_item_details_for_t4(sales_invoice, contract_item, first_day, last_day, income_account, cost_center):
     monthly_rate, hourly_rate = get_monthly_and_hourly_rate(sales_invoice.project, contract_item, first_day)
     total_working_days = calculate_total_working_days(sales_invoice.project, contract_item.item_code, first_day)
@@ -1139,29 +1129,3 @@ def set_print_settings_from_contracts(doc, method):
                 doc.format = contracts_print_settings[0].sales_invoice_print_format
             if contracts_print_settings[0].sales_invoice_letter_head:
                 doc.letter_head = contracts_print_settings[0].sales_invoice_letter_head
-
-def assign_collection_officer_to_sales_invoice_on_workflow_state(doc, method):
-    '''
-        This Method is used to notify the Collection Officer, such that the Sales Invoice is ready for delivery.
-        args:
-            doc: Object of Sales Invocie
-        Method will check if `workflow_state` is Equal to Workflow State configured in the `Accounts Additional Settings`,
-        if it is ture,
-        grab the Collection Office user to make an assignment to the Sales Invoice with that user.
-    '''
-    assign_collection_officer = frappe.db.get_single_value('Accounts Additional Settings', 'assign_collection_officer_to_sales_invoice_on_workflow_state')
-    if assign_collection_officer and frappe.get_meta(doc.doctype).has_field("workflow_state") and doc.workflow_state == frappe.db.get_single_value('Accounts Additional Settings', 'sales_invoice_workflow_sate_to_assign_collection_officer'):
-        try:
-            collection_officer = get_user_list_by_role('Collection Officer')
-            if len(collection_officer) > 0 and collection_officer[0]:
-                add_assignment({
-                    'doctype': doc.doctype,
-                    'name': doc.name,
-                    'assign_to': [collection_officer[0]],
-                    'description': (_('The Sales Invoice {0} is ready for Delivery.\n Please attach the delivered invoice copy to the Sales Invoice').format(doc.name))
-                })
-            else:
-                frappe.msgprint(_('Please Assing a User for Collection Officer Role!'))
-        except DuplicateToDoError:
-            frappe.message_log.pop()
-            pass

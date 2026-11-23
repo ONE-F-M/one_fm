@@ -434,11 +434,9 @@ doc_events = {
 		"on_submit": "one_fm.one_fm.asset_custom.on_asset_submit"
 	},
 	"Sales Invoice":{
-		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice",
 		"on_submit":"one_fm.one_fm.sales_invoice_custom.submit_sales_invoice",
 		"before_cancel":'one_fm.one_fm.sales_invoice_custom.cancel_sales_invoice',
 		"validate": "one_fm.one_fm.sales_invoice_custom.set_print_settings_from_contracts",
-		"on_update_after_submit": "one_fm.one_fm.sales_invoice_custom.assign_collection_officer_to_sales_invoice_on_workflow_state"
 	},
 	"Salary Slip": {
 		"before_submit": "one_fm.overrides.salary_slip.salary_slip_before_submit",
@@ -709,9 +707,6 @@ scheduler_events = {
 			# WI-001829: three working days of silence from the previous employer is a
 			# refusal. On this schedule because it only counts working days anyway.
 			'one_fm.grd.doctype.work_permit.work_permit.auto_reject_unanswered_previous_company'
-		],
-		"15 3 * * *": [
-			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice
 		],
 		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
 			# 'one_fm.api.tasks.process_attendance',
