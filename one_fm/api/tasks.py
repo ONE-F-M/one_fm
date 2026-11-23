@@ -1314,60 +1314,6 @@ def set_relief_fields(shift_assignment, schedule):
 	shift_assignment.custom_is_annual_leave_reliever = cint(schedule.get("is_annual_leave_reliever"))
 	shift_assignment.custom_leave_application = schedule.get("leave_application")
 
-def rambo_shift_assignment():
-	"""
-	Scheduled background job to auto-generate Shift Assignment records
-	for Employee Schedule entries created from Rambo Assignments.
-
-	Runs every 5 minutes via hooks.py cron.
-	Filters Employee Schedule rows where:
-	  - date = today
-	  - is_rambo_schedule = 1
-	  - is_replaced = 0
-	  - roster_type IN ("Basic", "Over-Time")
-	  - employee_availability IN ("Working", "On-the-job Training", "Client Event")
-	  - Employee is Active with eligible employment_type
-	"""
-	from frappe.query_builder import DocType
-
-	date = cstr(getdate())
-	employment_types = ["Full-time", "Part-time", "Intern", "Subcontractor"]
-
-	EmployeeSchedule = DocType("Employee Schedule")
-	Employee = DocType("Employee")
-
-	schedules = (
-		frappe.qb.from_(EmployeeSchedule)
-		.select(EmployeeSchedule.star)
-		.where(
-			(EmployeeSchedule.date == date)
-			& (EmployeeSchedule.is_rambo_schedule == 1)
-			& (EmployeeSchedule.is_replaced == 0)
-			& (EmployeeSchedule.roster_type.isin(["Basic", "Over-Time"]))
-			& (EmployeeSchedule.employee_availability.isin([
-				"Working", "On-the-job Training", "Client Event"
-			]))
-			& (EmployeeSchedule.employee.isin(
-				frappe.qb.from_(Employee)
-				.select(Employee.name)
-				.where(
-					(Employee.status == "Active")
-					& (Employee.employment_type.isin(employment_types))
-				)
-			))
-		)
-	).run(as_dict=True)
-
-	if schedules:
-		frappe.enqueue(
-			process_rambo_shift_assignment,
-			schedules=schedules,
-			date=date,
-			is_async=True,
-			queue="long"
-		)
-
-
 def _handle_existing_shifts_for_rambo(schedule, date):
 	"""
 	Pre-process existing shifts before creating a Rambo Shift Assignment.
@@ -1583,7 +1529,7 @@ def _handle_existing_shifts_for_rambo(schedule, date):
 
 def process_rambo_shift_assignment(schedules, date):
 	"""
-	Worker function enqueued by rambo_shift_assignment().
+	Called by the Rambo Shift Assignment map with today's Rambo schedules.
 	For each Rambo Employee Schedule row:
 	  1. Skip if employee status is "Vacation" or "Not Returned from Leave"
 	  2. Skip if employee has Attendance marked "On Leave" for today
