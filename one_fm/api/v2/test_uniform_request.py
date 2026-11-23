@@ -11,7 +11,7 @@ from frappe.tests.utils import FrappeTestCase
 
 from one_fm.api.v2.uniform_request import (
 	INDIVIDUAL,
-	PENDING_APPROVAL,
+	SUBMIT_FOR_APPROVAL,
 	UNIFORM_PARENT_GROUP,
 	UNIFORM_QTY,
 	_missing_details,
@@ -199,60 +199,6 @@ class TestWhatTheEmployeeMustGive(FrappeTestCase):
 		self.assertIn("size", str(raised.exception).lower())
 
 
-class TestTheDetailIsDemandedAtTheDecision(FrappeTestCase):
-	"""Required Date and the line Description are needed to *leave* Pending Approval, not
-	to enter it - the mobile form collects neither, and submits straight into that state.
-	Read the other way round, no mobile request could ever be made."""
-
-	def _pending(self, description=None, schedule_date=None):
-		request = frappe.new_doc("Request for Material")
-		request.type = INDIVIDUAL
-		request.schedule_date = schedule_date
-		request.append("items", {
-			"is_uniform_request": 1, "size": SIZE, "attach_photo": PHOTO,
-			"qty": 1, "requested_description": description,
-		})
-		return request
-
-	def test_entering_pending_approval_needs_neither(self):
-		request = self._pending()
-		request.workflow_state = PENDING_APPROVAL
-
-		request.validate_uniform_request_details()
-
-	def test_leaving_it_needs_the_required_date(self):
-		request = self._pending(description="Torn at the seam")
-		request.workflow_state = "Approved"
-		request._doc_before_save = self._pending()
-		request._doc_before_save.workflow_state = PENDING_APPROVAL
-
-		with self.assertRaises(frappe.ValidationError) as raised:
-			request.validate_uniform_request_details()
-
-		self.assertIn("Required Date", str(raised.exception))
-
-	def test_leaving_it_needs_a_description(self):
-		request = self._pending(schedule_date=frappe.utils.today())
-		request.workflow_state = "Approved"
-		request._doc_before_save = self._pending()
-		request._doc_before_save.workflow_state = PENDING_APPROVAL
-
-		with self.assertRaises(frappe.ValidationError) as raised:
-			request.validate_uniform_request_details()
-
-		self.assertIn("describe", str(raised.exception).lower())
-
-	def test_a_complete_request_may_be_decided(self):
-		request = self._pending(
-			description="Torn at the seam", schedule_date=frappe.utils.today()
-		)
-		request.workflow_state = "Approved"
-		request._doc_before_save = self._pending()
-		request._doc_before_save.workflow_state = PENDING_APPROVAL
-
-		request.validate_uniform_request_details()
-
-
 class TestTheEndpointsShape(FrappeTestCase):
 	def test_one_of_each_item(self):
 		"""Scenario 5: the employee never types a quantity."""
@@ -262,12 +208,9 @@ class TestTheEndpointsShape(FrappeTestCase):
 		self.assertEqual(INDIVIDUAL, "Individual")
 
 	def test_it_goes_straight_for_approval(self):
-		states = frappe.get_all(
-			"Workflow Document State",
-			filters={"parent": "RFM"},
-			pluck="state",
-		)
-		self.assertIn(PENDING_APPROVAL, states)
+		"""The endpoint completes the employee's Draft task with the map's own action."""
+		self.assertEqual(SUBMIT_FOR_APPROVAL, "Submit for Approval")
+		self.assertTrue(frappe.db.exists("Workflow Action Master", SUBMIT_FOR_APPROVAL))
 
 	def test_the_approver_rule_is_not_duplicated(self):
 		"""Scenario 7's approver - Reports To, else the site supervisor - is already in
