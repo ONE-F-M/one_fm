@@ -683,9 +683,6 @@ scheduler_events = {
 		'one_fm.one_fm.doctype.employee_resignation.employee_resignation.hand_over_in_process_approvals',
 		# WI-002431: raise a cancellation for every visa that has reached its expiry.
 		'one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request.cancel_expired_visas',
-		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
-		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.deactivate_expired_shipments',
-		'one_fm.one_fm.doctype.transportation_manifest.manifest_compiler.compile_daily_manifests'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -738,7 +735,6 @@ scheduler_events = {
 			"one_fm.api.tasks.overtime_shift_assignment",
 			#"one_fm.api.tasks.automatic_checkout",
 			"one_fm.one_fm.doctype.password_reset_token.password_reset_token.revoke_password_tokens",
-			"one_fm.api.tasks.rambo_shift_assignment",
 		],
 		"37 23 * * *": [  #“At 23:37.”
 			'one_fm.api.tasks.issue_penalties'
@@ -752,9 +748,6 @@ scheduler_events = {
 		"10 4 * * *": [ #“At 04:10.”
 			'one_fm.operations.doctype.post_scheduler_checker.post_scheduler_checker.schedule_roster_checker',
             'one_fm.operations.doctype.default_shift_checker.default_shift_checker.create_default_shift_checker'
-		],
-		"10 0 * * *": [ #"At 12:10 am - set tomorrow's manifest drivers from Vehicle Handover Logs (WI-001577)"
-			'one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log.set_manifest_drivers_for_tomorrow'
 		],
 		"5 0 * * *": [ # At 12:05 am - one digest email of the pending overtime (DSOT) requests
 			'one_fm.operations.doctype.employee_schedule.dsot_notification.send_daily_dsot_digest'

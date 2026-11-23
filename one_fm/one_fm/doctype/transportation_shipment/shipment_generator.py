@@ -41,6 +41,7 @@ COMPANY_FLEET = "Company Fleet"
 MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
 # Who may refresh the shipment cards from the canvas.
 GENERATE_ROLES = ("System Manager", "Transportation Manager", "Transportation Supervisor")
+GENERATION_SAVEPOINT = "transportation_shipment_generation"
 
 
 def build_demand_descriptors(nested_map: dict, skipped: dict | None = None) -> list:
@@ -444,6 +445,9 @@ def generate_transportation_shipments() -> dict:
 	skipped = {}  # employee -> why no demand was built for them
 	skipped_sites = {}  # Transport Required = No site -> its riders
 	failed = {}  # employee -> row, for riders of a demand that raised
+	# Rolled back to here, not to the start of the transaction: the nightly run is a Processa
+	# script, and a full rollback would also take the engine's uncommitted instance with it.
+	frappe.db.savepoint(GENERATION_SAVEPOINT)
 	try:
 		# First: a night with no demand must still expire them.
 		expired = _expire_single_day_rows(getdate(today()))
@@ -504,7 +508,7 @@ def generate_transportation_shipments() -> dict:
 			frappe.db.commit()
 	except Exception:
 		# Partial writes go; the failure itself must survive the rollback.
-		frappe.db.rollback()
+		frappe.db.rollback(save_point=GENERATION_SAVEPOINT)
 		title = _("Transportation Shipment Generation Failed")
 		trace = frappe.get_traceback()
 		frappe.log_error(title=title, message=trace)

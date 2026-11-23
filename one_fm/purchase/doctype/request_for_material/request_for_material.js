@@ -83,11 +83,6 @@ frappe.ui.form.on('Request for Material', {
 			});
 		}	
 	},
-	before_workflow_action: function(frm){
-		if(frm.doc.workflow_state == 'Pending Approval' && frm.doc.request_for_material_approver != frappe.session.user){
-			frappe.throw(__("You are not authorized to approve!!"));
-		}
-	},
 	setup: function(frm) {
 		
 		// formatter for material request item
