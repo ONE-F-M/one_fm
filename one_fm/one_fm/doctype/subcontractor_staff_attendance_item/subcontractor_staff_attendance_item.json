@@ -90,6 +90,7 @@
  "fields": [
   {
    "fieldname": "employee",
+   "ignore_user_permissions": 1,
    "fieldtype": "Link",
    "label": "Employee",
    "options": "Employee"
@@ -592,7 +593,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-11-11 10:00:00.000000",
+ "modified": "2026-11-23 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Subcontractor Staff Attendance Item",

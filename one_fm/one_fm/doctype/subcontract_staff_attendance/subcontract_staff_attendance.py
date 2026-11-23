@@ -52,19 +52,6 @@ class SubcontractStaffAttendance(Document):
 		if self.to_date:
 			validate_submission_window(self.to_date)
 
-		old_state = frappe.db.get_value("Subcontract Staff Attendance", self.name, "workflow_state")
-		# Enforce remarks when returning to Draft
-		if not self.is_new() and self.workflow_state == "Draft":
-			if old_state in ["Pending Operations Supervisor", "Pending Project Manager"]:
-				has_remarks = any(row.remarks for row in self.get("subcontractor_staff_attendance_item", []))
-				if not has_remarks:
-					frappe.throw("You must provide a remark for at least one employee when returning the document to Draft.")
-
-		# Project Manager returns to supervisor: Pending Project Manager → Pending Operations Supervisor
-		if not self.is_new() and old_state == "Pending Project Manager" and self.workflow_state == "Pending Operations Supervisor":
-			if not self.remarks_from_projects_manager:
-				frappe.throw(_("Please provide Remarks from Projects Manager before returning the document to Operations Supervisor."))
-
 		if not self.get("subcontractor_staff_attendance_item") and self.subcontractor_name:
 			self.fetch_subcontractor_staff()
 
@@ -267,6 +254,12 @@ def api_fetch_subcontractor_staff(subcontractor_name, from_date, to_date, attend
 @frappe.whitelist()
 def save_attendance_records(subcontractor_name, from_date, to_date, based_on, rows_json, submit=0):
 	import json
+
+	# Records are saved with ignore_permissions, so only the subcontractor's own portal users may write them.
+	supplier = frappe.db.get_value("User Permission", {"user": frappe.session.user, "allow": "Supplier"}, "for_value")
+	if not supplier or supplier != subcontractor_name:
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+
 	rows = json.loads(rows_json)
 	
 	# payload rows: list of { employee, employee_name, days: { "1": { value, site, status, parent_doc, project } } }
@@ -358,29 +351,37 @@ def save_attendance_records(subcontractor_name, from_date, to_date, based_on, ro
 	# Commit the saved drafts first so we don't lose the user's edits
 	frappe.db.commit()
 
-	# If submit == 1, transition all Draft docs in this period stringently
-	if int(submit) == 1:
-		from frappe.model.workflow import apply_workflow
-		all_docs = frappe.get_all(
-			"Subcontract Staff Attendance",
-			filters={
-				"subcontractor_name": subcontractor_name,
-				"from_date": from_date,
-				"to_date": to_date,
-				"workflow_state": "Draft"
-			},
-			fields=["name", "site"]
-		)
-		
-		for d in all_docs:
-			doc_obj = frappe.get_doc("Subcontract Staff Attendance", d.name)
-			try:
-				# Mute messages to prevent "No permission to share" warnings from popping up
-				frappe.flags.mute_messages = True
-				apply_workflow(doc_obj, "Submit for Review")
-			except Exception as e:
-				frappe.log_error(message=str(e), title=f"Error Submitting Subcontract Attendance {d.name}")
-			finally:
-				frappe.flags.mute_messages = False
+	if cint(submit):
+		submit_for_review(subcontractor_name, from_date, to_date)
 
 	return "Success"
+
+
+def submit_for_review(subcontractor_name, from_date, to_date):
+	"""Complete the owner's "Submit for Review" task on every Draft record of the period.
+
+	The Subcontract Staff Attendance process then moves each record to Pending Operations Supervisor.
+	"""
+	from processa.api.instances import complete_task, get_active_bpmn_tasks
+
+	drafts = frappe.get_all(
+		"Subcontract Staff Attendance",
+		filters={
+			"subcontractor_name": subcontractor_name,
+			"from_date": from_date,
+			"to_date": to_date,
+			"workflow_state": "Draft",
+		},
+		pluck="name",
+	)
+	for name in drafts:
+		task = next(
+			(
+				t for t in get_active_bpmn_tasks("Subcontract Staff Attendance", name)
+				if t["can_action"] and any(d.get("action") == "Submit for Review" for d in t["task_actions_detail"])
+			),
+			None,
+		)
+		if not task:
+			frappe.throw(_("Attendance {0} was saved as a draft but could not be submitted for review.").format(name))
+		complete_task(task["instance_name"], task["task_id"], frappe.as_json({"action": "Submit for Review"}))

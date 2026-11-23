@@ -122,3 +122,29 @@ class TestSubmissionWindow(FrappeTestCase):
 				validate_submission_window("2026-12-31")
 		with on_date("2027-01-10"):
 			validate_submission_window("2026-12-31")
+
+
+class TestPortal(FrappeTestCase):
+	def test_save_refused_for_another_subcontractor(self):
+		from one_fm.one_fm.doctype.subcontract_staff_attendance.subcontract_staff_attendance import save_attendance_records
+
+		with patch("frappe.db.get_value", return_value="Supplier A"), self.assertRaises(frappe.PermissionError):
+			save_attendance_records("Supplier B", "2026-01-01", "2026-01-31", "Attendance Status", "[]")
+
+	def test_submit_completes_the_owner_task(self):
+		from one_fm.one_fm.doctype.subcontract_staff_attendance.subcontract_staff_attendance import submit_for_review
+
+		task = {"instance_name": "INST-1", "task_id": "T-1", "can_action": True, "task_actions_detail": [{"action": "Submit for Review"}]}
+		with patch("frappe.get_all", return_value=["SSA-1"]), \
+			patch("processa.api.instances.get_active_bpmn_tasks", return_value=[task]), \
+			patch("processa.api.instances.complete_task") as complete_task:
+			submit_for_review("Supplier A", "2026-01-01", "2026-01-31")
+		complete_task.assert_called_once_with("INST-1", "T-1", frappe.as_json({"action": "Submit for Review"}))
+
+	def test_submit_without_a_task_throws(self):
+		from one_fm.one_fm.doctype.subcontract_staff_attendance.subcontract_staff_attendance import submit_for_review
+
+		with patch("frappe.get_all", return_value=["SSA-1"]), \
+			patch("processa.api.instances.get_active_bpmn_tasks", return_value=[]), \
+			self.assertRaises(frappe.ValidationError):
+			submit_for_review("Supplier A", "2026-01-01", "2026-01-31")
