@@ -689,8 +689,6 @@ scheduler_events = {
 		'one_fm.one_fm.doctype.employee_resignation.employee_resignation.hand_over_in_process_approvals',
 		# WI-002431: raise a cancellation for every visa that has reached its expiry.
 		'one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request.cancel_expired_visas',
-		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
-		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.deactivate_expired_shipments',
 		'one_fm.one_fm.doctype.transportation_manifest.manifest_compiler.compile_daily_manifests'
 	],
 	"hourly": [
