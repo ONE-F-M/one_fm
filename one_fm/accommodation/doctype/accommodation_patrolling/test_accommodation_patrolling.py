@@ -17,10 +17,57 @@ AUTO_FIELDS = (
 )
 
 
-def make_patrolling(floor_number="1", checklist=None, **kwargs):
-	doc = frappe.get_doc({"doctype": "Accommodation Patrolling", "floor_number": floor_number, **kwargs})
-	for row in checklist if checklist is not None else [{"number_of_incidents": "No"}]:
-		doc.append("accommodation_patrolling_checklist", row)
+CHECKLIST_ROW = {
+	"is_the_corridor_clear": "Yes",
+	"add_a_picture_of_the_corridor_captured_with_floor_number": "/files/corridor.png",
+	"is_the_right_side_stair_clear": "Yes",
+	"add_a_picture_of_the_right_side_stair": "/files/right.png",
+	"is_the_left_side_stair_clear": "Yes",
+	"add_a_picture_of_the_left_side_stair": "/files/left.png",
+	"number_of_incidents": "No",
+	"observations_and_incidents": "None",
+	"presence_of_unauthorized_persons": "No",
+	"overall_summary_of_patrol": "All clear",
+	"new_arrivals": "No",
+}
+
+
+def get_floor(number):
+	name = frappe.db.get_value("Floor", {"floor": number}, "name")
+	if name:
+		return name
+	return frappe.get_doc({"doctype": "Floor", "floor": number, "floor_name": f"Test Floor {number}"}).insert().name
+
+
+def get_accommodation():
+	if not frappe.db.exists("Accommodation Type", "Test Acc Type"):
+		frappe.get_doc({"doctype": "Accommodation Type", "accommodation_type": "Test Acc Type"}).insert()
+	name = frappe.db.get_value("Accommodation", {"accommodation": "Test Patrol Building"}, "name")
+	if not name:
+		name = frappe.get_doc(
+			{
+				"doctype": "Accommodation",
+				"accommodation": "Test Patrol Building",
+				"type": "Test Acc Type",
+				"status": "Active",
+				"total_no_of_floor": 5,
+			}
+		).insert().name
+	return name
+
+
+def make_patrolling(floor=1, checklist=None, **kwargs):
+	doc = frappe.get_doc(
+		{
+			"doctype": "Accommodation Patrolling",
+			"accommodation_buildingarea_covered": get_accommodation(),
+			"floor_number": get_floor(floor) if floor is not None else None,
+			"condition_of_entryexit_points": "Secured",
+			**kwargs,
+		}
+	)
+	for row in checklist if checklist is not None else [{}]:
+		doc.append("accommodation_patrolling_checklist", {**CHECKLIST_ROW, **row})
 	return doc
 
 
@@ -53,12 +100,39 @@ class TestAccommodationPatrolling(FrappeTestCase):
 		self.assertEqual(doc.docstatus, 1)
 
 	def test_missing_floor_number_raises(self):
-		doc = make_patrolling(floor_number=None)
+		doc = make_patrolling(floor=None)
 		self.assertRaises(frappe.MandatoryError, doc.insert)
 
 	def test_incidents_yes_requires_observations(self):
-		doc = make_patrolling(checklist=[{"number_of_incidents": "Yes"}])
+		doc = make_patrolling(checklist=[{"number_of_incidents": "Yes", "observations_and_incidents": ""}])
 		self.assertRaises(frappe.MandatoryError, doc.insert)
+
+	def test_ba_mandatory_fields(self):
+		for fieldname in ("accommodation_buildingarea_covered", "condition_of_entryexit_points"):
+			doc = make_patrolling(**{fieldname: None})
+			self.assertRaises(frappe.MandatoryError, doc.insert)
+		self.assertRaises(frappe.MandatoryError, make_patrolling(checklist=[]).insert)
+		for fieldname in CHECKLIST_ROW:
+			doc = make_patrolling(checklist=[{fieldname: None}])
+			self.assertRaises(frappe.MandatoryError, doc.insert)
+
+	def test_floor_is_a_link_filtered_by_building_floors(self):
+		meta = frappe.get_meta("Accommodation Patrolling")
+		df = meta.get_field("floor_number")
+		self.assertEqual((df.fieldtype, df.options), ("Link", "Floor"))
+		self.assertIn("doc.total_no_of_floor", df.link_filters)
+		self.assertEqual(meta.get_field("total_no_of_floor").fetch_from, "accommodation_buildingarea_covered.total_no_of_floor")
+		doc = make_patrolling().insert()
+		self.assertEqual(doc.total_no_of_floor, 5)
+
+	def test_unknown_floor_is_refused(self):
+		doc = make_patrolling()
+		doc.floor_number = "No Such Floor"
+		self.assertRaises(frappe.LinkValidationError, doc.insert)
+
+	def test_workflow_state_field(self):
+		df = frappe.get_meta("Accommodation Patrolling").get_field("workflow_state")
+		self.assertEqual((df.fieldtype, df.options, df.hidden), ("Link", "Workflow State", 1))
 
 	def test_doctypes_are_not_custom(self):
 		for name in ("Accommodation Patrolling", "Accommodation Patrolling Checklist"):
@@ -120,7 +194,7 @@ class TestAccommodationPatrollingAutoFetch(FrappeTestCase):
 		doc = self.insert_as_officer()
 		before = {fieldname: doc.get(fieldname) for fieldname in AUTO_FIELDS}
 
-		doc.floor_number = "2"
+		doc.floor_number = get_floor(2)
 		doc.save()  # as Administrator
 		doc.reload()
 
@@ -156,7 +230,7 @@ class TestNumberOfPatrolling(FrappeTestCase):
 
 	def test_resave_keeps_number(self):
 		doc = self.insert_at("2026-11-18 05:00")
-		doc.floor_number = "3"
+		doc.floor_number = get_floor(3)
 		doc.save()
 		doc.reload()
 		self.assertEqual(doc.number_of_patrolling, 1)
@@ -165,6 +239,6 @@ class TestNumberOfPatrolling(FrappeTestCase):
 		self.insert_at("2026-11-18 05:00")
 		# A failed request rolls back; the savepoint stands in for that here.
 		frappe.db.savepoint("failed_patrol")
-		self.assertRaises(frappe.MandatoryError, self.insert_at, "2026-11-18 06:00", floor_number=None)
+		self.assertRaises(frappe.MandatoryError, self.insert_at, "2026-11-18 06:00", floor=None)
 		frappe.db.rollback(save_point="failed_patrol")
 		self.assertEqual(self.insert_at("2026-11-18 07:00").number_of_patrolling, 2)

@@ -2,7 +2,6 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe import _
 from frappe.model.document import Document
 from frappe.model.naming import getseries
 from frappe.utils import cint, getdate, now_datetime
@@ -31,15 +30,3 @@ class AccommodationPatrolling(Document):
 		self.number_of_patrolling = cint(
 			getseries(f"ACC-PATROL-{getdate(self.patrolling_date_and_time)}", 1)
 		)
-
-	def validate(self):
-		self.validate_incident_observations()
-
-	def validate_incident_observations(self):
-		# Frappe v15 enforces mandatory_depends_on only in the browser.
-		for row in self.get("accommodation_patrolling_checklist") or []:
-			if row.number_of_incidents == "Yes" and not (row.observations_and_incidents or "").strip():
-				frappe.throw(
-					_("Row #{0}: Observations and Incidents is mandatory when Number of Incidents is Yes").format(row.idx),
-					frappe.MandatoryError,
-				)
