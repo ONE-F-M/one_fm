@@ -7,6 +7,7 @@
  "field_order": [
   "section_break_m7dg",
   "amended_from",
+  "workflow_state",
   "patrolling_date_and_time",
   "number_of_patrolling",
   "name_of_security_officer",
@@ -16,6 +17,7 @@
   "shift_end_time",
   "accommodation_buildingarea_covered",
   "floor_number",
+  "total_no_of_floor",
   "condition_of_entryexit_points",
   "section_break_bzmd",
   "accommodation_patrolling_checklist"
@@ -34,6 +36,13 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "options": "Workflow State"
   },
   {
    "fieldname": "patrolling_date_and_time",
@@ -87,20 +96,31 @@
    "fieldname": "accommodation_buildingarea_covered",
    "fieldtype": "Link",
    "label": "Accommodation Building/Area Covered",
-   "options": "Accommodation"
+   "options": "Accommodation",
+   "reqd": 1
   },
   {
    "fieldname": "floor_number",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Floor Number",
+   "link_filters": "[[\"Floor\", \"floor\", \"<=\", \"eval: doc.total_no_of_floor\"]]",
+   "options": "Floor",
    "reqd": 1
+  },
+  {
+   "fetch_from": "accommodation_buildingarea_covered.total_no_of_floor",
+   "fieldname": "total_no_of_floor",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Total Floor"
   },
   {
    "fieldname": "condition_of_entryexit_points",
    "fieldtype": "Select",
    "label": "Condition of Entry/Exit Points",
-   "options": "\nSecured\nUnsecured"
+   "options": "\nSecured\nUnsecured",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_bzmd",
@@ -110,13 +130,14 @@
    "fieldname": "accommodation_patrolling_checklist",
    "fieldtype": "Table",
    "label": "Accommodation Patrolling Checklist",
-   "options": "Accommodation Patrolling Checklist"
+   "options": "Accommodation Patrolling Checklist",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-19 12:30:00.000000",
+ "modified": "2026-11-23 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Patrolling",
