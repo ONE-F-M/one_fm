@@ -656,7 +656,6 @@ class Contracts(Document):
                     frappe.throw("No billable items found for the selected period.")
 
                 sales_invoice_doc.insert(ignore_permissions=True)
-                sales_invoice_doc.save()
 
                 return sales_invoice_doc
 
@@ -706,7 +705,6 @@ class Contracts(Document):
 
                             if sales_invoice_doc.items:
                                 sales_invoice_doc.insert(ignore_permissions=True)
-                                sales_invoice_doc.save()
                                 invoices_created.append(sales_invoice_doc)
 
                     elif item.item_type == "Items":
@@ -730,7 +728,6 @@ class Contracts(Document):
                         })
 
                         sales_invoice_doc.insert(ignore_permissions=True)
-                        sales_invoice_doc.save()
                         invoices_created.append(sales_invoice_doc)
 
                 if not invoices_created:
@@ -816,7 +813,6 @@ class Contracts(Document):
 
                         if sales_invoice_doc.items:
                             sales_invoice_doc.insert(ignore_permissions=True)
-                            sales_invoice_doc.save()
                             invoices_created.append(sales_invoice_doc)
 
                 # If there were only flat_item_rows (no service items with sites), create a single invoice
@@ -831,7 +827,6 @@ class Contracts(Document):
                         sales_invoice_doc.append('items', ext_item)
 
                     sales_invoice_doc.insert(ignore_permissions=True)
-                    sales_invoice_doc.save()
                     invoices_created.append(sales_invoice_doc)
 
                 if not invoices_created:

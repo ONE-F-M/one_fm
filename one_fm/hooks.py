@@ -314,21 +314,15 @@ doc_events = {
 		],
 	},
 	"Purchase Order": {
-		"on_submit": [
-			"one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
-			"one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_order"
-		],
 		"on_cancel": [
 			"one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 			"one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_order"
 		],
-		"after_insert": "one_fm.purchase.utils.set_quotation_attachment_in_po",
+		"before_insert": "one_fm.purchase.utils.set_purchase_type_from_rfp",
 		"validate":[
 			"one_fm.overrides.purchase_order.validate_purchase_uom"
 		],
-		'on_update':"one_fm.overrides.purchase_order.on_update",
 		"on_update_after_submit": [
-            "one_fm.purchase.utils.set_po_letter_head",
             "one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_order"
 		]
 	},
@@ -412,14 +406,6 @@ doc_events = {
 		"on_update_after_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_rfp",
 	},
 	"Purchase Receipt": {
-		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt",
-		"on_submit": [
-			"one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit",
-			"one_fm.overrides.purchase_receipt.update_received_qty",
-			"one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_receipt",
-			"one_fm.purchase.doctype.request_for_material.request_for_material.notify_requester_on_full_receipt",
-			"one_fm.one_fm.doctype.transit_log.transit_log_utils.update_transit_log_from_purchase_receipt"
-		],
 		"on_cancel": [
             "one_fm.overrides.purchase_receipt.update_received_qty",
             "one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_receipt"
@@ -448,11 +434,9 @@ doc_events = {
 		"on_submit": "one_fm.one_fm.asset_custom.on_asset_submit"
 	},
 	"Sales Invoice":{
-		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice",
 		"on_submit":"one_fm.one_fm.sales_invoice_custom.submit_sales_invoice",
 		"before_cancel":'one_fm.one_fm.sales_invoice_custom.cancel_sales_invoice',
 		"validate": "one_fm.one_fm.sales_invoice_custom.set_print_settings_from_contracts",
-		"on_update_after_submit": "one_fm.one_fm.sales_invoice_custom.assign_collection_officer_to_sales_invoice_on_workflow_state"
 	},
 	"Salary Slip": {
 		"before_submit": "one_fm.overrides.salary_slip.salary_slip_before_submit",
@@ -644,7 +628,6 @@ override_doctype_class = {
     "Stock Entry": "one_fm.overrides.stock_entry.StockEntryOverride",
     "Sales Invoice": "one_fm.overrides.sales_invoice.SalesInvoiceOverride",
     "Purchase Invoice": "one_fm.overrides.purchase_invoice.PurchaseInvoiceOverride",
-    "Purchase Receipt": "one_fm.overrides.purchase_receipt.PurchaseReceiptOverride",
     "Asset": "one_fm.overrides.asset.AssetOverride",
     "Asset Movement": "one_fm.overrides.asset_movement.AssetMovement",
     "Project": "one_fm.overrides.project.ProjectOverride",
@@ -689,9 +672,6 @@ scheduler_events = {
 		'one_fm.one_fm.doctype.employee_resignation.employee_resignation.hand_over_in_process_approvals',
 		# WI-002431: raise a cancellation for every visa that has reached its expiry.
 		'one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request.cancel_expired_visas',
-		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
-		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.deactivate_expired_shipments',
-		'one_fm.one_fm.doctype.transportation_manifest.manifest_compiler.compile_daily_manifests'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -728,9 +708,6 @@ scheduler_events = {
 			# refusal. On this schedule because it only counts working days anyway.
 			'one_fm.grd.doctype.work_permit.work_permit.auto_reject_unanswered_previous_company'
 		],
-		"15 3 * * *": [
-			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice
-		],
 		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
 			# 'one_fm.api.tasks.process_attendance',
 			"one_fm.api.tasks.update_shift_type"
@@ -744,7 +721,6 @@ scheduler_events = {
 			"one_fm.api.tasks.overtime_shift_assignment",
 			#"one_fm.api.tasks.automatic_checkout",
 			"one_fm.one_fm.doctype.password_reset_token.password_reset_token.revoke_password_tokens",
-			"one_fm.api.tasks.rambo_shift_assignment",
 		],
 		"37 23 * * *": [  #“At 23:37.”
 			'one_fm.api.tasks.issue_penalties'
@@ -758,9 +734,6 @@ scheduler_events = {
 		"10 4 * * *": [ #“At 04:10.”
 			'one_fm.operations.doctype.post_scheduler_checker.post_scheduler_checker.schedule_roster_checker',
             'one_fm.operations.doctype.default_shift_checker.default_shift_checker.create_default_shift_checker'
-		],
-		"10 0 * * *": [ #"At 12:10 am - set tomorrow's manifest drivers from Vehicle Handover Logs (WI-001577)"
-			'one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log.set_manifest_drivers_for_tomorrow'
 		],
 		"5 0 * * *": [ # At 12:05 am - one digest email of the pending overtime (DSOT) requests
 			'one_fm.operations.doctype.employee_schedule.dsot_notification.send_daily_dsot_digest'

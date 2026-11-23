@@ -8,31 +8,6 @@ from one_fm.processor import sendemail
 from one_fm.utils import background_enqueue_run
 
 
-def generate_contracts_invoice():
-    """
-        Generate Sales Invoice for Contracts
-    """
-    try:
-        dt = datetime
-        contracts = frappe.get_list('Contracts', filters={
-            'workflow_state': 'Active',
-            # 'due_date':str(getdate().day)
-        })
-        # generate
-        for contract in contracts:
-            contract_doc = frappe.get_doc("Contracts", contract.name)
-            contract_due_date = contract_doc.due_date
-
-            if str(contract_due_date).lower() == "end of month" and getdate() == get_last_day(getdate()):
-                contract_doc.generate_sales_invoice()
-
-            elif contract_due_date == str(getdate().day):
-                contract_doc.generate_sales_invoice()
-
-    except Exception as e:
-        frappe.log_error(message=str(e), title="Contracts Invoice")
-
-
 def roster_projection_view_task():
     """
         Generate ROSTER projection
