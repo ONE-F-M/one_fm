@@ -36,10 +36,6 @@ class PurchaseInvoiceOverride(PurchaseInvoice):
         if self.custom_refundable:
             self.initialize_pending_si_quantities()
     
-    def on_cancel(self):
-        self.validate_no_linked_sales_invoices()
-        super(PurchaseInvoiceOverride, self).on_cancel()
-    
     def initialize_pending_si_quantities(self):
         for item in self.items:
             frappe.db.set_value(
@@ -49,25 +45,6 @@ class PurchaseInvoiceOverride(PurchaseInvoice):
                 item.qty,
                 update_modified=False
             )
-    
-    def validate_no_linked_sales_invoices(self):
-        linked_sales_invoices = frappe.db.sql("""
-            SELECT DISTINCT si.name
-            FROM `tabSales Invoice` si
-            INNER JOIN `tabSales Invoice Item` si_item ON si_item.parent = si.name
-            WHERE si.docstatus = 1
-            AND si_item.custom_purchase_invoice = %s
-        """, (self.name), as_dict=1)
-        
-        if linked_sales_invoices:
-            si_list = ", ".join([d.name for d in linked_sales_invoices])
-            frappe.throw(
-                _("Cannot cancel Purchase Invoice {0} as it is linked to submitted Sales Invoice(s): {1}").format(
-                    self.name, si_list
-                )
-            )
-
-
 
 
 @frappe.whitelist()
