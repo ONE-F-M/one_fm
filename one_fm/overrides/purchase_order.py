@@ -10,7 +10,6 @@ from erpnext.stock.doctype.item.item import get_item_defaults
 from erpnext.buying.doctype.purchase_order.purchase_order import PurchaseOrder
 from erpnext.accounts.doctype.pricing_rule.utils import get_applied_pricing_rules
 from one_fm.purchase.doctype.request_for_purchase.request_for_purchase import update_rfp_status
-from frappe.utils import nowdate
 
 
 @frappe.whitelist()
@@ -113,40 +112,6 @@ def set_missing_values(source, target):
     
 
 
-def set_workflow_states(doc,old_doc):
-    """Sets approval dates based on workflow state changes."""
-    current_workflow_state = doc.workflow_state
-
-    # If the workflow state didn't change, no action is needed
-    if old_doc.workflow_state == current_workflow_state:
-        return
-
-    # Mapping workflow states to custom field names
-    workflow_mapping = {
-        "Pending Purchase Manager": "custom_purchase_officer_approval_date",
-        "Pending Finance Approver": "custom_purchase_manager_approval_date",
-    }
-
-    # Set approval dates based on current workflow state
-    if current_workflow_state in workflow_mapping:
-        doc.db_set(workflow_mapping[current_workflow_state],nowdate())
-
-
-
-def on_update(doc, event):
-    """Handles the update event for the Purchase Order document."""
-    #Check if workflow_state was changed, if it wasn't then we return,
-    old_doc = doc.get_doc_before_save()
-    if not old_doc:
-        return
-    if old_doc.workflow_state == doc.workflow_state:
-        return
-    # Check if both dates are present; if so, no action is needed.
-    if doc.custom_purchase_officer_approval_date and doc.custom_purchase_manager_approval_date:
-        return
-    set_workflow_states(doc,old_doc)
-    
-    
 def validate_purchase_uom(doc, method):
     for item in doc.items:
         if item.conversion_factor:
@@ -202,28 +167,10 @@ class PurchaseOrderOverride(PurchaseOrder):
                 frappe.throw(_("Request for Purchase is required for this Purchase Order to be processed further"))
 
     def on_submit(self):
-        self.update_purchased_quantities()
-        self.update_ordered_and_pending_quantities()
-        if self.one_fm_request_for_purchase:
-            update_rfp_status(self.one_fm_request_for_purchase)
-        self._auto_create_transit_log()
+        # ERPNext's own Purchase Order on_submit does not run here, as before. The updates
+        # that follow a submit run in the Purchase Order Lifecycle process.
+        pass
 
-    def _auto_create_transit_log(self):
-        """Auto-create a Transit Log when the PO is for 'Sample Purchase'
-        and the courier is NOT hand-carried."""
-        if self.custom_purpose != "Sample Purchase":
-            return
-        if cint(self.custom_is_courier_hand_carried):
-            return
-
-        try:
-            from one_fm.one_fm.doctype.transit_log.transit_log_utils import create_transit_log_from_po
-            create_transit_log_from_po(self.name)
-        except Exception:
-            frappe.log_error(
-                title=_("Transit Log Auto-Creation Failed for PO {0}").format(self.name),
-                message=frappe.get_traceback()
-            )
     def on_update_after_submit(self):
         self.update_purchased_quantities()
         self.update_ordered_and_pending_quantities()

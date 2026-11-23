@@ -19,15 +19,11 @@ from one_fm.purchase.doctype.item_reservation.item_reservation import get_item_b
 from one_fm.utils import get_approver_user, get_employee_site_supervisor
 from one_fm.processor import sendemail
 from one_fm.api.doc_events import get_employee_user_id
-from one_fm.utils import get_users_with_role_permitted_to_doctype
-from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, remove as remove_assignment, close_all_assignments
+from frappe.desk.form.assign_to import close_all_assignments
 
 # WI-002301: the request type a uniform replacement is raised as. Every rule the uniform
 # flow adds is scoped to it, so the other types keep the behaviour they had.
 INDIVIDUAL = "Individual"
-
-# The state a uniform request lands in, and the one its detail has to be complete to leave.
-PENDING_APPROVAL = "Pending Approval"
 
 
 class RequestforMaterial(BuyingController):
@@ -67,15 +63,6 @@ class RequestforMaterial(BuyingController):
     @frappe.whitelist()
     def get_default_warehouse(self):
         return frappe.db.get_single_value('Stock Settings', 'default_warehouse')
-
-    def notify_material_requester(self):
-        page_link = get_url(self.get_url())
-        message = "Request for Material <a href='{0}'>{1}</a> is {2} by {3}.".format(page_link, self.name, self.workflow_state, frappe.session.user)
-        if self.workflow_state == 'Approved':
-            message += "You will be notified of the expected delivery date as soon as the order is processed"
-        subject = '{0} {1} your Request for Material {2}'.format(self.workflow_state, get_fullname(frappe.session.user), self.name)
-        send_email(self, [self.requested_by], message, subject)
-        create_notification_log(subject, message, [self.requested_by], self)
 
     def validate(self):
         if self.is_new():
@@ -169,42 +156,6 @@ class RequestforMaterial(BuyingController):
                 frappe.throw(
                     _("Row #{0}: a photo of the damaged uniform is required.").format(item.idx),
                     title=_("Photo Missing"),
-                )
-
-        self.validate_uniform_request_before_approval()
-
-
-    def validate_uniform_request_before_approval(self):
-        """The detail the approver needs, demanded when they decide rather than when the
-        employee submits (WI-002301).
-
-        The criteria ask for Required Date and the line Description to be mandatory "at
-        Pending Approval", and for the mobile form to collect neither - it asks only for
-        the item, its size and a photo, and submits straight into that state. Read as a
-        condition of *entering* the state those rules cancel each other out and no mobile
-        request could ever be made. Read as a condition of *leaving* it, every scenario
-        holds: the employee reports the damage, and the supervisor completes the request
-        before approving it.
-        """
-        previous = self.get_doc_before_save()
-        was = previous.get("workflow_state") if previous else None
-
-        if was != PENDING_APPROVAL or self.workflow_state == PENDING_APPROVAL:
-            return
-
-        if not self.schedule_date:
-            frappe.throw(
-                _("Set the Required Date before deciding this request."),
-                title=_("Required Date Missing"),
-            )
-
-        for item in self.items:
-            if item.is_uniform_request and not item.requested_description:
-                frappe.throw(
-                    _("Row #{0}: describe the damage before deciding this request.").format(
-                        item.idx
-                    ),
-                    title=_("Description Missing"),
                 )
 
 
@@ -367,16 +318,11 @@ class RequestforMaterial(BuyingController):
         self.title = _('Material Request for {0}').format(items)[:100]
 
     def before_cancel(self):
-        if self.workflow_state == 'Rejected' and frappe.session.user == self.request_for_material_approver:
-            self.notify_material_requester()
         self.set_purchase_rfm_quantity()
 
     def on_submit(self):
         self._initialize_custom_quantities()
         self.validate_item_qty()
-        self.assign_for_technical_verification()
-        if self.workflow_state == 'Approved' and frappe.session.user == self.request_for_material_approver:
-            self.notify_material_requester()
         if self.per_received == 100:
             close_all_assignments(self.doctype, self.name)
         self.set_purchase_rfm_quantity()
@@ -447,40 +393,6 @@ class RequestforMaterial(BuyingController):
             self.flags.ignore_validate_update_after_submit = True
             self.save(ignore_permissions=True)
 
-    def assign_to_warehouse_supervisor(self):
-        try:
-            filtered_users = get_users_with_role_permitted_to_doctype('Warehouse Supervisor', self.doctype)
-            if filtered_users and len(filtered_users) > 0:
-                add_assignment({
-                    'doctype': self.doctype,
-                    'name': self.name,
-                    'assign_to': filtered_users,
-                    'description': _('{0}: Request for Material by {1}'.format(self.workflow_state, get_fullname(self.request_for_material_approver)))
-                })
-                self.add_comment("Comment", _("Assign to Warehouse Supervisor {0} to process the request".format(filtered_users[0])))
-            else:
-                frappe.msgprint(_("Not able to find user with role Warehouse Supervisor to assign this RFM"), alert=True)
-                self.add_comment("Comment", _("On Approval, not able to find user with role Warehouse Supervisor to assign this RFM"))
-        except DuplicateToDoError:
-            frappe.message_log.pop()
-            pass
-
-    def assign_for_technical_verification(self):
-        if self.technical_verification_needed == 'Yes' and self.technical_verification_from and not self.technical_remarks:
-            try:
-                add_assignment({
-                    'doctype': self.doctype,
-                    'name': self.name,
-                    'assign_to': [self.technical_verification_from],
-                    'description': _('Please add Your Technical Remarks for the Item Descriptions')
-                })
-                self.add_comment("Comment", _("Waiting for Technical Verification"))
-            except DuplicateToDoError:
-                frappe.message_log.pop()
-                pass
-        elif self.technical_verification_needed == "No" and self.technical_verification_from:
-            remove_assignment(self.doctype, self.name, self.technical_verification_from)
-            
     def set_purchase_rfm_quantity(self):
         """For Issue or Transfer RFMs, set the purchased quantity per item based on linked Purchase RFMs"""
         if self.purpose in ['Transfer','Issue'] or not self.issue_transfer_rfm:
@@ -696,59 +608,6 @@ def update_completed_purchase_qty(purchase_order, method):
                             frappe.InvalidStatusError)
 
                     mr_obj.update_purchased_qty(mr_item_rows)
-def notify_requester_on_full_receipt(doc, method):
-    """Email the RFM's "Requested By" user when a submitted Purchase Receipt completes
-    the linked Request for Material.
-
-    Hooked on Purchase Receipt on_submit only (never cancel / update_after_submit) so the
-    email fires strictly upon submission. Runs after ``update_received_qty`` so each RFM
-    item row already carries its aggregated ``received_qty``.
-
-    All of the following must hold to send:
-    - The PR is linked to an RFM (via ``custom_request_for_material`` or resolved through the PO).
-    - The RFM ``purpose`` is "Purchase" or "Sample Purchase".
-    - Every receivable RFM item row (has ``item_code`` and ``reject_item`` = 0) is fully
-      received, i.e. the computed pending quantity (``qty`` - ``received_qty``) is 0.
-
-    Sent once per RFM, guarded by the ``full_receipt_notified`` flag to avoid duplicate
-    emails on over-receipt or subsequent Purchase Receipts.
-    """
-    rfm_name = getattr(doc, "custom_request_for_material", None)
-    if not rfm_name:
-        rfm_name = get_rfm_in_purchase_receipt(doc)
-
-    if not rfm_name or not frappe.db.exists("Request for Material", rfm_name):
-        return
-
-    rfm = frappe.get_doc("Request for Material", rfm_name)
-
-    if rfm.purpose not in ("Purchase", "Sample Purchase"):
-        return
-
-    # Guard: only notify once, even if further Purchase Receipts are submitted later.
-    if rfm.get("full_receipt_notified"):
-        return
-
-    if not rfm.requested_by:
-        return
-
-    # Only rows that can actually be received via a Purchase Receipt count: those with an
-    # Item Code that are not rejected. Non-item / rejected rows never receive and must not
-    # permanently block the notification.
-    receivable_items = [d for d in rfm.items if d.item_code and not d.reject_item]
-    if not receivable_items:
-        return
-
-    # Pending Quantity == 0 for every receivable row (qty fully received).
-    fully_received = all(flt(d.qty) - flt(d.received_qty) <= 0 for d in receivable_items)
-    if not fully_received:
-        return
-
-    subject = _("Items Arrived: Purchase Receipt Submitted for RFM {0}").format(rfm.name)
-    message = build_full_receipt_email(rfm, receivable_items, doc)
-
-    send_email(rfm, [rfm.requested_by], message, subject)
-    rfm.db_set("full_receipt_notified", 1)
 
 
 def build_full_receipt_email(rfm, items, purchase_receipt):

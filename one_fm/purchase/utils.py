@@ -137,11 +137,6 @@ def get_payment_details_for_po(po):
                 payment_amount = schedule.payment_amount
     return {'mode_of_payment':mode_of_payment, 'payment_amount':payment_amount}
 
-def before_submit_purchase_receipt(doc, method):
-    if not doc.one_fm_attach_delivery_note:
-        frappe.throw(_('Please Attach Signed and Stamped Delivery Note'))
-
-
 def filter_description_specific_for_item_group(doctype, txt, searchfield, start, page_len, filters):
     description_values = False
     query = "select name from `tab{0}` where"
@@ -186,41 +181,11 @@ def get_supplier_list(doctype, txt, searchfield, start, page_len, filters):
                 'txt': "%%%s%%" % txt
             }
         )
-def close_assignments(doc):
-    "Close Todos for RFP when purchase order is being created"
+
+
+def set_purchase_type_from_rfp(doc, method):
     if doc.one_fm_request_for_purchase:
-        purchase_users = get_users_with_role('Purchase User')
-        for each in purchase_users:
-            remove_assignment("Request for Purchase", doc.one_fm_request_for_purchase,each)
-
-def set_quotation_attachment_in_po(doc, method):
-    if doc.one_fm_request_for_purchase:
-        doc.purchase_type = frappe.db.get_value("Request for Purchase",doc.one_fm_request_for_purchase,'type')
-        close_assignments(doc)
-        quotations = frappe.get_list('Quotation From Supplier', {'request_for_purchase': doc.one_fm_request_for_purchase})
-        if len(quotations) > 0:
-            set_attachments_to_doctype('Quotation From Supplier', quotations, doc.doctype, doc.name)
-
-def set_attachments_to_doctype(source_dt, list_of_source, target_dt, target_name):
-    for source in list_of_source:
-        """Copy attachments"""
-        from frappe.desk.form.load import get_attachments
-        #loop through attachments
-        for attach_item in get_attachments(source_dt, source.name):
-            #save attachments to new doc
-            _file = frappe.get_doc({
-            "doctype": "File",
-            "file_url": attach_item.file_url,
-            "file_name": attach_item.file_name,
-            "attached_to_name": target_name,
-            "attached_to_doctype": target_dt,
-            "folder": "Home/Attachments"})
-            _file.save()
-
-def set_po_letter_head(doc, method):
-	if doc.workflow_state == "Approved" and not doc.letter_head:
-		if frappe.db.exists('Letter Head', {'name': 'Authorization Signature'}):
-			doc.db_set('letter_head', 'Authorization Signature')
+        doc.purchase_type = frappe.db.get_value("Request for Purchase", doc.one_fm_request_for_purchase, "type")
 
 
 def validate_store_keeper_project_supervisor(doc, method):

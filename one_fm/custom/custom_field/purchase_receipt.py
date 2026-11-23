@@ -69,5 +69,14 @@ def get_purchase_receipt_custom_fields():
                 "options": "\nPurchase\nSample Purchase",
                 "read_only": 1
             },
+            {
+                "fieldname": "workflow_state",
+                "label": "Workflow State",
+                "fieldtype": "Link",
+                "options": "Workflow State",
+                "hidden": 1,
+                "no_copy": 1,
+                "allow_on_submit": 1
+            },
         ]
     }

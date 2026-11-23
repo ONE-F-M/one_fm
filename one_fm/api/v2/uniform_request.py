@@ -13,13 +13,12 @@ import hashlib
 import frappe
 from frappe import _
 
-from one_fm.api.api import upload_file
 from one_fm.api.v1.utils import response
 
-# The request type a uniform replacement is raised as, and the state it goes straight to:
-# an employee is not filing a draft for themselves to approve later.
+# The request type a uniform replacement is raised as, and the action that sends it straight
+# to the approver: an employee is not filing a draft for themselves to approve later.
 INDIVIDUAL = "Individual"
-PENDING_APPROVAL = "Pending Approval"
+SUBMIT_FOR_APPROVAL = "Submit for Approval"
 
 # One of each. The employee is replacing a damaged item, not ordering stock, so the form
 # never asks and the row carries the only quantity that makes sense.
@@ -130,16 +129,16 @@ def _build_request(employee, items, schedule_date):
 	if schedule_date:
 		request.schedule_date = schedule_date
 
-	for item in items:
-		photo = item.get("attach_photo")
+	# The photos are stored before the insert: validate needs one on every row, and the
+	# Request for Material Lifecycle process saves the request as soon as it is inserted.
+	photos = [_store_photo(item.get("attach_photo")) for item in items]
+	for item, photo in zip(items, photos):
 		request.append("items", {
 			"item_code": item.get("item_code"),
 			"requested_item_name": item.get("item_name"),
 			"requested_description": item.get("requested_description"),
 			"size": item.get("size"),
-			# A url the caller already had can be set now; bytes have nowhere to live
-			# until the request exists, so those rows are filled in after the insert.
-			"attach_photo": photo if isinstance(photo, str) else None,
+			"attach_photo": photo.file_url if photo else item.get("attach_photo"),
 			"is_uniform_request": 1,
 			"qty": UNIFORM_QTY,
 			# The unit is still required on the line, and a uniform is only ever asked
@@ -155,25 +154,60 @@ def _build_request(employee, items, schedule_date):
 			"employee": employee.name,
 		})
 
-	# The size and photo checks run on validate, and a row whose photo is still bytes has
-	# nothing in the field yet - so the rows are saved first and the photos attached
-	# before the request is validated on its way to the approver.
-	request.flags.ignore_validate = True
 	request.insert(ignore_permissions=True)
 
-	_attach_photos(request, items)
+	# Attached once the request exists, so the approver can open the private photos.
+	for photo in filter(None, photos):
+		frappe.db.set_value("File", photo.name, {
+			"attached_to_doctype": request.doctype,
+			"attached_to_name": request.name,
+			"attached_to_field": "attach_photo",
+		})
 
-	# Straight to the supervisor - and this save has to run validate, which is why the
-	# flag comes back off. The approver is resolved in validate, and the "RFM Approver"
-	# assignment rule matches on the field it sets and fires from on_update. Flipping the
-	# state with db_set runs neither, which leaves the request sitting in Pending Approval
-	# with no approver and nobody assigned to it.
+	_submit_for_approval(request)
 	request.reload()
-	request.flags.ignore_validate = False
-	request.workflow_state = PENDING_APPROVAL
-	request.save(ignore_permissions=True)
-
 	return request
+
+
+def _store_photo(photo):
+	"""A photo sent as bytes, saved as a private File. A url the caller already had is used as is."""
+	if not isinstance(photo, dict):
+		return None
+
+	name = photo.get("attachment_name") or "uniform.jpg"
+	extension = "." + name.split(".")[-1] if "." in name else ".jpg"
+	stored_as = hashlib.md5(
+		(name + str(datetime.datetime.now())).encode("utf-8")
+	).hexdigest() + extension
+
+	return frappe.get_doc({
+		"doctype": "File",
+		"file_name": stored_as,
+		"is_private": 1,
+		"content": _decode(photo["attachment"]),
+	}).insert()
+
+
+def _submit_for_approval(request):
+	"""Complete the employee's "Submit for Approval" task, which the process opened on insert.
+
+	The process then moves the request to Pending Approval and assigns the approver.
+	"""
+	from processa.api.instances import complete_task, get_active_bpmn_tasks
+
+	task = next(
+		(
+			t for t in get_active_bpmn_tasks(request.doctype, request.name)
+			if t["can_action"] and any(d.get("action") == SUBMIT_FOR_APPROVAL for d in t["task_actions_detail"])
+		),
+		None,
+	)
+	if not task:
+		frappe.throw(
+			_("Request for Material {0} was saved as a draft but could not be sent for approval.").format(request.name)
+		)
+
+	complete_task(task["instance_name"], task["task_id"], frappe.as_json({"action": SUBMIT_FOR_APPROVAL}))
 
 
 def _decode(attachment: str) -> bytes:
@@ -187,31 +221,6 @@ def _decode(attachment: str) -> bytes:
 	if "," in attachment[:64] and attachment.lstrip().startswith("data:"):
 		attachment = attachment.split(",", 1)[1]
 	return base64.b64decode(attachment)
-
-
-def _attach_photos(request, items):
-	"""Store each row's photo and point the row at it.
-
-	Written straight to the row with db_set: the request has already been created, and
-	re-saving the whole document here would run the very validation the photos are being
-	added to satisfy.
-	"""
-	for row, item in zip(request.items, items):
-		photo = item.get("attach_photo")
-		if not isinstance(photo, dict):
-			continue
-
-		name = photo.get("attachment_name") or "uniform.jpg"
-		extension = "." + name.split(".")[-1] if "." in name else ".jpg"
-		stored_as = hashlib.md5(
-			(name + str(datetime.datetime.now())).encode("utf-8")
-		).hexdigest() + extension
-
-		saved = upload_file(
-			request, "attach_photo", stored_as, "", _decode(photo["attachment"]),
-			is_private=True,
-		)
-		row.db_set("attach_photo", saved.file_url)
 
 
 @frappe.whitelist()

@@ -126,8 +126,10 @@ class TestTheGeneratorWiring(FrappeTestCase):
 		source = inspect.getsource(shipment_generator.generate_transportation_shipments)
 		self.assertIn("Entry point for both the daily scheduler and the canvas", source)
 
+		# The nightly run is the Transportation Shipment Scheduler Processa timer, whose
+		# script calls this same function.
 		hooks = frappe.read_file(frappe.get_app_path("one_fm", "hooks.py"))
-		self.assertIn(
+		self.assertNotIn(
 			"one_fm.one_fm.doctype.transportation_shipment.shipment_generator"
 			".generate_transportation_shipments",
 			hooks,

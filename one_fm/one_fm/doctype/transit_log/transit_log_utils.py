@@ -124,29 +124,6 @@ def create_transit_log_from_rfm(rfm_name: str) -> str:
 # Backtracking Utilities (Story 3 & 4)
 # ---------------------------------------------------------------------------
 
-def update_transit_log_from_purchase_receipt(doc, method):
-	"""Hook: on_submit of Purchase Receipt.
-
-	Finds Transit Logs linked to the parent Purchase Order(s) of this
-	Purchase Receipt and marks them as 'Completed' when all items have
-	been fully received.
-	"""
-	# Collect unique PO names from the PR items
-	po_names = set()
-	for item in doc.items:
-		if item.purchase_order:
-			po_names.add(item.purchase_order)
-
-	if not po_names:
-		return
-
-	for po_name in po_names:
-		_check_and_complete_transit_log(
-			reference_doctype="Purchase Order",
-			reference_name=po_name
-		)
-
-
 def update_transit_log_from_stock_entry(doc, method):
 	"""Hook: on_submit of Stock Entry.
 
