@@ -7,7 +7,7 @@ from collections import OrderedDict
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import  add_to_date, cstr, getdate, add_days, add_months, get_first_day, get_last_day, nowdate, date_diff
+from frappe.utils import add_to_date, cstr, getdate, add_days, date_diff
 from frappe.permissions import get_doctype_roles
 
 from one_fm.one_fm.page.roster.roster import get_current_user_details
@@ -51,67 +51,6 @@ def get_permission_query_conditions(user):
 
 	return ""
 
-
-def create():
-	frappe.enqueue(create_roster_employee_actions, is_async=True, queue='long')
-
-
-def create_roster_employee_actions():
-	"""
-		This function creates a Roster Employee Actions document and issues notifications to relevant supervisors
-		directing them to schedule employees that are unscheduled and assigned to them.
-		It computes employees not scheduled for the span of two months, starting from tomorrow.
-	"""
-	tomorrow = add_days(getdate(), 1)
-	next_month = add_months(tomorrow, 1)
-
-	durations = [
-		{
-			"start_date": tomorrow,
-			"end_date": get_last_day(tomorrow)
-		},
-		{
-			"start_date": get_first_day(next_month),
-			"end_date": get_last_day(next_month)
-		},
-	]
-
-	for duration in durations:
-		start_date = duration["start_date"]
-		end_date = duration["end_date"]
-
-		employees_not_rostered = get_employees_not_rostered(start_date, end_date)
-
-		for employee, dates in employees_not_rostered.items():
-			try:
-				sorted_dates = sorted(
-					[datetime.strptime(date.strip(), "%Y-%m-%d") for date in dates]
-				)
-
-				yesterday_repeat_count = frappe.db.get_value(
-					"Roster Employee Actions",
-					{
-						# If start date lies within current month then check for yesterday else check for first day of month (for next month)
-						"start_date": add_days(start_date, -1) if getdate(start_date).month == getdate(nowdate()).month and getdate(start_date).year == getdate(nowdate()).year else get_first_day(start_date),
-						"employee": employee,
-						"creation": ["between", [add_days(nowdate(), -1), nowdate()]],
-					},
-					["repeat_count"]
-				)
-
-				make_roster_employee_action(
-					employee,
-					start_date,
-					end_date,
-					[date.strftime("%Y-%m-%d") for date in sorted_dates],
-					repeat_count=(yesterday_repeat_count or 0) + 1,
-				)
-
-			except Exception as e:
-				frappe.log_error(message=frappe.get_traceback(), title="Error while generating Roster employee actions")
-				continue
-
-			frappe.db.commit()
 
 def make_roster_employee_action(employee, start_date, end_date, missing_dates, repeat_count=1):
 	"""Save a Pending Roster Employee Actions doc for the employee's allocation and its supervisors."""
