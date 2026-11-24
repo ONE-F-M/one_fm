@@ -164,6 +164,7 @@ class TestPreparationRelievingDate(FrappeTestCase):
 
 		before = self._stored(row)
 		submitted = frappe.get_doc("Preparation", doc.name)
+		submitted._action = "update_after_submit"  # what save() sets before validating links
 		statements = self._spy(submitted._validate_links)
 
 		self.assertEqual(submitted.preparation_record[0].relieving_date, before)
