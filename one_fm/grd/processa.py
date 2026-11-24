@@ -99,3 +99,26 @@ def retire_workflow(doctype, workflow, assignment_rules):
 			frappe.db.set_value("Assignment Rule", name, "disabled", 1)
 
 	frappe.clear_cache(doctype=doctype)
+
+
+def run_server_script_in_background(script_name):
+	"""Background job: run a Processa map's Server Script the way a script task does, with in_background set.
+
+	A map script queues itself with frappe.enqueue to get past the 5-minute limit of the timer sweep.
+	"""
+	from processa.processa_engine.engine.script_engine import check_server_script
+
+	script = frappe.get_doc("Server Script", script_name)
+	if script.disabled:
+		return
+	check_server_script(script)
+	exec(  # noqa: S102
+		script.script,
+		{
+			"__builtins__": __builtins__,
+			"frappe": frappe,
+			"doc": frappe._dict(),
+			"result": {},
+			"task_data": {"in_background": True},
+		},
+	)
