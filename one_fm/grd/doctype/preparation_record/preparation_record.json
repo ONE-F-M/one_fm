@@ -176,6 +176,7 @@
    "read_only": 1
   },
   {
+   "fetch_from": "employee.relieving_date",
    "fieldname": "relieving_date",
    "fieldtype": "Date",
    "in_list_view": 1,
