@@ -141,6 +141,33 @@ class TestPortal(FrappeTestCase):
 			submit_for_review("Supplier A", "2026-01-01", "2026-01-31")
 		complete_task.assert_called_once_with("INST-1", "T-1", frappe.as_json({"action": "Submit for Review"}))
 
+	def test_submit_shares_the_instance_with_a_portal_user(self):
+		from one_fm.one_fm.doctype.subcontract_staff_attendance.subcontract_staff_attendance import submit_for_review
+
+		task = {"instance_name": "INST-1", "task_id": "T-1", "can_action": True, "task_actions_detail": [{"action": "Submit for Review"}]}
+		with patch("frappe.get_all", return_value=["SSA-1"]), \
+			patch("processa.api.instances.get_active_bpmn_tasks", return_value=[task]), \
+			patch("frappe.has_permission", return_value=False), \
+			patch("frappe.share.add_docshare") as add_docshare, \
+			patch("processa.api.instances.complete_task") as complete_task:
+			submit_for_review("Supplier A", "2026-01-01", "2026-01-31")
+		add_docshare.assert_called_once_with(
+			"BPMN Process Instance", "INST-1", frappe.session.user, read=1, write=1, flags={"ignore_share_permission": True}
+		)
+		complete_task.assert_called_once()
+
+	def test_submit_does_not_share_when_the_user_can_write(self):
+		from one_fm.one_fm.doctype.subcontract_staff_attendance.subcontract_staff_attendance import submit_for_review
+
+		task = {"instance_name": "INST-1", "task_id": "T-1", "can_action": True, "task_actions_detail": [{"action": "Submit for Review"}]}
+		with patch("frappe.get_all", return_value=["SSA-1"]), \
+			patch("processa.api.instances.get_active_bpmn_tasks", return_value=[task]), \
+			patch("frappe.has_permission", return_value=True), \
+			patch("frappe.share.add_docshare") as add_docshare, \
+			patch("processa.api.instances.complete_task"):
+			submit_for_review("Supplier A", "2026-01-01", "2026-01-31")
+		add_docshare.assert_not_called()
+
 	def test_submit_without_a_task_throws(self):
 		from one_fm.one_fm.doctype.subcontract_staff_attendance.subcontract_staff_attendance import submit_for_review
 

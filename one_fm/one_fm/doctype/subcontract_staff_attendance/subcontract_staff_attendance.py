@@ -384,4 +384,14 @@ def submit_for_review(subcontractor_name, from_date, to_date):
 		)
 		if not task:
 			frappe.throw(_("Attendance {0} was saved as a draft but could not be submitted for review.").format(name))
+		# Portal users hold no role on BPMN Process Instance; share only this record's instance.
+		if not frappe.has_permission("BPMN Process Instance", "write", task["instance_name"]):
+			frappe.share.add_docshare(
+				"BPMN Process Instance",
+				task["instance_name"],
+				frappe.session.user,
+				read=1,
+				write=1,
+				flags={"ignore_share_permission": True},
+			)
 		complete_task(task["instance_name"], task["task_id"], frappe.as_json({"action": "Submit for Review"}))
