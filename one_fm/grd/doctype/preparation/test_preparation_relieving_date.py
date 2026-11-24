@@ -60,6 +60,23 @@ class TestPreparationRelievingDate(FrappeTestCase):
 
 	# helpers
 
+	def _drop_fetches_of_missing_employee_columns(self):
+		"""Work around custom Employee columns this test site may not have.
+
+		Link validation selects every fetch_from column of the row from tabEmployee, so a
+		missing custom column (employee_id, one_fm_civil_id ...) fails every save with
+		"Unknown column". Those fetches are switched off for the test, for the columns that
+		are absent only. relieving_date is a standard Employee column and is never touched.
+		"""
+		for df in frappe.get_meta("Preparation Record").fields:
+			source = (df.fetch_from or "").split(".")
+			if len(source) != 2 or source[0] != "employee" or source[1] == "relieving_date":
+				continue
+			if not frappe.db.has_column("Employee", source[1]):
+				patcher = mock.patch.object(df, "fetch_from", None)
+				patcher.start()
+				self.addCleanup(patcher.stop)
+
 	def _set_employee_date(self, value):
 		frappe.db.set_value("Employee", self.employee, "relieving_date", value)
 
