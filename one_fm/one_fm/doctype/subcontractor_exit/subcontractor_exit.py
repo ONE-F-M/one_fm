@@ -7,10 +7,6 @@ from frappe.model.document import Document
 
 
 class SubcontractorExit(Document):
-	def before_insert(self):
-		"""Auto-populate requested_by with the current user."""
-		self.requested_by = frappe.session.user
-
 	def validate(self):
 		self.validate_penalty_remarks()
 
