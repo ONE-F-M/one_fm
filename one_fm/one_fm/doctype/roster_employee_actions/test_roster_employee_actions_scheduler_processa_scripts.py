@@ -20,70 +20,83 @@ SCRIPTS = {
 # next month. repeat_count carries on from yesterday's record for the same period, so it counts
 # the days in a row the employee has been flagged. The shift supervisor is the first one on the
 # shift who works today. An employee that fails is logged and the run carries on.
-from datetime import datetime
+# The map runs this inside the timer sweep, which stops after 5 minutes, so that pass only queues
+# this same script on the long queue. The queued pass has in_background set and does the work.
+if not task_data.get("in_background"):
+	frappe.enqueue(
+		"one_fm.grd.processa.run_server_script_in_background",
+		queue="long",
+		timeout=3600,
+		job_id="Create Employee Actions",
+		deduplicate=True,
+		script_name="Create Employee Actions",
+	)
+	result["queued"] = True
+else:
+	from datetime import datetime
 
-from one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions import get_employees_not_rostered
-from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor
+	from one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions import get_employees_not_rostered
+	from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor
 
-getdate = frappe.utils.getdate
-add_days = frappe.utils.add_days
-get_first_day = frappe.utils.get_first_day
-get_last_day = frappe.utils.get_last_day
+	getdate = frappe.utils.getdate
+	add_days = frappe.utils.add_days
+	get_first_day = frappe.utils.get_first_day
+	get_last_day = frappe.utils.get_last_day
 
-today = getdate()
-tomorrow = add_days(today, 1)
-next_month = frappe.utils.add_months(tomorrow, 1)
-periods = [
-	(tomorrow, get_last_day(tomorrow)),
-	(get_first_day(next_month), get_last_day(next_month)),
-]
+	today = getdate()
+	tomorrow = add_days(today, 1)
+	next_month = frappe.utils.add_months(tomorrow, 1)
+	periods = [
+		(tomorrow, get_last_day(tomorrow)),
+		(get_first_day(next_month), get_last_day(next_month)),
+	]
 
-created = 0
-errors = 0
-for start_date, end_date in periods:
-	employees_not_rostered = get_employees_not_rostered(start_date, end_date) or {}
-	for employee, dates in employees_not_rostered.items():
-		try:
-			missing_dates = sorted(datetime.strptime(date.strip(), "%Y-%m-%d") for date in dates)
-			# This month's record started yesterday; next month's always starts on the 1st.
-			if start_date.month == today.month and start_date.year == today.year:
-				previous_start = add_days(start_date, -1)
-			else:
-				previous_start = get_first_day(start_date)
-			yesterday_repeat_count = frappe.db.get_value(
-				"Roster Employee Actions",
-				{
-					"start_date": previous_start,
+	created = 0
+	errors = 0
+	for start_date, end_date in periods:
+		employees_not_rostered = get_employees_not_rostered(start_date, end_date) or {}
+		for employee, dates in employees_not_rostered.items():
+			try:
+				missing_dates = sorted(datetime.strptime(date.strip(), "%Y-%m-%d") for date in dates)
+				# This month's record started yesterday; next month's always starts on the 1st.
+				if start_date.month == today.month and start_date.year == today.year:
+					previous_start = add_days(start_date, -1)
+				else:
+					previous_start = get_first_day(start_date)
+				yesterday_repeat_count = frappe.db.get_value(
+					"Roster Employee Actions",
+					{
+						"start_date": previous_start,
+						"employee": employee,
+						"creation": ["between", [add_days(today, -1), today]],
+					},
+					"repeat_count",
+				)
+				shift, site, project = frappe.db.get_value("Employee", employee, ["shift", "site", "project"])
+				frappe.get_doc({
+					"doctype": "Roster Employee Actions",
+					"start_date": start_date,
+					"end_date": end_date,
+					"repeat_count": (yesterday_repeat_count or 0) + 1,
+					"status": "Pending",
+					"supervisor": get_shift_supervisor(shift),
+					"site_supervisor": frappe.db.get_value("Operations Site", site, "site_supervisor"),
+					"project_manager": frappe.db.get_value("Project", project, "project_manager"),
+					"shift": shift,
+					"site": site,
+					"project": project,
 					"employee": employee,
-					"creation": ["between", [add_days(today, -1), today]],
-				},
-				"repeat_count",
-			)
-			shift, site, project = frappe.db.get_value("Employee", employee, ["shift", "site", "project"])
-			frappe.get_doc({
-				"doctype": "Roster Employee Actions",
-				"start_date": start_date,
-				"end_date": end_date,
-				"repeat_count": (yesterday_repeat_count or 0) + 1,
-				"status": "Pending",
-				"supervisor": get_shift_supervisor(shift),
-				"site_supervisor": frappe.db.get_value("Operations Site", site, "site_supervisor"),
-				"project_manager": frappe.db.get_value("Project", project, "project_manager"),
-				"shift": shift,
-				"site": site,
-				"project": project,
-				"employee": employee,
-				"missing_dates": ", ".join(date.strftime("%Y-%m-%d") for date in missing_dates),
-			}).insert()
-			created += 1
-		except Exception:
-			frappe.log_error(message=frappe.get_traceback(), title="Error while generating Roster employee actions")
-			errors += 1
-			continue
-		frappe.db.commit()
+					"missing_dates": ", ".join(date.strftime("%Y-%m-%d") for date in missing_dates),
+				}).insert()
+				created += 1
+			except Exception:
+				frappe.log_error(message=frappe.get_traceback(), title="Error while generating Roster employee actions")
+				errors += 1
+				continue
+			frappe.db.commit()
 
-result["actions_created"] = created
-result["errors"] = errors
+	result["actions_created"] = created
+	result["errors"] = errors
 """,
 }
 
@@ -117,6 +130,32 @@ class TestSiteScripts(FrappeTestCase):
 MODULE = "one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions"
 
 
+class TestScriptQueuesItself(FrappeTestCase):
+	def test_map_pass_only_queues_the_script_on_the_long_queue(self):
+		with patch("frappe.enqueue") as enqueue, patch(MODULE + ".get_employees_not_rostered") as not_rostered:
+			result = run("Create Employee Actions", None)
+		enqueue.assert_called_once_with(
+			"one_fm.grd.processa.run_server_script_in_background",
+			queue="long",
+			timeout=3600,
+			job_id="Create Employee Actions",
+			deduplicate=True,
+			script_name="Create Employee Actions",
+		)
+		not_rostered.assert_not_called()
+		self.assertEqual(result, {"queued": True})
+
+	def test_background_runner_runs_the_script_with_in_background(self):
+		from one_fm.grd.processa import run_server_script_in_background
+
+		script = frappe._dict(disabled=0, script="frappe.flags.seen_in_background = task_data.get('in_background')")
+		with patch("frappe.get_doc", return_value=script), \
+			patch("processa.processa_engine.engine.script_engine.check_server_script") as check:
+			run_server_script_in_background("Create Employee Actions")
+		check.assert_called_once_with(script)
+		self.assertTrue(frappe.flags.pop("seen_in_background"))
+
+
 class TestCreateEmployeeActions(FrappeTestCase):
 	def setUp(self):
 		self.employee = frappe.get_all("Employee", filters={"status": "Active", "shift_working": 1, "shift": ["is", "set"]}, pluck="name", limit=1)[0]
@@ -135,7 +174,7 @@ class TestCreateEmployeeActions(FrappeTestCase):
 	def run_script(self):
 		self.started = now_datetime()
 		with patch(MODULE + ".get_employees_not_rostered", side_effect=self.not_rostered), patch("frappe.db.commit"), patch("frappe.log_error") as log:
-			result = run("Create Employee Actions", None)
+			result = run("Create Employee Actions", None, in_background=True)
 		return result, log
 
 	def test_one_pending_record_per_employee_and_period(self):
@@ -164,7 +203,7 @@ class TestCreateEmployeeActions(FrappeTestCase):
 	def test_periods_are_this_month_and_next_month(self):
 		seen = []
 		with patch(MODULE + ".get_employees_not_rostered", side_effect=lambda s, e: seen.append((s, e)) or {}):
-			result = run("Create Employee Actions", None)
+			result = run("Create Employee Actions", None, in_background=True)
 		self.assertEqual(seen, [(self.tomorrow, get_last_day(self.tomorrow)), (self.next_month, get_last_day(self.next_month))])
 		self.assertEqual(result, {"actions_created": 0, "errors": 0})
 
