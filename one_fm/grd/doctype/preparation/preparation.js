@@ -195,12 +195,13 @@ frappe.ui.form.on("Preparation", {
 				frm.fields_dict.preparation_record.grid.update_docfield_property("civil_id_amount", "allow_on_submit", 0);
 				["embassy_attestation_fee", "mofa_fee", "pcc_translation_fee"].forEach(field =>
 					frm.fields_dict.preparation_record.grid.update_docfield_property(field, "allow_on_submit", 0));
-				
-				// Fetch dates on refresh (covers load & reload)
-				fetch_employee_dates_batch(frm);
 			}
 		}
 
+		// WI-004230: every refresh, draft or submitted, whatever the role. It used to sit
+		// inside the submitted-and-not-HR-Manager branch, so drafts and HR Managers never
+		// got it. Returns early for a new document.
+		fetch_employee_dates_batch(frm);
 	},
 	set_renewal_for_all: function(frm) {
 		frappe.call({
@@ -258,15 +259,29 @@ function fetch_employee_dates_batch(frm){
 		args: { preparation: frm.doc.name },
 		freeze: false,
 		callback: function(r){
-			// We avoid local field mutation to keep form clean.
-			// Optionally, refresh grid rows that were updated so user sees values.
-			if(r.message && r.message.updated_rows && r.message.updated_rows.length){
-				// Reload only affected child rows values from DB
-				// r.message.updated_rows.forEach(rowname => {
-				// 	frappe.model.remove_from_locals('Preparation Record', rowname); // force re-fetch
-				// });
-				frm.refresh_field('preparation_record');
+			// WI-004230: the server only reports rows whose date differs from Employee.
+			// Nothing changed: return before any DOM work.
+			const values = r.message && r.message.values;
+			if(!values || !Object.keys(values).length){
+				return;
 			}
+			const row_docs = locals['Preparation Record'] || {};
+			const grid = frm.fields_dict.preparation_record.grid;
+			Object.keys(values).forEach(rowname => {
+				const row_doc = row_docs[rowname];
+				if(!row_doc){
+					return;
+				}
+				// Direct assignment, not frappe.model.set_value: the form must not go
+				// dirty and no child table event may fire. Rows on other pages read this
+				// value from locals when their page renders.
+				row_doc.relieving_date = values[rowname];
+				// Repaint only the changed cell, and only if the row is rendered now.
+				const grid_row = grid.grid_rows_by_docname && grid.grid_rows_by_docname[rowname];
+				if(grid_row){
+					grid_row.refresh_field('relieving_date');
+				}
+			});
 		}
 	});
 }
