@@ -4,6 +4,7 @@ from dateutil.parser import parse
 import frappe
 from frappe import _
 from frappe.utils import cint, flt, get_datetime, cstr, getdate, now_datetime, add_days, now, today, formatdate
+from frappe.query_builder import DocType
 from hrms.hr.doctype.employee_checkin.employee_checkin import *
 from one_fm.utils import get_current_shift
 from one_fm.overrides.employee import NOT_RETURNED_FROM_LEAVE
@@ -455,28 +456,58 @@ def calculate_time_diffrence_for_checkin(shift_time, checkin_time):
 		return [the_diff[1]]
 	return list(the_diff)
 
+def auto_checkin_employee_query(date):
+	"""Employees eligible for a generated check-in on `date`.
+
+	Only employees who are still Active on that date qualify: a relieved or
+	otherwise inactive employee must never get a generated log.
+	"""
+	Employee = DocType("Employee")
+	ShiftAssignment = DocType("Shift Assignment")
+
+	return (
+		frappe.qb.from_(Employee)
+		.join(ShiftAssignment).on(ShiftAssignment.employee == Employee.name)
+		.select(
+			Employee.name.as_("ename"),
+			ShiftAssignment.name.as_("sname"),
+			ShiftAssignment.start_datetime,
+			ShiftAssignment.end_datetime,
+			ShiftAssignment.start_date,
+		)
+		.where(Employee.auto_attendance == 1)
+		.where(Employee.status == "Active")
+		.where(ShiftAssignment.start_date == date)
+		.where(Employee.relieving_date.isnull() | (Employee.relieving_date >= date))
+	)
+
+
 @frappe.whitelist()
 def auto_generate_checkin():
 	date = today()
 	expected_date_time = datetime.strptime(format(now_datetime() + timedelta(hours=1), "%d-%m-%Y %H:00:00"), "%d-%m-%Y %H:00:00")
-	employee_list = frappe.db.sql(f"""SELECT e.name as ename, sa.name as sname, sa.start_datetime, sa.end_datetime, sa.start_date
-									from `tabEmployee` as e, `tabShift Assignment` as sa
-									WHERE e.auto_attendance = 1
-									AND sa.employee = e.name
-									AND sa.start_date = '{date}'
-					""", as_dict=1)
+	employee_list = auto_checkin_employee_query(date).run(as_dict=True)
 
 	if employee_list:
 		frappe.enqueue(process_list, employee_list=employee_list, expected_date_time=expected_date_time, is_async=True, queue='long')
 
 def process_list(employee_list, expected_date_time):
 	for e in employee_list:
-		if expected_date_time == e.start_datetime:
-			checkin_time = e.start_datetime + (e.start_datetime + timedelta(minutes=60) - e.start_datetime) * random.random()
-			create_checkin_record(e.ename, "IN", checkin_time, e.sname)
-		if expected_date_time == e.end_datetime:
-			checkout_time = e.end_datetime + (e.end_datetime + timedelta(minutes=30) - e.end_datetime) * random.random()
-			create_checkin_record(e.ename, "OUT", checkout_time, e.sname)
+		# One rejected employee (relieved, inactive, duplicate log) must not stop
+		# the generated check-ins for everyone else in the batch.
+		try:
+			if expected_date_time == e.start_datetime:
+				checkin_time = e.start_datetime + (e.start_datetime + timedelta(minutes=60) - e.start_datetime) * random.random()
+				create_checkin_record(e.ename, "IN", checkin_time, e.sname)
+			if expected_date_time == e.end_datetime:
+				checkout_time = e.end_datetime + (e.end_datetime + timedelta(minutes=30) - e.end_datetime) * random.random()
+				create_checkin_record(e.ename, "OUT", checkout_time, e.sname)
+		except Exception:
+			frappe.db.rollback()
+			frappe.log_error(
+				message=frappe.get_traceback(),
+				title=f"Auto Checkin skipped for {e.ename}"
+			)
 
 def create_checkin_record(employee, log_type, time, shift_assignment):
 	employee_checkin = frappe.new_doc('Employee Checkin')
@@ -484,6 +515,11 @@ def create_checkin_record(employee, log_type, time, shift_assignment):
 	employee_checkin.log_type = log_type
 	employee_checkin.time = time
 	employee_checkin.shift_assignment = shift_assignment
+	# The generated record skips validate() because the interactive checks
+	# (geolocation, shift permission) do not apply to it, but the guards that
+	# decide whether this employee may be logged at all must still run.
+	employee_checkin.validate_not_after_relieving_date()
+	validate_active_employee(employee)
 	employee_checkin.flags.ignore_validate = True
 	employee_checkin.save(ignore_permissions=True)
 	employee_checkin.db_set('creation', str(time))
