@@ -20,14 +20,23 @@ var set_requester = (frm) => {
 }
 
 var create_shortlist_button = (frm) => {
-	if (frm.doc.status == "Approved" && frm.doc.docstatus == 1){
-			frm.add_custom_button(__("Create Subcontract Staff Shortlist"), function() {
-				const wo = frappe.model.get_new_doc('Subcontract Staff Shortlist');
-				wo.subcontract_staff_request = frm.doc.name
-				wo.company = frm.doc.company
-				wo.date = frappe.datetime.get_today()
-				frappe.set_route('Form', wo.doctype, wo.name);
-
+	if (frm.doc.workflow_state == "Approved" && frm.doc.docstatus == 1) {
+		frm.add_custom_button(__("Create Subcontract Staff Shortlist"), function () {
+			frappe.model.with_doctype("Subcontract Staff Shortlist", function () {
+				const shortlist = frappe.model.get_new_doc("Subcontract Staff Shortlist");
+				shortlist.subcontract_staff_request = frm.doc.name;
+				shortlist.company = frm.doc.company;
+				shortlist.date = frappe.datetime.get_today();
+				// One shortlist row per requested person, carrying the gender and nationality asked for.
+				(frm.doc.subcontracted_staff_request_detail || []).forEach((d) => {
+					for (let i = 0; i < (d.number || 0); i++) {
+						const row = frappe.model.add_child(shortlist, "subcontract_staff_shortlist_detail");
+						row.gender = d.gender;
+						row.nationality = d.nationality;
+					}
+				});
+				frappe.set_route("Form", shortlist.doctype, shortlist.name);
+			});
 		}).addClass("btn-primary");
 	}
-}
+};

@@ -747,3 +747,4 @@ one_fm.patches.v15_0.add_purchase_receipt_workflow_state
 one_fm.patches.v15_0.move_purchase_order_lifecycle_to_processa
 one_fm.patches.v15_0.add_supplier_quotation_workflow_state
 one_fm.patches.v15_0.move_request_for_material_lifecycle_to_processa
+one_fm.patches.v15_0.move_subcontractor_staffing_lifecycles_to_processa
