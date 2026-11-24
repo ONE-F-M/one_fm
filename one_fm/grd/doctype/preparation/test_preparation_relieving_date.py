@@ -52,6 +52,7 @@ def _count(spy, pattern):
 
 class TestPreparationRelievingDate(FrappeTestCase):
 	def setUp(self):
+		self._drop_fetches_of_missing_employee_columns()
 		self.employee = _an_active_employee()
 		self._set_employee_date(None)
 		self.date = add_days(nowdate(), 30)
