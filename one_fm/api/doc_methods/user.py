@@ -74,23 +74,3 @@ def update_password(
 		return get_home_page() or "/me"
 
 	return result
-
-
-@frappe.whitelist()
-def submit_attendance(docname):
-	"""Process the 'Submit' workflow action from the Web Form for Subcontract Staff Attendance."""
-	doc = frappe.get_doc("Subcontract Staff Attendance", docname)
-
-	# Security check: verify this belongs to the logged-in user's Supplier
-	supplier = frappe.db.get_value(
-		"User Permission",
-		{"user": frappe.session.user, "allow": "Supplier"},
-		"for_value"
-	)
-	if doc.subcontractor_name != supplier:
-		frappe.throw("Not Permitted")
-
-	from frappe.model.workflow import apply_workflow
-	apply_workflow(doc, "Submit for Review")
-	return "Success"
-

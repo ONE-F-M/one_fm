@@ -121,6 +121,7 @@
   {
    "fetch_from": "project.project_manager",
    "fieldname": "project_manager",
+   "ignore_user_permissions": 1,
    "fieldtype": "Link",
    "label": "Project Manager",
    "options": "Employee"
@@ -145,6 +146,7 @@
   {
    "fetch_from": "site.site_supervisor",
    "fieldname": "operations_supervisor",
+   "ignore_user_permissions": 1,
    "fieldtype": "Link",
    "label": "Operations Supervisor",
    "options": "Employee"
@@ -180,7 +182,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-11 10:00:00.000000",
+ "modified": "2026-11-23 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Subcontract Staff Attendance",
