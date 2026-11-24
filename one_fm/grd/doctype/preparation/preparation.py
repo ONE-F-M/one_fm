@@ -898,20 +898,24 @@ def get_employees_relieving_date(employees):
 @frappe.whitelist()
 def update_preparation_employee_dates(preparation: str):
     """
-        Update relieving_date in child rows without making the form dirty.
-        Uses frappe.db.set_value (update_modified=False) so the client doc stays clean until reload.
-        Returns map of updated rows and data used.
+        Report which child rows show a stale relieving_date (WI-004230).
+
+        NOTE: the name now overstates what this does. It is a pure read and writes nothing;
+        the stored value is refreshed on save by fetch_from on Preparation Record.relieving_date.
+        Returns updated_rows (rows whose value differs) and values {rowname: date} for those
+        rows, so the client can repaint them. Nothing is returned for rows already current.
     """
     if not preparation:
         return {}
     doc = frappe.get_doc('Preparation', preparation)
-    if doc.is_new():  # cannot update unsaved document rows
-        return {'updated_rows': [], 'data': {}}
+    if doc.is_new():  # unsaved document, nothing to compare
+        return {'updated_rows': []}
     employees = [r.employee for r in doc.preparation_record if r.employee]
     if not employees:
-        return {'updated_rows': [], 'data': {}}
+        return {'updated_rows': []}
     data = get_employees_relieving_date(employees)
     updated = []
+    values = {}
     for row in doc.preparation_record:
         if not row.employee:
             continue
@@ -919,12 +923,12 @@ def update_preparation_employee_dates(preparation: str):
         if not info:
             continue
         rel = info.get('relieving_date')
-        if row.relieving_date != rel:
-            frappe.db.set_value(row.doctype, row.name, {
-                'relieving_date': rel
-            }, update_modified=False)
+        if (getdate(row.relieving_date) if row.relieving_date else None) != (getdate(rel) if rel else None):
             updated.append(row.name)
-    return {'updated_rows': updated, 'data': data}
+            values[row.name] = cstr(getdate(rel)) if rel else None
+    if not updated:
+        return {'updated_rows': []}
+    return {'updated_rows': updated, 'values': values}
 
 def get_renewal_extension_cost_for_employee(employee, no_of_years = "1 Year"):
     """
