@@ -162,7 +162,6 @@ one_fm.patches.v15_0.update_residency_assignment_rule
 one_fm.patches.v15_0.update_stock_entry_index
 one_fm.patches.v15_0.add_hd_agent_custom_field_github_api_token
 one_fm.patches.v15_0.update_rfm_from_pr
-one_fm.patches.v15_0.update_rfm_workflow #2025-10-15
 one_fm.patches.v15_0.add_update_workflow #2026-01-05
 one_fm.patches.v15_0.update_hd_ticket_bug_buster_assignment
 one_fm.patches.v15_0.update_timesheet_records
@@ -352,8 +351,6 @@ one_fm.patches.v15_0.rename_warehouse_fields_in_rfm
 one_fm.patches.v15_0.rename_job_applicant_forth_name #3
 one_fm.patches.v15_0.check_po_kwd_rates
 one_fm.patches.v15_0.add_hr_settings_custom_fields #1-2
-one_fm.patches.v15_0.add_assignment_rule_rfm_approver #1
-one_fm.patches.v15_0.add_assignment_rule_rfm_warehouse_supervisor #1
 one_fm.patches.v15_0.populate_abbreviation_data #1-2
 one_fm.patches.v15_0.rename_accommodation_hierarchy #1-2
 one_fm.patches.v15_0.add_roster_client_day_off_checker_assignment_rules
@@ -734,5 +731,6 @@ one_fm.patches.v15_0.add_purchase_receipt_workflow_state
 one_fm.patches.v15_0.move_purchase_order_lifecycle_to_processa
 one_fm.patches.v15_0.add_supplier_quotation_workflow_state
 one_fm.patches.v15_0.move_request_for_material_lifecycle_to_processa
+one_fm.patches.v15_0.add_request_for_material_workflow_state
 one_fm.patches.v15_0.move_subcontract_staff_attendance_lifecycle_to_processa
 one_fm.patches.v15_0.move_subcontractor_staffing_lifecycles_to_processa
