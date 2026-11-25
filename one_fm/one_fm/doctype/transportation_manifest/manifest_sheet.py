@@ -288,8 +288,8 @@ def save_stop_checks(manifest: str, stop_sequence, updates, trip_id=None) -> dic
 
 	Rejects any write to a row that is not part of the currently active stop, so
 	completed and not-yet-reached stops cannot be altered through this endpoint.
-	Delegates to a normal ``doc.save()`` so the manifest controller's reliever /
-	Rambo-assignment logic still runs.
+	Delegates to a normal ``doc.save()`` so the controller's reliever checks run and
+	the Transportation Manifest Lifecycle map syncs the Rambo Assignments.
 
 	``updates`` is a JSON list of
 	``{row_name, attendance_status, qoa_status, qoa_reason}``.
