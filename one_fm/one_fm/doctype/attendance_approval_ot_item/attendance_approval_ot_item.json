@@ -182,7 +182,7 @@
    "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
   },
   {
-   "depends_on": "day_29",
+   "depends_on": "eval:parent.month && new Date(parseInt(parent.year), [\"January\",\"February\",\"March\",\"April\",\"May\",\"June\",\"July\",\"August\",\"September\",\"October\",\"November\",\"December\"].indexOf(parent.month) + 1, 0).getDate() >= 29",
    "fieldname": "day_29",
    "fieldtype": "Select",
    "label": "Day 29",
@@ -235,7 +235,7 @@
    "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
   },
   {
-   "depends_on": "day_30",
+   "depends_on": "eval:parent.month && new Date(parseInt(parent.year), [\"January\",\"February\",\"March\",\"April\",\"May\",\"June\",\"July\",\"August\",\"September\",\"October\",\"November\",\"December\"].indexOf(parent.month) + 1, 0).getDate() >= 30",
    "fieldname": "day_30",
    "fieldtype": "Select",
    "label": "Day 30",
@@ -288,7 +288,7 @@
    "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
   },
   {
-   "depends_on": "day_31",
+   "depends_on": "eval:parent.month && new Date(parseInt(parent.year), [\"January\",\"February\",\"March\",\"April\",\"May\",\"June\",\"July\",\"August\",\"September\",\"October\",\"November\",\"December\"].indexOf(parent.month) + 1, 0).getDate() >= 31",
    "fieldname": "day_31",
    "fieldtype": "Select",
    "label": "Day 31",
@@ -382,7 +382,7 @@
    "label": "Day 25"
   },
   {
-   "depends_on": "day_29_hour",
+   "depends_on": "eval:parent.month && new Date(parseInt(parent.year), [\"January\",\"February\",\"March\",\"April\",\"May\",\"June\",\"July\",\"August\",\"September\",\"October\",\"November\",\"December\"].indexOf(parent.month) + 1, 0).getDate() >= 29",
    "fieldname": "day_29_hour",
    "fieldtype": "Data",
    "label": "Day 29"
@@ -427,7 +427,7 @@
    "label": "Day 26"
   },
   {
-   "depends_on": "day_30_hour",
+   "depends_on": "eval:parent.month && new Date(parseInt(parent.year), [\"January\",\"February\",\"March\",\"April\",\"May\",\"June\",\"July\",\"August\",\"September\",\"October\",\"November\",\"December\"].indexOf(parent.month) + 1, 0).getDate() >= 30",
    "fieldname": "day_30_hour",
    "fieldtype": "Data",
    "label": "Day 30"
@@ -472,7 +472,7 @@
    "label": "Day 27"
   },
   {
-   "depends_on": "day_31_hour",
+   "depends_on": "eval:parent.month && new Date(parseInt(parent.year), [\"January\",\"February\",\"March\",\"April\",\"May\",\"June\",\"July\",\"August\",\"September\",\"October\",\"November\",\"December\"].indexOf(parent.month) + 1, 0).getDate() >= 31",
    "fieldname": "day_31_hour",
    "fieldtype": "Data",
    "label": "Day 31"
@@ -559,7 +559,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-11-12 12:00:00.000000",
+ "modified": "2026-11-25 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Approval OT Item",
