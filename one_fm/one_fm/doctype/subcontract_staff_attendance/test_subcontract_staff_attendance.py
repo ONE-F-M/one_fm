@@ -175,3 +175,41 @@ class TestPortal(FrappeTestCase):
 			patch("processa.api.instances.get_active_bpmn_tasks", return_value=[]), \
 			self.assertRaises(frappe.ValidationError):
 			submit_for_review("Supplier A", "2026-01-01", "2026-01-31")
+
+
+class TestFetchSubcontractorStaff(FrappeTestCase):
+	def fetch(self, subcontractor_name):
+		from one_fm.one_fm.doctype.subcontract_staff_attendance.subcontract_staff_attendance import (
+			api_fetch_subcontractor_staff,
+		)
+
+		return api_fetch_subcontractor_staff(subcontractor_name, "2026-01-01", "2026-01-31", "Attendance Status")
+
+	def test_portal_user_fetches_own_supplier(self):
+		with patch("frappe.db.get_value", return_value="Supplier A"), \
+			patch(f"{MODULE}.get_subcontractor_staff", return_value=["row"]) as fetch:
+			self.assertEqual(self.fetch("Supplier A"), ["row"])
+		fetch.assert_called_once_with("Supplier A", "2026-01-01", "2026-01-31", "Attendance Status")
+
+	def test_portal_user_refused_for_another_supplier(self):
+		with patch("frappe.db.get_value", return_value="Supplier A"), \
+			patch("frappe.has_permission", return_value=True), \
+			patch(f"{MODULE}.get_subcontractor_staff") as fetch, \
+			self.assertRaises(frappe.PermissionError):
+			self.fetch("Supplier B")
+		fetch.assert_not_called()
+
+	def test_desk_user_with_read_permission_fetches(self):
+		with patch("frappe.db.get_value", return_value=None), \
+			patch("frappe.has_permission", return_value=True), \
+			patch(f"{MODULE}.get_subcontractor_staff", return_value=[]) as fetch:
+			self.assertEqual(self.fetch("Supplier B"), [])
+		fetch.assert_called_once()
+
+	def test_desk_user_without_read_permission_refused(self):
+		with patch("frappe.db.get_value", return_value=None), \
+			patch("frappe.has_permission", return_value=False), \
+			patch(f"{MODULE}.get_subcontractor_staff") as fetch, \
+			self.assertRaises(frappe.PermissionError):
+			self.fetch("Supplier B")
+		fetch.assert_not_called()

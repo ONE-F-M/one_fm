@@ -66,7 +66,7 @@ class SubcontractStaffAttendance(Document):
 
 		try:
 			self.flags._is_fetching_baseline = True
-			baseline_items = api_fetch_subcontractor_staff(
+			baseline_items = get_subcontractor_staff(
 				self.subcontractor_name, self.from_date, self.to_date, self.attendance_record_based_on
 			)
 			for item in baseline_items:
@@ -151,7 +151,7 @@ class SubcontractStaffAttendance(Document):
 		self.set("subcontractor_staff_attendance_item", [])
 
 		# Use the unified API logic that dynamically evaluates actual Attendance records
-		items = api_fetch_subcontractor_staff(
+		items = get_subcontractor_staff(
 			self.subcontractor_name,
 			self.from_date,
 			self.to_date,
@@ -162,8 +162,26 @@ class SubcontractStaffAttendance(Document):
 			for row in items:
 				self.append("subcontractor_staff_attendance_item", row)
 
+def check_fetch_permission(subcontractor_name):
+	"""A portal Supplier user may fetch only their own supplier; other users need read on Subcontract Staff Attendance."""
+	supplier = frappe.db.get_value("User Permission", {"user": frappe.session.user, "allow": "Supplier"}, "for_value")
+	if supplier:
+		allowed = supplier == subcontractor_name
+	else:
+		allowed = frappe.has_permission("Subcontract Staff Attendance", "read")
+	if not allowed:
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+
 @frappe.whitelist()
-def api_fetch_subcontractor_staff(subcontractor_name, from_date, to_date, attendance_record_based_on):
+def api_fetch_subcontractor_staff(
+	subcontractor_name: str | None, from_date: str | None, to_date: str | None, attendance_record_based_on: str | None
+):
+	check_fetch_permission(subcontractor_name)
+	return get_subcontractor_staff(subcontractor_name, from_date, to_date, attendance_record_based_on)
+
+
+def get_subcontractor_staff(subcontractor_name, from_date, to_date, attendance_record_based_on):
 	if not subcontractor_name:
 		frappe.throw("Please select a Subcontractor Name first.")
 	if not from_date or not to_date:
