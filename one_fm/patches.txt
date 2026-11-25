@@ -388,7 +388,6 @@ one_fm.patches.v15_0.add_assignment_rule_subcontract_ops_supervisor #2026-04-27 
 one_fm.patches.v15_0.add_assignment_rule_subcontract_project_manager #2026-04-27 #2
 one_fm.patches.v15_0.add_assignment_rule_subcontract_finance_manager #2026-04-12
 one_fm.patches.v15_0.add_assignment_rule_subcontract_subcontractor #2026-04-12
-one_fm.patches.v15_0.add_subcontractor_contracts_workflow #2026-04-12
 one_fm.patches.v15_0.backfill_candidate_process_planned_dates #2026-04-15
 one_fm.patches.v15_0.backfill_candidate_process_parallel_groups #2026-04-15
 one_fm.patches.v15_0.update_medical_reference_types
@@ -456,12 +455,6 @@ one_fm.patches.v15_0.add_attendance_check_action_user_to_hr_settings
 
 one_fm.patches.v15_0.add_absence_investigation_hr_officer_to_hr_settings
 one_fm.patches.v15_0.update_leave_application_workflow_dss #2026-07-17-2
-one_fm.patches.v15_0.add_subcontractor_exit_workflow
-one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_project_manager
-one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_operations_manager
-one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_gsd_supervisor
-one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_offboarding_officer
-one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_finance_manager
 # --- Operations-011 (24th-30th) release patches ---
 one_fm.patches.v15_0.update_bank_account_workflow #2026-11-04 onboarding officer set inactive
 
