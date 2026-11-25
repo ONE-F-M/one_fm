@@ -166,7 +166,6 @@ one_fm.patches.v15_0.update_rfm_workflow #2025-10-15
 one_fm.patches.v15_0.add_update_workflow #2026-01-05
 one_fm.patches.v15_0.update_hd_ticket_bug_buster_assignment
 one_fm.patches.v15_0.update_timesheet_records
-one_fm.patches.v15_0.update_purchase_order_workflow
 one_fm.patches.v15_0.update_item_workflow_state #2025-11-10
 one_fm.patches.v15_0.update_project_details
 one_fm.patches.v15_0.add_employee_uniform_workflow

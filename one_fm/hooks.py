@@ -314,10 +314,6 @@ doc_events = {
 		],
 	},
 	"Purchase Order": {
-		"on_cancel": [
-			"one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
-			"one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_order"
-		],
 		"before_insert": "one_fm.purchase.utils.set_purchase_type_from_rfp",
 		"validate":[
 			"one_fm.overrides.purchase_order.validate_purchase_uom"
