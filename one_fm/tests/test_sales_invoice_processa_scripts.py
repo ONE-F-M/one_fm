@@ -61,6 +61,22 @@ if (
 			"description": frappe._("The Sales Invoice {0} is ready for Delivery. Please attach the delivered invoice copy to the Sales Invoice.").format(doc.name),
 		})
 """,
+	"Post Sales Invoice Advance Settlement": """# Right after Set Approved submits the invoice: when it settles from the customer's advance, posts
+# the settlement Journal Entry. An error here rolls back the submit, as the old on_submit hook did.
+from one_fm.one_fm.sales_invoice_custom import allocate_advances
+
+if doc.get("automatic_settlement") == "Yes":
+	allocate_advances(doc.name, doc.settlement_amount, doc=doc)
+""",
+	"Cancel Sales Invoice Settlement Entries": """# Right before Set Cancelled cancels the invoice: when it was settled from the customer's advance,
+# cancels every Journal Entry linked to it. An error here stops the cancel, as the old before_cancel
+# hook did.
+from frappe.desk.form.linked_with import get as get_linked_docs
+
+if doc.get("settlement_amount") and doc.get("automatic_settlement") == "Yes":
+	for entry in get_linked_docs(doctype="Sales Invoice", docname=doc.name).get("Journal Entry") or []:
+		frappe.get_doc("Journal Entry", entry.name).cancel()
+""",
 }
 
 
@@ -147,3 +163,67 @@ class TestAssignSalesInvoiceCollectionOfficer(FrappeTestCase):
 		with patch("frappe.get_doc", return_value=self.settings(1, "Approved")), patch("frappe.desk.form.assign_to.add") as add:
 			run("Assign Sales Invoice Collection Officer", doc)
 		add.assert_not_called()
+
+
+class TestPostSalesInvoiceAdvanceSettlement(FrappeTestCase):
+	def test_settles_from_advance_when_set(self):
+		doc = si(automatic_settlement="Yes", settlement_amount=150)
+		with patch("one_fm.one_fm.sales_invoice_custom.allocate_advances") as allocate:
+			run("Post Sales Invoice Advance Settlement", doc)
+		allocate.assert_called_once_with(doc.name, 150, doc=doc)
+
+	def test_nothing_when_not_settling(self):
+		for value in ("No", None):
+			with patch("one_fm.one_fm.sales_invoice_custom.allocate_advances") as allocate:
+				run("Post Sales Invoice Advance Settlement", si(automatic_settlement=value, settlement_amount=150))
+			allocate.assert_not_called()
+
+	def test_an_error_reaches_the_engine_so_the_submit_rolls_back(self):
+		with patch("one_fm.one_fm.sales_invoice_custom.allocate_advances", side_effect=frappe.ValidationError("x")):
+			self.assertRaises(frappe.ValidationError, run, "Post Sales Invoice Advance Settlement", si(automatic_settlement="Yes", settlement_amount=1))
+
+
+class TestCancelSalesInvoiceSettlementEntries(FrappeTestCase):
+	def cancel(self, doc, linked):
+		entry = frappe._dict(cancel=lambda: cancelled.append(True))
+		cancelled = []
+		with patch("frappe.desk.form.linked_with.get", return_value=linked) as get_linked, \
+				patch("frappe.get_doc", return_value=entry) as get_doc:
+			run("Cancel Sales Invoice Settlement Entries", doc)
+		return get_linked, get_doc, cancelled
+
+	def test_cancels_every_linked_journal_entry(self):
+		linked = {"Journal Entry": [frappe._dict(name="JV-1"), frappe._dict(name="JV-2")]}
+		get_linked, get_doc, cancelled = self.cancel(si(automatic_settlement="Yes", settlement_amount=10), linked)
+		get_linked.assert_called_once_with(doctype="Sales Invoice", docname="SINV-PROCESSA-TEST-1")
+		self.assertEqual([c.args for c in get_doc.call_args_list], [("Journal Entry", "JV-1"), ("Journal Entry", "JV-2")])
+		self.assertEqual(len(cancelled), 2)
+
+	def test_nothing_without_a_settlement(self):
+		for kw in ({"automatic_settlement": "Yes", "settlement_amount": 0}, {"automatic_settlement": "No", "settlement_amount": 10}):
+			get_linked, _get_doc, cancelled = self.cancel(si(**kw), {"Journal Entry": [frappe._dict(name="JV-1")]})
+			get_linked.assert_not_called()
+			self.assertEqual(cancelled, [])
+
+	def test_no_linked_entries(self):
+		_g, get_doc, _c = self.cancel(si(automatic_settlement="Yes", settlement_amount=10), {})
+		get_doc.assert_not_called()
+
+
+class TestAllocateAdvancesPermission(FrappeTestCase):
+	def test_refused_without_submit_or_journal_entry_rights(self):
+		from one_fm.one_fm.sales_invoice_custom import allocate_advances
+
+		doc = si(company="C", customer="X")
+		for denied in ("Sales Invoice", "Journal Entry"):
+			with patch("frappe.has_permission", side_effect=lambda dt, *a, **k: dt != denied), \
+					patch("frappe.get_doc") as get_doc:
+				self.assertRaises(frappe.PermissionError, allocate_advances, doc.name, 10, doc=doc)
+			get_doc.assert_not_called()
+
+	def test_allowed_user_reaches_the_journal_entry(self):
+		from one_fm.one_fm.sales_invoice_custom import allocate_advances
+
+		with patch("frappe.has_permission", return_value=True), patch("frappe.get_value", return_value=None) as get_value:
+			allocate_advances("SINV-PROCESSA-TEST-1", 10, doc=si())
+		get_value.assert_called_once()

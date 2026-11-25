@@ -434,8 +434,6 @@ doc_events = {
 		"on_submit": "one_fm.one_fm.asset_custom.on_asset_submit"
 	},
 	"Sales Invoice":{
-		"on_submit":"one_fm.one_fm.sales_invoice_custom.submit_sales_invoice",
-		"before_cancel":'one_fm.one_fm.sales_invoice_custom.cancel_sales_invoice',
 		"validate": "one_fm.one_fm.sales_invoice_custom.set_print_settings_from_contracts",
 	},
 	"Salary Slip": {
@@ -762,9 +760,6 @@ scheduler_events = {
 		# "one_fm.one_fm.grd" doesnt find the module, only "one_fm.grd"
 		"30 12 * * *": [
             "one_fm.overrides.job_applicant.notify_hr_manager_about_local_transfer"
-		],
-		"12 3 * * *":[ #“At 03:12"
-			'one_fm.one_fm.sales_invoice_custom.create_sales_invoice'
 		],
         "00 2 * * *":[ #“At 02:00"
 			"one_fm.one_fm.doctype.leave_acknowledgement_form.leave_acknowledgement_form.generate_leave_acknowledgement"
