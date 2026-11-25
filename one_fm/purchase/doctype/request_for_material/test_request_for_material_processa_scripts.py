@@ -7,7 +7,7 @@ bodies are mirrored here. test_site_scripts_match_this_file catches a site copy 
 drifted from the reviewed one.
 """
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -60,6 +60,16 @@ if doc.technical_verification_needed == "Yes" and doc.technical_verification_fro
 user = frappe.db.get_value("Process Task", {"name": "P-TASK-2026-00017", "is_active": 1}, "employee_user")
 result["assigned_user"] = user or ""
 result["assigned_role"] = "" if user else "Warehouse Supervisor"
+""",
+	"Apply Request for Material Submit Updates": """# Runs once the request is submitted, as Approved or as Rejected. Throws, and so undoes the submit,
+# when a row has no quantity (Issue and Transfer requests). For a request raised from an Issue or
+# Transfer request, recounts that request's purchased and pending quantities.
+doc.validate_item_qty()
+doc.set_purchase_rfm_quantity()
+""",
+	"Apply Request for Material Cancel Updates": """# Runs just before the request is cancelled. For a request raised from an Issue or Transfer request,
+# recounts that request's purchased and pending quantities.
+doc.set_purchase_rfm_quantity()
 """,
 }
 
@@ -193,3 +203,71 @@ class TestMovedLogicLeftTheController(FrappeTestCase):
 
 		for name in ("notify_material_requester", "assign_for_technical_verification", "assign_to_warehouse_supervisor", "validate_uniform_request_before_approval"):
 			self.assertFalse(hasattr(RequestforMaterial, name), name)
+
+	def test_submit_and_cancel_run_no_follow_up_in_python(self):
+		from one_fm.purchase.doctype.request_for_material.request_for_material import RequestforMaterial
+
+		doc = MagicMock()
+		with patch("erpnext.controllers.buying_controller.BuyingController.on_submit") as core_submit, \
+			patch("erpnext.controllers.accounts_controller.AccountsController.before_cancel") as core_cancel:
+			RequestforMaterial.on_submit(doc)
+			RequestforMaterial.before_cancel(doc)
+		doc.validate_item_qty.assert_not_called()
+		doc.set_purchase_rfm_quantity.assert_not_called()
+		core_submit.assert_not_called()
+		core_cancel.assert_not_called()
+
+	def test_unprotected_and_dead_code_is_gone(self):
+		import one_fm.purchase.doctype.request_for_material.request_for_material as module
+		from one_fm.purchase.doctype.request_for_material.request_for_material import RequestforMaterial
+
+		self.assertFalse(hasattr(module, "update_status"))
+		for name in ("update_status", "check_modified_date", "status_can_change", "validate_item_reservation",
+				"set_pending_quantity_per_item", "_initialize_custom_quantities"):
+			self.assertFalse(hasattr(RequestforMaterial, name), name)
+
+	def test_the_map_has_a_field_to_write_the_state_to(self):
+		from one_fm.custom.custom_field.request_for_material import get_request_for_material_custom_fields
+
+		(field,) = get_request_for_material_custom_fields()["Request for Material"]
+		self.assertEqual((field["fieldname"], field["fieldtype"], field["options"], field["hidden"], field["no_copy"], field["allow_on_submit"]),
+			("workflow_state", "Link", "Workflow State", 1, 1, 1))
+		site = frappe.get_meta("Request for Material").get_field("workflow_state")
+		if site:
+			self.assertEqual((site.fieldtype, site.options, site.no_copy, site.allow_on_submit), ("Link", "Workflow State", 1, 1))
+
+
+class TestApplyRequestForMaterialSubmitUpdates(FrappeTestCase):
+	def test_checks_quantities_then_recounts_the_source_request(self):
+		doc = MagicMock()
+		doc.name = "RFM-PROCESSA-TEST-1"
+		run("Apply Request for Material Submit Updates", doc)
+		self.assertEqual([c[0] for c in doc.method_calls], ["validate_item_qty", "set_purchase_rfm_quantity"])
+
+	def test_a_row_without_quantity_still_refuses_the_submit(self):
+		doc = rfm(purpose="Issue", items=[{"item_name": "Boots", "qty": 0}])
+		namespace = {"frappe": frappe, "doc": doc, "task_data": {}, "result": {}}
+		# run() mutes msgprint, which frappe.throw raises through, so the script runs bare here.
+		with patch.object(type(doc), "set_purchase_rfm_quantity") as recount:
+			self.assertRaises(frappe.ValidationError, exec, SCRIPTS["Apply Request for Material Submit Updates"], namespace)
+		recount.assert_not_called()
+
+	def test_a_purchase_request_skips_the_quantity_check(self):
+		doc = rfm(purpose="Purchase", items=[{"item_name": "Boots", "qty": 0}])
+		with patch.object(type(doc), "set_purchase_rfm_quantity") as recount:
+			run("Apply Request for Material Submit Updates", doc)
+		recount.assert_called_once()
+
+
+class TestApplyRequestForMaterialCancelUpdates(FrappeTestCase):
+	def test_recounts_the_source_request(self):
+		doc = MagicMock()
+		doc.name = "RFM-PROCESSA-TEST-1"
+		run("Apply Request for Material Cancel Updates", doc)
+		self.assertEqual([c[0] for c in doc.method_calls], ["set_purchase_rfm_quantity"])
+
+	def test_a_request_not_raised_from_another_is_left_alone(self):
+		doc = rfm(purpose="Purchase", issue_transfer_rfm=None, items=[{"item_code": "I1", "qty": 1}])
+		with patch("frappe.get_doc") as get_doc, patch("frappe.db.commit"):
+			run("Apply Request for Material Cancel Updates", doc)
+		get_doc.assert_not_called()
