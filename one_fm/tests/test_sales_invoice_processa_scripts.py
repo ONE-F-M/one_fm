@@ -62,20 +62,23 @@ if (
 		})
 """,
 	"Post Sales Invoice Advance Settlement": """# Right after Set Approved submits the invoice: when it settles from the customer's advance, posts
-# the settlement Journal Entry. An error here rolls back the submit, as the old on_submit hook did.
+# the settlement Journal Entry. An error here halts the process with the invoice submitted; fix the
+# cause and use Retry, which runs this step again.
 from one_fm.one_fm.sales_invoice_custom import allocate_advances
 
 if doc.get("automatic_settlement") == "Yes":
 	allocate_advances(doc.name, doc.settlement_amount, doc=doc)
 """,
 	"Cancel Sales Invoice Settlement Entries": """# Right before Set Cancelled cancels the invoice: when it was settled from the customer's advance,
-# cancels every Journal Entry linked to it. An error here stops the cancel, as the old before_cancel
-# hook did.
+# cancels every Journal Entry linked to it. An error here halts the process before the invoice is
+# cancelled; fix the cause and use Retry, which runs this step again.
 from frappe.desk.form.linked_with import get as get_linked_docs
 
 if doc.get("settlement_amount") and doc.get("automatic_settlement") == "Yes":
 	for entry in get_linked_docs(doctype="Sales Invoice", docname=doc.name).get("Journal Entry") or []:
-		frappe.get_doc("Journal Entry", entry.name).cancel()
+		# Only submitted entries, so a retry after a failed cancel skips the ones already cancelled.
+		if entry.docstatus == 1:
+			frappe.get_doc("Journal Entry", entry.name).cancel()
 """,
 }
 
@@ -178,7 +181,7 @@ class TestPostSalesInvoiceAdvanceSettlement(FrappeTestCase):
 				run("Post Sales Invoice Advance Settlement", si(automatic_settlement=value, settlement_amount=150))
 			allocate.assert_not_called()
 
-	def test_an_error_reaches_the_engine_so_the_submit_rolls_back(self):
+	def test_an_error_reaches_the_engine_and_halts_the_process(self):
 		with patch("one_fm.one_fm.sales_invoice_custom.allocate_advances", side_effect=frappe.ValidationError("x")):
 			self.assertRaises(frappe.ValidationError, run, "Post Sales Invoice Advance Settlement", si(automatic_settlement="Yes", settlement_amount=1))
 
@@ -193,7 +196,7 @@ class TestCancelSalesInvoiceSettlementEntries(FrappeTestCase):
 		return get_linked, get_doc, cancelled
 
 	def test_cancels_every_linked_journal_entry(self):
-		linked = {"Journal Entry": [frappe._dict(name="JV-1"), frappe._dict(name="JV-2")]}
+		linked = {"Journal Entry": [frappe._dict(name="JV-1", docstatus=1), frappe._dict(name="JV-2", docstatus=1), frappe._dict(name="JV-0", docstatus=2)]}
 		get_linked, get_doc, cancelled = self.cancel(si(automatic_settlement="Yes", settlement_amount=10), linked)
 		get_linked.assert_called_once_with(doctype="Sales Invoice", docname="SINV-PROCESSA-TEST-1")
 		self.assertEqual([c.args for c in get_doc.call_args_list], [("Journal Entry", "JV-1"), ("Journal Entry", "JV-2")])
@@ -201,7 +204,7 @@ class TestCancelSalesInvoiceSettlementEntries(FrappeTestCase):
 
 	def test_nothing_without_a_settlement(self):
 		for kw in ({"automatic_settlement": "Yes", "settlement_amount": 0}, {"automatic_settlement": "No", "settlement_amount": 10}):
-			get_linked, _get_doc, cancelled = self.cancel(si(**kw), {"Journal Entry": [frappe._dict(name="JV-1")]})
+			get_linked, _get_doc, cancelled = self.cancel(si(**kw), {"Journal Entry": [frappe._dict(name="JV-1", docstatus=1)]})
 			get_linked.assert_not_called()
 			self.assertEqual(cancelled, [])
 
