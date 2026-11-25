@@ -67,10 +67,12 @@ def _apply_row_checkin(parent_manifest, row_name, attendance_status, qoa_status,
 							)
 						)
 					
-					# Validate that reliever can only be set when attendance is Absent
-					if row.attendance_status != "Absent":
+					# A reliever covers an Absent worker, or a Present worker who failed QOA
+					if row.attendance_status != "Absent" and not (
+						row.attendance_status == "Present" and row.qoa_status == "Fail"
+					):
 						frappe.throw(
-							_("A reliever employee can only be assigned if Attendance Status is set to Absent")
+							_("A reliever employee can only be assigned if Attendance Status is Absent, or Present with a failed QOA")
 						)
 					
 					row.requires_reliever = 1

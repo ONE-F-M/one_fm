@@ -1860,10 +1860,12 @@ function renderManifest($container, data) {
 	// ── RAMBO PROMPT MODAL LOGIC ──
 	let ramboPromptEmpId = null;
 	let ramboPromptEmpName = null;
+	let ramboPromptReason = null;
 
 	function openRamboPrompt(empId, empName, reason) {
 		ramboPromptEmpId = empId;
 		ramboPromptEmpName = empName;
+		ramboPromptReason = reason;
 		$container.find("#mfst-ramboPromptEmpName").text(empName);
 		if (reason === "qoa_fail") {
 			$container.find("#mfst-ramboPromptTitle").text("Quality of Appearance Failed");
@@ -2021,35 +2023,6 @@ function renderManifest($container, data) {
 		applyRelieverFilter();
 	});
 
-	function getEmpIdFromRowId(rowId) {
-		for (const emps of Object.values(shipmentEmployees)) {
-			const found = (emps || []).find(e => e.row_id === rowId);
-			if (found) return found.id;
-		}
-		for (const emps of Object.values(shipmentReturnEmployees)) {
-			const found = (emps || []).find(e => e.row_id === rowId);
-			if (found) return found.id;
-		}
-		return null;
-	}
-
-	function findShiftForEmp(rowId) {
-		// Walk all shipment labels to find which shift/site this employee belongs to
-		for (const [label, emps] of Object.entries(shipmentEmployees)) {
-			const found = (emps || []).some(e => {
-				const erowid = (typeof e === "object" && e !== null) ? (e.row_id || e.id || e.name || "") : "";
-				return erowid === rowId;
-			});
-			if (found) {
-				return {
-					shift: shipmentShiftNames[label] || "",
-					site: shipmentSiteLocations[label] || ""
-				};
-			}
-		}
-		return { shift: "", site: "" };
-	}
-
 	function openReplacementModal(rowId, empName) {
 		$container.find("#mfst-replaceOrigName").text(empName);
 		availableRelievers = [];
@@ -2068,12 +2041,6 @@ function renderManifest($container, data) {
 		setRelieverListMessage(__("Loading available relievers..."));
 		$container.find("#mfst-btn-confirm-replace").prop("disabled", true).text(__("Confirm Replacement"));
 		$container.find("#mfst-replacementModal").addClass("active");
-
-		// Resolve shift/site for this employee
-		const empShiftInfo = findShiftForEmp(rowId);
-		// Store for use in confirm handler
-		window._mfst_currentReplacementShift = empShiftInfo.shift;
-		window._mfst_currentReplacementSite = empShiftInfo.site;
 
 		// The server takes the date, covered shift and trip window from the row.
 		frappe.call({
@@ -2104,7 +2071,6 @@ function renderManifest($container, data) {
 		if (!reliever) return;
 
 		const rowId = currentCheckInEmpId;
-		const empId = getEmpIdFromRowId(rowId) || rowId;
 
 		$container.find("#mfst-btn-confirm-replace").text("Processing...").prop("disabled", true);
 
@@ -2115,48 +2081,25 @@ function renderManifest($container, data) {
 			method: "one_fm.one_fm.api.doc_methods.transportation_manifest.update_manifest_row_checkin",
 			args: {
 				row_name: rowId,
-				attendance_status: "Absent",
+				// A QOA fail keeps the worker Present; only an absence is saved as Absent.
+				attendance_status: ramboPromptReason === "qoa_fail" ? "Present" : "Absent",
 				reliever_employee: reliever.name
 			},
 			callback: function(r) {
 				if (r.message && r.message.status === "success") {
-					// 2. Call email notification since DB write succeeded
-					frappe.call({
-						method: "one_fm.one_fm.page.transportation_schedule.transportation_schedule.process_rambo_replacement",
-						args: {
-							original_employee: empId,
-							replacement_employee: reliever.name,
-							shift_name: window._mfst_currentReplacementShift || "",
-							site: window._mfst_currentReplacementSite || ""
-						},
-						callback: function(res) {
-							$container.find("#mfst-btn-confirm-replace").text("Confirm Replacement").prop("disabled", false);
-							
-							// Update local checkerState
-							window.checkerState[rowId] = window.checkerState[rowId] || {};
-							window.checkerState[rowId].replacement = {
-								id: reliever.name,
-								name: reliever.employee_name,
-								mobile: reliever.mobile
-							};
-							
-							const msg = (res.message && res.message.message) ? res.message.message : "Replacement processed.";
-							showToast(msg);
-							closeReplacementModal();
-						},
-						error: function() {
-							$container.find("#mfst-btn-confirm-replace").text("Confirm Replacement").prop("disabled", false);
-							// Still complete since DB saved
-							window.checkerState[rowId] = window.checkerState[rowId] || {};
-							window.checkerState[rowId].replacement = {
-								id: reliever.name,
-								name: reliever.employee_name,
-								mobile: reliever.mobile
-							};
-							showToast("Replacement saved, but notification email failed.");
-							closeReplacementModal();
-						}
-					});
+					// The Rambo Assignment map emails the shift supervisor.
+					$container.find("#mfst-btn-confirm-replace").text("Confirm Replacement").prop("disabled", false);
+
+					// Update local checkerState
+					window.checkerState[rowId] = window.checkerState[rowId] || {};
+					window.checkerState[rowId].replacement = {
+						id: reliever.name,
+						name: reliever.employee_name,
+						mobile: reliever.mobile
+					};
+
+					showToast(__("Replacement processed."));
+					closeReplacementModal();
 				} else {
 					$container.find("#mfst-btn-confirm-replace").text("Confirm Replacement").prop("disabled", false);
 				}

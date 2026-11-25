@@ -195,6 +195,47 @@ class TestTransportationManifest(FrappeTestCase):
 		self.assertEqual(row.qoa_reason, "Uniform")
 		self.assertEqual(row.reliever_employee, self.reliever)
 
+	def _checkin_reliever(self, row, attendance_status):
+		from one_fm.one_fm.api.doc_methods.transportation_manifest import update_manifest_row_checkin
+
+		frappe.local.form_dict = frappe._dict(
+			row_name=row, attendance_status=attendance_status, reliever_employee=self.reliever
+		)
+		try:
+			return update_manifest_row_checkin(row, attendance_status=attendance_status, reliever_employee=self.reliever)
+		finally:
+			frappe.local.form_dict = frappe._dict()
+
+	def _checked_in_manifest(self, row_values):
+		doc = frappe.new_doc("Transportation Manifest")
+		doc.vehicle_no = self.vehicle1
+		doc.schedule_date = today()
+		doc.append("transportation_manifest_details", dict(
+			stop_name="Test Stop", employee=self.employee1, scheduled_time="08:00:00", **row_values
+		))
+		doc.save()
+		return doc.transportation_manifest_details[0].name
+
+	def test_api_reliever_for_present_qoa_fail_keeps_present(self):
+		row = self._checked_in_manifest({"attendance_status": "Present", "qoa_status": "Fail", "qoa_reason": "Uniform"})
+		saved = self._checkin_reliever(row, "Present")["row"]
+		self.assertEqual(saved["attendance_status"], "Present")
+		self.assertEqual(saved["qoa_status"], "Fail")
+		self.assertEqual(saved["qoa_reason"], "Uniform")
+		self.assertEqual(saved["reliever_employee"], self.reliever)
+		self.assertEqual(saved["requires_reliever"], 1)
+
+	def test_api_reliever_for_absent(self):
+		row = self._checked_in_manifest({"attendance_status": "Absent"})
+		saved = self._checkin_reliever(row, "Absent")["row"]
+		self.assertEqual(saved["attendance_status"], "Absent")
+		self.assertEqual(saved["reliever_employee"], self.reliever)
+		self.assertEqual(saved["requires_reliever"], 1)
+
+	def test_api_refuses_reliever_for_present_qoa_pass(self):
+		row = self._checked_in_manifest({"attendance_status": "Present", "qoa_status": "Pass"})
+		self.assertRaises(frappe.ValidationError, self._checkin_reliever, row, "Present")
+
 	def test_reliever_replacement_validation(self):
 		# Assign reliever employee
 		doc1 = frappe.new_doc("Transportation Manifest")
