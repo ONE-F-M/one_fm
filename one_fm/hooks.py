@@ -16,6 +16,10 @@ app_icon = "octicon octicon-file-directory"
 app_color = "grey"
 app_email = "develop@one-fm.com"
 app_license = "MIT"
+
+# MCP discovery tools may show the source of this app's whitelisted methods.
+expose_discovery_source = True
+
 app_logo_url = "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png"
 # Includes in <head>
 # ------------------
