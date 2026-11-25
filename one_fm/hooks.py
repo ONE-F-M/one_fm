@@ -402,10 +402,6 @@ doc_events = {
 		"on_update_after_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_rfp",
 	},
 	"Purchase Receipt": {
-		"on_cancel": [
-            "one_fm.overrides.purchase_receipt.update_received_qty",
-            "one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_receipt"
-        ],
 		"on_update_after_submit": [
             "one_fm.overrides.purchase_receipt.update_received_qty",
             "one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_receipt"
