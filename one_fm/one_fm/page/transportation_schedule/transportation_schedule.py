@@ -2978,68 +2978,6 @@ def get_available_rambo_relievers(shift_name: str = None, date: str = None, row_
     return result
 
 
-@frappe.whitelist()
-def process_rambo_replacement(original_employee: str, replacement_employee: str, shift_name: str, site: str):
-    """
-    Processes the swap by sending an email notification.
-    The UI will update its own DOM/State dynamically.
-    """
-    orig_emp = frappe.db.get_value("Employee", original_employee, "employee_name") or original_employee
-    new_emp = frappe.db.get_value("Employee", replacement_employee, "employee_name") or replacement_employee
-    
-    # Send Email Notification
-    recipients = []
-    
-    # Find operations supervisor for the shift/site
-    if shift_name:
-        supervisor = frappe.db.get_value("Operations Shift", shift_name, "supervisor")
-        if supervisor:
-            user_id = frappe.db.get_value("Employee", supervisor, "user_id")
-            if user_id:
-                user_email = frappe.db.get_value("User", user_id, "email")
-                if user_email:
-                    recipients.append(user_email)
-    
-    if recipients:
-        subject = f"Rambo Reliever Swap: {orig_emp} replaced by {new_emp}"
-        message = f"""
-        <p>A Rambo Reliever replacement has been processed from the Route Planner Manifest.</p>
-        <ul>
-            <li><b>Site:</b> {site}</li>
-            <li><b>Shift:</b> {shift_name}</li>
-            <li><b>Original Employee (Absent/Fail):</b> {orig_emp}</li>
-            <li><b>Rambo Reliever (Replacement):</b> {new_emp}</li>
-        </ul>
-        <p>Please note that this is an automated message.</p>
-        """
-        
-        try:
-            frappe.sendmail(
-                recipients=recipients,
-                subject=subject,
-                message=message,
-                now=True
-            )
-            return {
-                "status": "success",
-                "notified": True,
-                "message": "Replacement processed and supervisor notified."
-            }
-        except Exception as e:
-            frappe.log_error(f"Error sending Rambo Reliever notification: {str(e)}", "Rambo Reliever Notification")
-            return {
-                "status": "success",
-                "notified": False,
-                "message": "Replacement processed, but notification email failed."
-            }
-
-    return {
-        "status": "success",
-        "notified": False,
-        "message": "Replacement processed. No supervisor found for this shift to notify."
-    }
-
-
 def _unmerge_unmixed_placements(items) -> None:
     """A card no longer placed as part of a merged run is no longer merged.
 

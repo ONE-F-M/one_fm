@@ -63,27 +63,6 @@ def get_users_with_role(role):
     return []
 
 
-def on_update(doc,ev):
-    approvers = False
-    # "Send workflow action emails to various employees based on the value of the workflow state field"
-    if doc.workflow_state == 'Pending Approver':
-        approvers = [doc.department_manager]
-
-    elif doc.workflow_state == 'Pending Purchase Manager':
-        #Get all the employees with purchase manager role
-        approvers = get_users_with_role("Purchase Manager")
-
-    elif doc.workflow_state == 'Pending Finance Manager':
-        approvers = get_users_with_role('Finance Manager')
-
-    elif doc.workflow_state == 'Draft':
-        approvers = [doc.owner]
-
-    if approvers and len(approvers) > 0:
-        send_workflow_action_email(doc, approvers)
-        doc.add_comment("Info", "Email Sent to approvers {0}".format(approvers))
-        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _(f'Please note that a workflow action created by {frappe.session.user} is awaiting your review'), approvers, doc)
-
 @frappe.whitelist()
 def make_material_delivery_note(source_name, target_doc=None):
     from frappe.model.mapper import get_mapped_doc
