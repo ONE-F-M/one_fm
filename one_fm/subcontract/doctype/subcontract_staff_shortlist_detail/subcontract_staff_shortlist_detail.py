@@ -20,8 +20,23 @@ class SubcontractStaffShortlistDetail(Document):
 				frappe.throw(_("Civil ID No must be exactly 12 digits"))
 
 
+def get_ocr_file_path(file_url):
+	"""Disk path of a File at file_url that the caller can read; refuses paths outside the site's files folders."""
+	file_names = frappe.get_all("File", filters={"file_url": file_url}, pluck="name")
+	if not file_names:
+		return None
+	if not any(frappe.has_permission("File", "read", doc=name) for name in file_names):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+	file_path = os.path.realpath(frappe.get_doc("File", file_names[0]).get_full_path())
+	folders = [os.path.realpath(frappe.get_site_path(*parts)) for parts in (("public", "files"), ("private", "files"))]
+	if not any(os.path.commonpath((folder, file_path)) == folder for folder in folders):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	return file_path
+
+
 @frappe.whitelist()
-def trigger_ocr(file_url, id_type, subcontractor=None):
+def trigger_ocr(file_url: str, id_type: str, subcontractor: str | None = None):
 	"""
 	Trigger OCR processing for uploaded Civil ID document
 	
@@ -33,34 +48,22 @@ def trigger_ocr(file_url, id_type, subcontractor=None):
 	Returns:
 		dict: Extracted data or error message
 	"""
+	# Only process if ID Type is Civil ID
+	if id_type != "Civil ID":
+		return {
+			"success": False,
+			"message": "OCR is only triggered for Civil ID type"
+		}
+
+	file_path = get_ocr_file_path(file_url)
+	if not file_path or not os.path.exists(file_path):
+		return {
+			"success": False,
+			"message": "File not found",
+			"url": file_url
+		}
+
 	try:
-		# Only process if ID Type is Civil ID
-		if id_type != "Civil ID":
-			return {
-				"success": False,
-				"message": "OCR is only triggered for Civil ID type"
-			}
-		
-		# Get file path from URL
-		# Handle both /files/ and /private/files/ URLs
-		if file_url.startswith('/files/'):
-			# Public file
-			file_path = frappe.get_site_path('public', 'files', file_url.split('/files/')[-1])
-		elif file_url.startswith('/private/files/'):
-			# Private file
-			file_path = frappe.get_site_path('private', 'files', file_url.split('/private/files/')[-1])
-		else:
-			# Try to construct path from full URL
-			file_path = frappe.get_site_path('public', file_url.lstrip('/'))
-		
-		if not os.path.exists(file_path):
-			return {
-				"success": False,
-				"message": "File not found",
-				"path": file_path,
-				"url": file_url
-			}
-		
 		# Extract data using OCR
 		extracted_data = extract_kuwait_civil_id_data(file_path)
 		
