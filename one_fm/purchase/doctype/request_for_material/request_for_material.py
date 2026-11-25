@@ -15,11 +15,9 @@ from frappe.utils import nowdate, cstr
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from erpnext.controllers.buying_controller import BuyingController
-from one_fm.purchase.doctype.item_reservation.item_reservation import get_item_balance
 from one_fm.utils import get_approver_user, get_employee_site_supervisor
 from one_fm.processor import sendemail
 from one_fm.api.doc_events import get_employee_user_id
-from frappe.desk.form.assign_to import close_all_assignments
 
 # WI-002301: the request type a uniform replacement is raised as. Every rule the uniform
 # flow adds is scoped to it, so the other types keep the behaviour they had.
@@ -74,7 +72,6 @@ class RequestforMaterial(BuyingController):
         self.set_title()
         self.validate_item_qty()
         self.validate_uom_conversion()
-        # self.validate_item_reservation()
         self.validate_linked_request_quantities()
         self.validate_uniform_request_details()
         self.validate_refundable_margins()
@@ -163,9 +160,6 @@ class RequestforMaterial(BuyingController):
         self.validate_uom_conversion()
         self.set_purchase_rfm_quantity()
         
-    def set_pending_quantity_per_item(self):
-        """Set the pending quantity per item based on Stock UOM"""
-        
     def validate_uom_conversion(self):
         for item in self.items:
             if item.uom and item.stock_uom and item.uom != item.stock_uom:
@@ -180,54 +174,6 @@ class RequestforMaterial(BuyingController):
             else:
                 item.stock_qty = item.qty
             item.custom_pending_quantity = item.stock_qty
-
-    def _initialize_custom_quantities(self):
-            """
-            Initializes the custom RFP and pending quantities for each item
-            when the Request for Material is submitted.
-            """
-            for item in self.items:
-                    item.custom_rfp_quantity = 0
-                    if item.uom != item.stock_uom:
-                        item.custom_pending_quantity = item.stock_qty
-                    else:
-                        item.custom_pending_quantity = item.qty
-
-    def validate_item_reservation(self):
-        # validate item reservation
-        added_items = []
-        item_reservation_dict = {}
-        for item in self.items:
-            reservation = frappe.db.sql(f"""
-                SELECT name, item_code, item_name, sum(qty) as qty, issued_qty,
-                from_date, to_date
-                FROM `tabItem Reservation`
-                WHERE item_code="{item.item_code}" AND docstatus=1 AND status in ('Active')
-                AND '{self.schedule_date}' BETWEEN from_date AND to_date
-                GROUP BY item_code
-            ;""", as_dict=1)
-            if(len(reservation)>0):
-                # get_balance
-                balance = get_item_balance(item.item_code)['total']
-                if(item.qty>(balance-(reservation[0].qty-reservation[0].issued_qty))):
-                    added_items.append({
-                        'reserved': reservation[0].name,
-                        'issued': reservation[0].issued_qty,
-                        'from_date': reservation[0].from_date,
-                        'to_date': reservation[0].to_date,
-                        'item_code':item.item_code,
-                        'item_name': reservation[0].item_name,
-                        'reserved': reservation[0].qty,
-                        'reqd': item.qty,
-                        'available': balance-reservation[0].qty-reservation[0].issued_qty,
-                        'url': frappe.get_doc('Item Reservation', reservation[0].name).get_url()
-                    })
-        # check added_items
-        if(added_items):
-            template = frappe.render_template(
-                "one_fm/purchase/doctype/item_reservation/templates/reserved_rfm.html",
-                context={'added_items':added_items})
-            frappe.throw(template, title='Following items have been reserved.')
 
     #in process
     def validate_item_qty(self):
@@ -318,14 +264,14 @@ class RequestforMaterial(BuyingController):
         self.title = _('Material Request for {0}').format(items)[:100]
 
     def before_cancel(self):
-        self.set_purchase_rfm_quantity()
+        # The controllers' own before_cancel does not run here, as before. The recount that comes
+        # before a cancel runs in the Request for Material Lifecycle process.
+        pass
 
     def on_submit(self):
-        self._initialize_custom_quantities()
-        self.validate_item_qty()
-        if self.per_received == 100:
-            close_all_assignments(self.doctype, self.name)
-        self.set_purchase_rfm_quantity()
+        # The controllers' own on_submit does not run here, as before. The checks and recount that
+        # follow a submit run in the Request for Material Lifecycle process.
+        pass
 
     def _get_total_rfp_quantity(self):
         return frappe.db.sql("""
@@ -429,44 +375,6 @@ class RequestforMaterial(BuyingController):
         frappe.db.commit()
     
     
-    def check_modified_date(self):
-        mod_db = frappe.db.sql("""select modified from `tabRequest for Material` where name = %s""",
-            self.name)
-        date_diff = frappe.db.sql("""select TIMEDIFF('%s', '%s')"""
-            % (mod_db[0][0], cstr(self.modified)))
-
-        if date_diff and date_diff[0][0]:
-            frappe.throw(_("{0} {1} has been modified. Please refresh.").format(_(self.doctype), self.name))
-
-    def update_status(self, status):
-        self.check_modified_date()
-        self.status_can_change(status)
-        # self.set_status(update=True, status=status)
-        self.db_set('status', status)
-
-    def status_can_change(self, status):
-        """
-        validates that `status` is acceptable for the present controller status
-        and throws an Exception if otherwise.
-        """
-        if self.status and self.status == 'Cancelled':
-            # cancelled documents cannot change
-            if status != self.status:
-                frappe.throw(
-                    _("{0} {1} is cancelled so the action cannot be completed").
-                        format(_(self.doctype), self.name),
-                    frappe.InvalidStatusError
-                )
-
-        elif self.status and self.status == 'Draft':
-            # draft document to pending only
-            if status != 'Pending':
-                frappe.throw(
-                    _("{0} {1} has not been submitted so the action cannot be completed").
-                        format(_(self.doctype), self.name),
-                    frappe.InvalidStatusError
-                )
-
     #for quantities that had to be purchased
     def update_purchased_qty(self, mr_items=None, update_modified=True):
         if not mr_items:
@@ -704,12 +612,6 @@ def bring_erf_items(erf):
     else:
         frappe.throw(_("No ERF named {} exist").format(erf))
     return {'item_list': item_list}
-
-@frappe.whitelist()
-def update_status(name, status):
-    request_for_material = frappe.get_doc('Request for Material', name)
-    request_for_material.check_permission('write')
-    request_for_material.update_status(status)
 
 @frappe.whitelist()
 def make_stock_entry(source_name, target_doc=None):
