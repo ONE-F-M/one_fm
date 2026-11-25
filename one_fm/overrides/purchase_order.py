@@ -178,10 +178,9 @@ class PurchaseOrderOverride(PurchaseOrder):
             update_rfp_status(self.one_fm_request_for_purchase)
 
     def on_cancel(self):
-        self.update_purchased_quantities()
-        self.update_ordered_and_pending_quantities()
-        if self.one_fm_request_for_purchase:
-            update_rfp_status(self.one_fm_request_for_purchase)
+        # ERPNext's own Purchase Order on_cancel does not run here, as before. The recounts that
+        # follow a cancel run in the Purchase Order Lifecycle process.
+        pass
 
 
     def update_purchased_quantities(self):
@@ -480,60 +479,3 @@ def get_mapped_purchase_invoice(source_name, target_doc=None, ignore_permissions
 	)
 
 	return doc
-
-
-@frappe.whitelist()
-def correct_purchase_order_rates(purchase_order):
-    """
-    Corrects the rate of items in a Purchase Order if row.amount/row.qty != row.rate.
-    Sets price_list_rate to 0 and rate to row.amount/row.qty in such cases.
-    """
-    if not isinstance(purchase_order, str):
-        frappe.throw(_("Purchase Order name must be a string"))
-
-    if not frappe.db.exists("Purchase Order", purchase_order):
-        frappe.throw(_("Purchase Order {0} not found").format(purchase_order))
-
-    doc = frappe.get_doc("Purchase Order", purchase_order)
-
-    updated = False
-    for row in doc.items:
-        if row.qty and row.amount:
-            calculated_rate = row.amount / row.qty
-            if round(row.rate,3) != round(calculated_rate, 3) and round(row.rate_with_margin, 3) == round(calculated_rate, 3):
-                row.db_set('margin_type', None)
-                row.db_set('margin_rate_or_amount', 0)
-                row.db_set('rate_with_margin', 0)
-                row.db_set('rate', calculated_rate)
-                updated = True
-    
-    return
-
-
-
-@frappe.whitelist()
-def get_incorrect_purchase_orders(start_date, end_date,fix=False):
-    """
-    Returns a list of Purchase Orders where item rate != amount/qty
-    within the given date range.
-    """
-    query = """
-        SELECT DISTINCT poi.parent
-        FROM `tabPurchase Order Item` poi
-        JOIN `tabPurchase Order` po ON poi.parent = po.name
-        WHERE po.docstatus < 2
-        AND po.transaction_date BETWEEN %(start_date)s AND %(end_date)s
-        AND poi.qty > 0
-        AND poi.amount > 0
-        AND ROUND((poi.amount / poi.qty), 3) != ROUND(poi.rate, 3)
-    """
-    
-    result = frappe.db.sql(query, {
-        "start_date": start_date,
-        "end_date": end_date
-    }, as_dict=True)
-    print(len(result), " Purchase Orders are affected")
-    if fix:
-        for d in result:
-            correct_purchase_order_rates(d.parent)
-    return [d.parent for d in result]

@@ -404,22 +404,6 @@ def cancel_compensatory_leave_request_from_attendance(attendance):
         frappe.get_doc('Compensatory Leave Request', exist_compensatory_leave_request).cancel()
 
 @frappe.whitelist()
-def get_workflow_sates(doctype):
-    '''
-        Method used to Get active Workflow States of a Doctype
-        args:
-            doctype: Name of Doctype
-        return list of Workflow States object in Active Workflow
-    '''
-    workflow_states = []
-    exists_workflow = frappe.db.exists('Workflow', {'is_active': True, 'document_type': doctype})
-    if exists_workflow:
-        workflow = frappe.get_doc('Workflow', exists_workflow)
-        for state in workflow.states:
-            workflow_states.append(state)
-    return workflow_states
-
-@frappe.whitelist()
 def create_role_if_not_exists(roles, desk_access=True):
 	'''
 		Method is used to create Role.

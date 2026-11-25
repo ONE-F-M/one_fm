@@ -73,11 +73,3 @@ class TestAssignRosterEmployeeAction(FrappeTestCase):
 
 	def test_status_completed_by_hand_ends_the_process(self):
 		self.assertTrue(run("Assign Roster Employee Action", self.doc(status="Completed"))["completed_by_hand"])
-
-
-class TestRetiredAssignmentRules(FrappeTestCase):
-	def test_rule_files_are_disabled(self):
-		from one_fm.custom.assignment_rule.assignment_rule import get_assignment_rule_json_file
-
-		for name in ("roster_employee_actions_project_manager.json", "roster_employee_actions_site_supervisor.json"):
-			self.assertEqual(get_assignment_rule_json_file(name)["disabled"], 1, name)

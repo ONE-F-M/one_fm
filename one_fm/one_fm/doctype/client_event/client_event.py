@@ -7,6 +7,9 @@ from frappe.model.document import Document
 from frappe.utils import now_datetime, today, getdate
 import json
 
+from one_fm.one_fm.doctype.event_staff.event_staff import CREATE_SCRIPT, cancel_event_staff
+from one_fm.one_fm.processa_rules import run_rule
+
 class ClientEvent(Document):
 	def validate(self):
 		self.set_approver()
@@ -112,7 +115,7 @@ class ClientEvent(Document):
 		for event_staff in event_staffs:
 			event_staff_doc = frappe.get_doc("Event Staff", event_staff.name)
 			if not event_started:
-				event_staff_doc.cancel()
+				cancel_event_staff(event_staff_doc, _("Client Event {0} cancelled before it started").format(self.name))
 			else:
 				event_staff_doc.end_date = getdate(today())
 				event_staff_doc.save(ignore_permissions=True)
@@ -140,7 +143,7 @@ class ClientEvent(Document):
 			return
 		for event_staff in event_staffs:
 			event_staff_doc = frappe.get_doc("Event Staff", event_staff.name)
-			event_staff_doc.process_employee_schedules()
+			run_rule(CREATE_SCRIPT, "create_schedules", event_staff_doc)
 
 	@frappe.whitelist()
 	def add_event_staff(self, staff):
@@ -203,7 +206,7 @@ def cancel_event_staff_background(client_event):
 	for es in submitted:
 		try:
 			doc = frappe.get_doc("Event Staff", es.name)
-			doc.cancel()
+			cancel_event_staff(doc, _("Client Event {0} cancelled").format(client_event))
 		except Exception as e:
 			frappe.log_error(title="Event Staff Cancellation Error", message=frappe.get_traceback())
 			

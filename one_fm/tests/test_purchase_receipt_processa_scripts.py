@@ -8,7 +8,7 @@ drifted from the reviewed one.
 """
 
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -111,6 +111,14 @@ for d in doc.items:
 	"Assign Purchase Receipt Step": """# Cancelling a submitted receipt is open to every Stock User, the role that cancels receipts.
 result["assigned_user"] = ""
 result["assigned_role"] = "Stock User"
+""",
+	"Apply Purchase Receipt Cancel Updates": """# Runs once the receipt is cancelled: recounts the received quantity and status of the Request for
+# Material it filled, so the cancelled receipt no longer counts.
+from one_fm.overrides.purchase_receipt import update_received_qty
+from one_fm.purchase.doctype.request_for_material.request_for_material import update_rfm_status_against_purchase_receipt
+
+update_received_qty(doc, "on_cancel")
+update_rfm_status_against_purchase_receipt(doc, "on_cancel")
 """,
 }
 
@@ -252,9 +260,25 @@ class TestPurchaseReceiptPython(FrappeTestCase):
 		self.assertIsNotNone(field)
 		self.assertEqual((field.fieldtype, field.options, field.no_copy, field.allow_on_submit), ("Link", "Workflow State", 1, 1))
 
-	def test_submit_hooks_are_gone_and_cancel_hooks_stay(self):
+	def test_submit_and_cancel_hooks_are_gone_and_update_after_submit_stays(self):
 		events = frappe.get_hooks("doc_events")["Purchase Receipt"]
 		self.assertNotIn("on_submit", events)
 		self.assertNotIn("before_submit", events)
-		self.assertIn("one_fm.overrides.purchase_receipt.update_received_qty", events["on_cancel"])
+		self.assertNotIn("on_cancel", events)
+		self.assertIn("one_fm.overrides.purchase_receipt.update_received_qty", events["on_update_after_submit"])
 		self.assertNotIn("Purchase Receipt", frappe.get_hooks("override_doctype_class"))
+
+	def test_unused_mappers_are_gone(self):
+		import one_fm.overrides.purchase_receipt as pr_module
+		self.assertFalse(hasattr(pr_module, "make_purchase_receipt_invoice"))
+
+
+class TestApplyPurchaseReceiptCancelUpdates(FrappeTestCase):
+	def test_recounts_received_qty_then_status_as_the_cancel_hooks_did(self):
+		calls = MagicMock()
+		doc = pr(custom_request_for_material="RFM-1")
+		with patch("one_fm.overrides.purchase_receipt.update_received_qty", side_effect=lambda *a: calls("received", *a)), \
+			patch("one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_receipt",
+				side_effect=lambda *a: calls("status", *a)):
+			run("Apply Purchase Receipt Cancel Updates", doc)
+		self.assertEqual([c.args for c in calls.call_args_list], [("received", doc, "on_cancel"), ("status", doc, "on_cancel")])

@@ -124,19 +124,5 @@
   "selling": 0,
   "subject": "Leave Employee Approval Notification",
   "use_html": 1
- },
- {
-  "add_workflow_action_buttons_to_email": 0,
-  "buying": 0,
-  "docstatus": 0,
-  "doctype": "Email Template",
-  "hr": 0,
-  "modified": "2026-06-28 13:00:00.000000",
-  "name": "Rambo Assignment Notification",
-  "response": "",
-  "response_html": "<p>The following shift requires immediate coverage due to a staff absence:</p>\n\n<p><strong>Original Absent Staff:</strong> {{ doc.original_employee }} - {{ doc.original_employee_name }}</p>\n<p><strong>Rambo Reliever Staff:</strong> {{ doc.employee }} - {{ doc.employee_name }}</p>\n\n<p><strong>Unassigned Shift Details:</strong></p>\n<ul>\n    <li><strong>Date:</strong> {{ doc.date }}</li>\n    <li><strong>Operations Site:</strong> {{ doc.operations_site }}</li>\n    <li><strong>Operations Shift:</strong> {{ doc.operations_shift }}</li>\n    <li><strong>Operations Role:</strong> {{ doc.operations_role }}</li>\n    <li><strong>Project:</strong> {{ doc.project }}</li>\n    <li><strong>Duty Timings:</strong> {{ doc.start_time }} to {{ doc.end_time }}</li>\n</ul>",
-  "selling": 0,
-  "subject": "Critical Roster Alert: No Reliever Available for Manifest {{ doc.transportation_manifest }}",
-  "use_html": 1
  }
 ]

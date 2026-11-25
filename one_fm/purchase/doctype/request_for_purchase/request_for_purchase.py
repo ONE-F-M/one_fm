@@ -119,8 +119,7 @@ class RequestforPurchase(Document):
 					request_for_purchase=self.name,
 					warehouse=wh,
 					items_list=items_list,
-					rfp_doc=self.as_dict(),
-					do_not_submit=True
+					rfp_doc=self.as_dict()
 				)
 				
 				if po:
@@ -809,8 +808,6 @@ def create_purchase_order(**args):
 	
 	if not args.do_not_save:
 		po.save(ignore_permissions=True)
-		if not args.do_not_submit:
-			po.submit()
 	
 	return po
 
