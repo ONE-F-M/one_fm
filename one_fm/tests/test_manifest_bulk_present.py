@@ -99,7 +99,7 @@ class TestTheStopHeader(FrappeTestCase):
 	def test_the_chips_are_redrawn_from_the_saved_rows(self):
 		handler = self.source.split("window._mfst_markAllPresent", 1)[1]
 		self.assertIn("window.checkerState[row.name]", handler)
-		self.assertIn("renderRoute(activeView)", handler)
+		self.assertIn("rerender();", handler)
 
 
 class TestTheEndpoint(FrappeTestCase):
