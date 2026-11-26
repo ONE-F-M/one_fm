@@ -1,0 +1,22 @@
+{
+    "doctype": "Page",
+    "module": "One FM",
+    "name": "transportation-schedules-board",
+    "page_name": "transportation-schedules-board",
+    "standard": "Yes",
+    "title": "Transportation Schedules",
+    "roles": [
+        {
+            "role": "Transportation Supervisor"
+        },
+        {
+            "role": "Transportation Manager"
+        },
+        {
+            "role": "Operations Manager"
+        },
+        {
+            "role": "System Manager"
+        }
+    ]
+}

@@ -236,6 +236,19 @@ class TestTransportationManifest(FrappeTestCase):
 		row = self._checked_in_manifest({"attendance_status": "Present", "qoa_status": "Pass"})
 		self.assertRaises(frappe.ValidationError, self._checkin_reliever, row, "Present")
 
+	def test_api_skip_flags_requires_reliever_without_a_reliever(self):
+		from one_fm.one_fm.api.doc_methods.transportation_manifest import update_manifest_row_checkin
+
+		row = self._checked_in_manifest({"attendance_status": "Absent"})
+		frappe.local.form_dict = frappe._dict(row_name=row, requires_reliever=1)
+		try:
+			saved = update_manifest_row_checkin(row, requires_reliever=1)["row"]
+		finally:
+			frappe.local.form_dict = frappe._dict()
+		self.assertEqual(saved["requires_reliever"], 1)
+		self.assertFalse(saved["reliever_employee"])
+		self.assertEqual(saved["attendance_status"], "Absent")
+
 	def test_reliever_replacement_validation(self):
 		# Assign reliever employee
 		doc1 = frappe.new_doc("Transportation Manifest")
@@ -706,3 +719,76 @@ class TestTransportationManifest(FrappeTestCase):
 		self.assertTrue(sheet["all_completed"])
 		self.assertTrue(all(s["status"] == "Completed" for s in sheet["stops"]))
 
+
+
+	def test_complete_stop_refuses_unchecked_boarding_rows(self):
+		from one_fm.one_fm.doctype.transportation_manifest.manifest_sheet import (
+			trigger_attendance_check,
+			complete_stop,
+		)
+
+		doc = self._make_two_stop_manifest()
+		for row in doc.transportation_manifest_details:
+			row.employee_action = "Boarding"
+		doc.save()
+		trigger_attendance_check(doc.name, 1)
+		self.assertRaises(frappe.ValidationError, complete_stop, doc.name, 1)
+
+		doc.reload()
+		doc.transportation_manifest_details[0].attendance_status = "Absent"
+		doc.save()
+		self.assertEqual(complete_stop(doc.name, 1)["active_stop_sequence"], 2)
+
+class TestTripTimeSync(FrappeTestCase):
+	"""sync_manifest_details stamps trip_time from the departure callable."""
+
+	def _row(self, card="C1", trip="T1", origin="Camp A", stop="Site X"):
+		from types import SimpleNamespace
+
+		return SimpleNamespace(
+			direction="OUTBOUND", card_id=card, stop_location=stop, origin_location=origin,
+			trip_group=trip, trip_name="Run", start_time=None, end_time=None,
+		)
+
+	def _sync(self, doc, rows, emp_map, departures):
+		from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
+
+		return sync_manifest_details(
+			doc, rows, emp_map, departure_of=lambda r: departures.get(r.origin_location)
+		)
+
+	def test_inserted_and_updated_rows_get_the_departure(self):
+		doc = frappe.new_doc("Transportation Manifest")
+		rows = [self._row()]
+		emp_map = {"C1": [{"id": "EMP-A", "name": "A"}]}
+		self.assertTrue(self._sync(doc, rows, emp_map, {"Camp A": "04:00"}))
+		self.assertEqual(doc.transportation_manifest_details[0].trip_time, "04:00")
+
+		self.assertFalse(self._sync(doc, rows, emp_map, {"Camp A": "04:00"}))
+		self.assertTrue(self._sync(doc, rows, emp_map, {"Camp A": "04:15"}))
+		self.assertEqual(doc.transportation_manifest_details[0].trip_time, "04:15")
+
+	def test_a_run_loading_at_two_camps_gets_two_times(self):
+		doc = frappe.new_doc("Transportation Manifest")
+		rows = [self._row("C1", origin="Camp A"), self._row("C2", origin="Camp B", stop="Site Y")]
+		emp_map = {"C1": [{"id": "EMP-A", "name": "A"}], "C2": [{"id": "EMP-B", "name": "B"}]}
+		self._sync(doc, rows, emp_map, {"Camp A": "03:52", "Camp B": "04:04"})
+		times = {r.employee: r.trip_time for r in doc.transportation_manifest_details}
+		self.assertEqual(times, {"EMP-A": "03:52", "EMP-B": "04:04"})
+
+	def test_midnight_is_stamped_not_blank(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import _time_field
+
+		self.assertEqual(_time_field(0)[:5], "00:00")
+		doc = frappe.new_doc("Transportation Manifest")
+		self._sync(doc, [self._row()], {"C1": [{"id": "EMP-A", "name": "A"}]}, {"Camp A": "00:00"})
+		self.assertEqual(doc.transportation_manifest_details[0].trip_time, "00:00")
+
+	def test_without_a_callable_trip_time_is_left_alone(self):
+		from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
+
+		doc = frappe.new_doc("Transportation Manifest")
+		emp_map = {"C1": [{"id": "EMP-A", "name": "A"}]}
+		self._sync(doc, [self._row()], emp_map, {"Camp A": "05:00"})
+		self.assertFalse(sync_manifest_details(doc, [self._row()], emp_map))
+		self.assertEqual(doc.transportation_manifest_details[0].trip_time, "05:00")

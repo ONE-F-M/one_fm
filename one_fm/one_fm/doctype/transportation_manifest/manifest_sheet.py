@@ -279,6 +279,21 @@ def complete_stop(manifest: str, stop_sequence, trip_id=None) -> dict:
 			_("Only the active stop (Stop {0}) can be completed.").format(active or "—")
 		)
 
+	unchecked = [
+		row.employee_name or row.employee
+		for row in doc.transportation_manifest_details
+		if row.employee_action == "Boarding"
+		and int(row.stop_sequence or 1) == stop_sequence
+		and (trip_id is None or str(row.trip_id or "") == str(trip_id or ""))
+		and not row.attendance_status
+	]
+	if unchecked:
+		frappe.throw(
+			_("Check in every boarding employee before locking Stop {0}. Still unchecked: {1}").format(
+				stop_sequence, ", ".join(unchecked)
+			)
+		)
+
 	return _set_active_stop(manifest, stop_sequence + 1, trip_id)
 
 
