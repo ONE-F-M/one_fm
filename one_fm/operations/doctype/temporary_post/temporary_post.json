@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "format:TP-{post_name}-{gender}|{site_shift}-{start_date}",
+ "autoname": "format:TP-{temporary_deployment}-{post_name}-{gender}|{site_shift}-{start_date}",
  "creation": "2026-03-03 07:19:14.883229",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -118,7 +118,7 @@
  ],
  "grid_page_length": 50,
  "links": [],
- "modified": "2026-03-03 07:19:14.883229",
+ "modified": "2026-10-13 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Temporary Post",
