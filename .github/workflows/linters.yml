@@ -19,7 +19,7 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 200
       - uses: actions/setup-node@v3
@@ -38,7 +38,7 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v4
         with:
           python-version: '3.14'
@@ -61,7 +61,7 @@ jobs:
         with:
           python-version: '3.14'
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Cache pip
         uses: actions/cache@v3
