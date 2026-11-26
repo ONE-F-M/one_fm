@@ -197,7 +197,7 @@ class TestResignationOnProcessa(FrappeTestCase):
         self.user = _make_user("test-processa-res@example.com", "Processa Res")
         self.employee = _make_employee("Processa-Res", self.user)
 
-    def test_create_resignation_does_not_call_the_frappe_workflow(self):
+    def test_create_resignation_submits_it_for_review(self):
         with self.set_user(self.user), \
                 patch("one_fm.api.v1.resignation.handle_attachment_internal"), \
                 patch("one_fm.api.v1.resignation.apply_workflow") as apply_workflow:
@@ -208,8 +208,10 @@ class TestResignationOnProcessa(FrappeTestCase):
                 reason_for_exit="Test",
                 attachment={"attachment_name": "letter.png", "attachment": "abc"},
             )
-        apply_workflow.assert_not_called()
-        self.assertEqual(result["message"], "Resignation saved. Submit it for review.")
+        apply_workflow.assert_called_once()
+        self.assertEqual(apply_workflow.call_args.args[0].name, result["name"])
+        self.assertEqual(apply_workflow.call_args.args[1], "Submit for Review")
+        self.assertEqual(result["message"], "Resignation submitted successfully")
         self.assertTrue(frappe.db.exists("Employee Resignation", result["name"]))
 
     def test_only_the_letter_is_editable_in_draft_and_in_date_correction(self):
@@ -219,7 +221,9 @@ class TestResignationOnProcessa(FrappeTestCase):
             self.assertEqual(doc.get_processa_editable_fields(), ["resignation_letter"])
 
     def test_create_resignation_fixes_the_dates_whatever_the_app_sends(self):
-        with self.set_user(self.user), patch("one_fm.api.v1.resignation.handle_attachment_internal"):
+        with self.set_user(self.user), \
+                patch("one_fm.api.v1.resignation.handle_attachment_internal"), \
+                patch("one_fm.api.v1.resignation.apply_workflow"):
             result = create_resignation(
                 employee_id=self.employee,
                 resignation_initiation_date="2026-04-27",
