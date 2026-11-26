@@ -44,7 +44,8 @@
   "rpr_ref",
   "amount",
   "reminder_grd_operator",
-  "reminder_grd_operator_again"
+  "reminder_grd_operator_again",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -241,7 +242,8 @@
   {
    "fieldname": "payment_date",
    "fieldtype": "Datetime",
-   "label": "Payment Date"
+   "label": "Payment Date",
+   "allow_on_submit": 1
   },
   {
    "allow_on_submit": 1,
@@ -309,6 +311,16 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Reminder Government Relations Operator Again"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "is_system_generated": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "is_submittable": 1,
