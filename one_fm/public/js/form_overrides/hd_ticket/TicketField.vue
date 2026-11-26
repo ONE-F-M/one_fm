@@ -83,10 +83,7 @@
               }
             : {
                 'update:model-value': (event) => {
-                  emitUpdate(
-                    field.fieldname,
-                    event?.value || event?.target?.value || event
-                  );
+                  emitUpdate(field.fieldname, extractValue(event));
                 },
               }
         "
@@ -229,6 +226,20 @@ const transValue = computed(() => {
   }
   return props.value;
 });
+
+/**
+ * Autocomplete emits the whole selected option ({ label, value }), while plain
+ * inputs emit either a raw value or a DOM event. Unwrap by key presence, never
+ * by truthiness: a Check field's "No" carries value 0, and a falsy-`||` chain
+ * would fall through and hand the option object back as the value.
+ */
+function extractValue(event: any): FieldValue {
+  if (event && typeof event === "object") {
+    if ("value" in event) return event.value;
+    if (event.target && "value" in event.target) return event.target.value;
+  }
+  return event;
+}
 
 function emitUpdate(fieldname: Field["fieldname"], value: FieldValue) {
   emit("change", { fieldname, value });

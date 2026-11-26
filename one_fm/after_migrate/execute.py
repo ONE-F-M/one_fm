@@ -3,6 +3,16 @@ import frappe, os, shutil, subprocess
 from frappe.utils import cstr, get_bench_path
 from one_fm.utils import production_domain
 
+# Anchors move when a vendored app is upgraded. A patch that no longer finds
+# its anchor is not an error to the caller, it just silently stops shipping,
+# so every miss is collected here and reported at the end of the run.
+PATCH_WARNINGS = []
+
+
+def record_patch_warning(message):
+    print(message)
+    PATCH_WARNINGS.append(message)
+
 def comment_timesheet_in_hrms():
     """
         HRMS overrides Timesheet, this affects restricts the overide in ONE_FM
@@ -171,19 +181,27 @@ def replace_job_opening():
         Replace job opening in HRMS
     """
     print("Replacing job_opening.html")
-    app_path = frappe.utils.get_bench_path()+"/apps/hrms/hrms/templates/generators"
-    os.remove(app_path+'/job_opening.html')
-    shutil.copy(frappe.utils.get_bench_path()+"/apps/one_fm/one_fm/templates/generators/job_opening.html", app_path+'/job_opening.html')
-    bench_path = frappe.utils.get_bench_path()+'/sites/'+cstr(frappe.local.site)+'/'
-    private = "private/"
-    public = "public/"
-    user_files_path = "private/files/user"
-    user_magic_link = "private/files/user/magic_link"
-    user_files_path = "public/files/user"
-    user_magic_link = "public/files/user/magic_link"
-    for i in [user_files_path, user_magic_link]:
-        if not os.path.exists(bench_path+i):
-            os.mkdir(bench_path+i)
+    target = os.path.join(
+        get_bench_path(), "apps", "hrms", "hrms", "templates", "generators", "job_opening.html",
+    )
+    source = os.path.join(
+        get_bench_path(), "apps", "one_fm", "one_fm", "templates", "generators", "job_opening.html",
+    )
+
+    # Guarded: this runs in before_migrate, so an unguarded os.remove on a
+    # template hrms has renamed would take the whole migrate down with it.
+    if not os.path.exists(source):
+        record_patch_warning("[!] Source job_opening.html not found: " + source)
+    elif not os.path.exists(os.path.dirname(target)):
+        record_patch_warning("[!] hrms generators folder not found: " + os.path.dirname(target))
+    else:
+        if os.path.exists(target):
+            os.remove(target)
+        shutil.copy(source, target)
+
+    site_path = os.path.join(get_bench_path(), "sites", cstr(frappe.local.site))
+    for folder in ["public/files/user", "public/files/user/magic_link"]:
+        os.makedirs(os.path.join(site_path, folder), exist_ok=True)
 
 
 def replace_prompt_message_in_goal():
@@ -220,10 +238,18 @@ def append_code_in_file(file_path, search_text, appendable_code, insert_before_s
         if replace_with_search_text:
             with open(file_path, 'r') as file:
                 lines = file.read()
-                if search_text in lines:
-                    lines = lines.replace(search_text, appendable_code)
+
+            # Without this guard the file was rewritten unchanged and the patch
+            # still reported success, so a dead anchor looked like a live
+            # customization and charged the caller a rebuild every time.
+            if search_text not in lines:
+                record_patch_warning(
+                    f"[!] {os.path.basename(file_path)}: anchor not found, patch not applied: '{search_text}'"
+                )
+                return False
+
             with open(file_path, 'w') as file_write:
-                file_write.write(lines)
+                file_write.write(lines.replace(search_text, appendable_code))
                 return True
         else:
             # Read the file contents
@@ -256,10 +282,12 @@ def append_code_in_file(file_path, search_text, appendable_code, insert_before_s
                 print(f"The new code was successfully appended {'before' if insert_before_search_text else 'after'} '{search_text}'.")
                 return True
             else:
-                print(f"The line '{search_text}' was not found in the file.")
+                record_patch_warning(
+                    f"[!] {os.path.basename(file_path)}: anchor not found, patch not applied: '{search_text}'"
+                )
                 return False
     except FileNotFoundError:
-        print(f"The file '{file_path}' does not exist.")
+        record_patch_warning(f"[!] The file '{file_path}' does not exist.")
         return False
     except Exception as e:
         print(f"An error occurred: {e} try", frappe.get_traceback())
@@ -333,8 +361,8 @@ def add_resolution_details_updation():
         if (first_change or second_change or third_change or fourth_change):
             return True
     else:
-        print(FILE_PATH, 'not found')
-    return
+        record_patch_warning(str(FILE_PATH) + ' not found')
+    return False
 
 
 def run_command(command, cwd=None, shell=True):
@@ -351,44 +379,61 @@ def run_command(command, cwd=None, shell=True):
 
 
 def deploy_ticket_views():
+    """Deploy the one_fm customer ticket views and their route.
+
+    Returns True only when something was actually written: every True here
+    costs the caller a full yarn build and a bench restart.
+    """
     bench_path = get_bench_path()
 
-    ticket_target_folder = os.path.join(bench_path, "apps", "helpdesk", "desk", "src", "pages", "ticket")
+    overrides_folder = os.path.join(
+        bench_path, "apps", "one_fm", "one_fm", "public", "js",
+        "form_overrides", "hd_ticket",
+    )
+    ticket_target_folder = os.path.join(
+        bench_path, "apps", "helpdesk", "desk", "src", "pages", "ticket",
+    )
 
-    ticket_edit_source = os.path.join(bench_path, "apps", "one_fm", "one_fm", "public", "js", "form_overrides", "hd_ticket", "TicketEdit.vue")
-    ticket_edit_target = os.path.join(ticket_target_folder, "TicketEdit.vue")
+    any_changes = False
+    for filename in ["TicketEdit.vue", "TicketCustomer.vue"]:
+        if copy_if_changed(
+            os.path.join(overrides_folder, filename),
+            os.path.join(ticket_target_folder, filename),
+            filename,
+        ):
+            any_changes = True
 
-    if not os.path.exists(ticket_edit_source):
-        print(f"[❌] Source TicketEdit.vue not found: {ticket_edit_source}")
-        return False
+    if deploy_ticket_edit_route():
+        any_changes = True
 
-    shutil.copy2(ticket_edit_source, ticket_edit_target)
-    print(f"[✅] TicketEdit.vue deployed to: {ticket_edit_target}")
+    return any_changes
 
-    ticket_customer_source = os.path.join(bench_path, "apps", "one_fm", "one_fm", "public", "js", "form_overrides", "hd_ticket", "TicketCustomer.vue")
-    ticket_customer_target = os.path.join(ticket_target_folder, "TicketCustomer.vue")
 
-    if not os.path.exists(ticket_customer_source):
-        print(f"[❌] Source TicketCustomer.vue not found: {ticket_customer_source}")
-        return False
-
-    shutil.copy2(ticket_customer_source, ticket_customer_target)
-    print(f"[✅] TicketCustomer.vue deployed to: {ticket_customer_target}")
-
-    router_file = os.path.join(bench_path, "apps", "helpdesk", "desk", "src", "router", "index.ts")
+def deploy_ticket_edit_route():
+    """Add the TicketEdit route to the helpdesk router if it is not there."""
+    router_file = os.path.join(
+        get_bench_path(), "apps", "helpdesk", "desk", "src", "router", "index.ts",
+    )
 
     if not os.path.exists(router_file):
-        print("❌ Router file not found:", router_file)
+        record_patch_warning("[!] Router file not found: " + router_file)
         return False
 
     with open(router_file, "r") as f:
         router_content = f.read()
 
     if 'name: "TicketEdit"' in router_content:
-        print("⚠️ TicketEdit route already exists.")
-    else:
-        search_text = "const routes = ["
-        appendable_code = '''
+        print("TicketEdit route already present.")
+        return False
+
+    search_text = "const routes = ["
+    if search_text not in router_content:
+        record_patch_warning(
+            "[!] index.ts: anchor not found, TicketEdit route not added: '" + search_text + "'"
+        )
+        return False
+
+    appendable_code = '''
   {
     path: "/edit-ticket/:ticket_name?",
     name: "TicketEdit",
@@ -402,20 +447,11 @@ def deploy_ticket_views():
     },
   },'''
 
-        updated_content = ""
-        if search_text in router_content:
-            parts = router_content.split(search_text)
-            updated_content = parts[0] + search_text + appendable_code + parts[1]
+    parts = router_content.split(search_text)
+    with open(router_file, "w") as f:
+        f.write(parts[0] + search_text + appendable_code + parts[1])
 
-            with open(router_file, "w") as f:
-                f.write(updated_content)
-
-            print("✅ TicketEdit route added.")
-        else:
-            print("⚠️ Could not find insertion point for router update.")
-            return False
-
-    print("[🎉] TicketEdit, TicketCustomer and TicketNew views deployed successfully.")
+    print("TicketEdit route added.")
     return True
 
 
@@ -426,11 +462,13 @@ def copy_if_changed(source, target, label):
     (expensive) yarn build when nothing changed.
     """
     if not os.path.exists(source):
-        print(f"[❌] Source {label} not found: {source}")
+        record_patch_warning(f"[❌] Source {label} not found: {source}")
         return False
 
     if not os.path.exists(os.path.dirname(target)):
-        print(f"[❌] Target folder not found: {os.path.dirname(target)}")
+        record_patch_warning(
+            f"[❌] Target folder not found: {os.path.dirname(target)}"
+        )
         return False
 
     with open(source, "r") as f:
@@ -555,6 +593,61 @@ def deploy_fetch_from_support():
     return any_changes
 
 
+def deploy_ticket_editor():
+    """Overwrite the helpdesk ticket description editor with the one_fm version.
+
+    Reported on HD Ticket 1934569: dragging a picture into the New Ticket
+    description looks like it is ignored. The file does reach the server, it is
+    just never put back into the editor, and it is left public, in Home,
+    attached to nothing.
+
+    Two defects, both upstream:
+
+      * TicketNew.vue passes :uploadFunction to TicketTextEditor, but neither
+        TicketTextEditor nor the TextEditor wrapper declares it, so it never
+        reaches frappe-ui. frappe-ui falls back to its own uploader, which
+        stores the file public, in Home, with no doctype, which is exactly what
+        the two orphaned files on 1934569 look like.
+
+      * frappe-ui's image extension handles a drop by inserting a placeholder
+        node, uploading, then swapping the placeholder for the result. The
+        placeholder does not survive the editor's content round trip, so the
+        swap finds nothing and the picture never appears. Pasting runs through a
+        different extension, which is why Cmd+V works.
+
+    The one_fm copies declare the prop down the chain, and take the drop in the
+    capture phase before ProseMirror sees it: upload first, then insert the
+    finished image, so there is no placeholder to lose.
+    """
+    bench_path = get_bench_path()
+
+    overrides_folder = os.path.join(
+        bench_path, "apps", "one_fm", "one_fm", "public", "js",
+        "form_overrides", "hd_ticket",
+    )
+    desk_src = os.path.join(bench_path, "apps", "helpdesk", "desk", "src")
+
+    files = [
+        (
+            "TicketTextEditor.vue",
+            os.path.join(desk_src, "pages", "ticket", "TicketTextEditor.vue"),
+            "TicketTextEditor.vue",
+        ),
+        (
+            "TextEditor.vue",
+            os.path.join(desk_src, "components", "TextEditor.vue"),
+            "TextEditor.vue",
+        ),
+    ]
+
+    any_changes = False
+    for filename, target, label in files:
+        if copy_if_changed(os.path.join(overrides_folder, filename), target, label):
+            any_changes = True
+
+    return any_changes
+
+
 def deploy_dashboard_view():
     """Overwrite the helpdesk Dashboard.vue with the one_fm version.
 
@@ -656,66 +749,8 @@ def update_hd_ticket_side_bar():
         if fourth_change:
             return True
     else:
-        print(FILE_PATH, 'not found')
-    return
-
-
-def update_hd_ticket_field_check_value():
-    """Stop Check fields in the ticket sidebar from snapping back to "Yes".
-
-    TicketField.vue renders a Check as an Autocomplete whose options are
-    {label: "Yes", value: 1} / {label: "No", value: 0}, and the component emits
-    the whole option object on select. The stock handler unwrapped it with a
-    truthy `||` chain, so "No" (value 0) fell through and the option OBJECT was
-    written back as the field value. Being truthy, it rendered as "Yes" again
-    and the field could never be cleared - it also kept every
-    `depends_on` child field visible.
-
-    The same defect is fixed in UniInput.vue, which one_fm ships whole via
-    deploy_fetch_from_support(); TicketField.vue is otherwise unmodified
-    upstream, so it gets a surgical in-place replacement instead.
-    """
-    FILE_PATH = frappe.utils.get_bench_path() + "/apps/helpdesk/desk/src/components/TicketField.vue"
-    if not os.path.exists(FILE_PATH):
-        print(FILE_PATH, "not found")
-        return False
-
-    any_changes = False
-
-    # 1. unwrap the emitted option by key presence, not by truthiness
-    handler_search = """                'update:model-value': (event) => {
-                  emitUpdate(
-                    field.fieldname,
-                    event?.value || event?.target?.value || event
-                  );
-                },"""
-    handler_replace = """                'update:model-value': (event) => {
-                  emitUpdate(field.fieldname, extractValue(event));
-                },"""
-    if append_code_in_file(FILE_PATH, handler_search, handler_replace, replace_with_search_text=True):
-        any_changes = True
-
-    # 2. add the helper the handler above now calls
-    helper_search = """function emitUpdate(fieldname: Field["fieldname"], value: FieldValue) {"""
-    helper_replace = """/**
- * Autocomplete emits the whole selected option ({ label, value }), while plain
- * inputs emit either a raw value or a DOM event. Unwrap by key presence, never
- * by truthiness: a Check field's "No" carries value 0, and a falsy-`||` chain
- * would fall through and hand the option object back as the value.
- */
-function extractValue(event: any): FieldValue {
-  if (event && typeof event === "object") {
-    if ("value" in event) return event.value;
-    if (event.target && "value" in event.target) return event.target.value;
-  }
-  return event;
-}
-
-function emitUpdate(fieldname: Field["fieldname"], value: FieldValue) {"""
-    if append_code_in_file(FILE_PATH, helper_search, helper_replace, replace_with_search_text=True):
-        any_changes = True
-
-    return any_changes
+        record_patch_warning(str(FILE_PATH) + ' not found')
+    return False
 
 
 def remove_code_block_with_regex(file_path, pattern):
@@ -726,7 +761,9 @@ def remove_code_block_with_regex(file_path, pattern):
 
         # Check if the pattern exists
         if not re.search(pattern, content, flags=re.MULTILINE | re.VERBOSE):
-            print("Pattern not found in file.")
+            record_patch_warning(
+                f"[!] {os.path.basename(file_path)}: pattern not found, block not removed"
+            )
             return False
 
         # Remove the block
@@ -751,6 +788,15 @@ def deploy_ticket_field():
     blur handler writes whatever is left in that input back to the DB. The
     one_fm copy renders Text Editor fields as a sanitized preview that opens a
     real TextEditor dialog, keeping them editable without corrupting the HTML.
+
+    The one_fm copy also carries the Check-field fix (extractValue): the stock
+    handler unwrapped the emitted option with a truthy `||` chain, so "No"
+    (value 0) fell through and the option OBJECT was written back as the field
+    value, which rendered as "Yes" again and kept every depends_on child field
+    visible. That fix used to live in a separate surgical patch, which fought
+    this copy on every migrate: the copy restored the stock handler, the patch
+    put the fix back, and both reported a change, so every migrate paid for a
+    rebuild. A file is owned by one mechanism only.
     """
     bench_path = get_bench_path()
 
@@ -805,6 +851,7 @@ def set_reference_doctype_url_method():
 
 def update_all_ticket_features():
     any_changes = False
+    del PATCH_WARNINGS[:]
 
     set_reference_doctype_url_method()
 
@@ -820,9 +867,9 @@ def update_all_ticket_features():
         any_changes = True
     if deploy_ticket_field():
         any_changes = True
-    if update_hd_ticket_side_bar():
+    if deploy_ticket_editor():
         any_changes = True
-    if update_hd_ticket_field_check_value():
+    if update_hd_ticket_side_bar():
         any_changes = True
 
     if any_changes:
@@ -833,6 +880,15 @@ def update_all_ticket_features():
         run_command("bench restart", cwd=bench_path)
     else:
         print("No changes detected. Skipping build and restart.")
+
+    # A customization whose anchor has moved stops shipping without failing
+    # anything, so say so loudly rather than leaving it in the scrollback.
+    if PATCH_WARNINGS:
+        print("\n======================================================================")
+        print("{0} helpdesk customization(s) did NOT apply:".format(len(PATCH_WARNINGS)))
+        for warning in PATCH_WARNINGS:
+            print("  - " + warning)
+        print("======================================================================")
 
 def disable_email_and_sync_on_developer_mode():
     if not frappe.conf.get("developer_mode"):
