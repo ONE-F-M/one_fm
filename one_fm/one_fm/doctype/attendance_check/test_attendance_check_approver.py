@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
-"""WI-004923: Attendance Check approver is resolved from the Operations Site on the
+"""Attendance Check approver is resolved from the Operations Site on the
 Shift Assignment for the check date, with fallbacks to the Employee's default site.
 
 These tests run against existing site data: two Active Operations Sites and three
@@ -105,6 +105,7 @@ class TestAttendanceCheckApprover(FrappeTestCase):
         self.assertEqual(len(logs), 1)
         self.assertIn("has no supervisor", logs[0].error)
         self.assertIn(self.site_b, logs[0].error)
+        self.assertIn(f"HR-AC-{self.employee}_{TEST_DATE}_Basic", logs[0].error)
 
     # AC4
     def test_supervisor_without_user_falls_back_and_logs(self):
@@ -128,37 +129,45 @@ class TestAttendanceCheckApprover(FrappeTestCase):
         self.assertEqual(self.approver_logs(), [])
 
     def test_get_shift_site_uses_assignment_covering_date(self):
-        covering = frappe.db.sql(
-            """
-            SELECT employee, roster_type, end_date
-            FROM `tabShift Assignment`
-            WHERE docstatus = 1 AND status = 'Active'
-                AND end_date > start_date AND ifnull(site, '') != ''
-            ORDER BY end_date DESC
-            LIMIT 1
-            """,
-            as_dict=True,
+        # An overnight assignment (start_date < end_date) checked on its end date,
+        # where it is the only Active assignment covering that date.
+        candidates = frappe.get_all(
+            "Shift Assignment",
+            filters={"docstatus": 1, "status": "Active", "site": ["is", "set"], "end_date": ["is", "set"]},
+            fields=["employee", "roster_type", "start_date", "end_date", "site"],
+            order_by="end_date desc",
+            limit=200,
         )
-        if not covering:
+        row = next(
+            (
+                r for r in candidates
+                if r.end_date > r.start_date and frappe.db.count(
+                    "Shift Assignment",
+                    {
+                        "employee": r.employee,
+                        "roster_type": r.roster_type,
+                        "docstatus": 1,
+                        "status": "Active",
+                        "start_date": ["<=", r.end_date],
+                        "end_date": [">=", r.end_date],
+                    },
+                ) == 1
+            ),
+            None,
+        )
+        if not row:
             self.skipTest("No overnight Active Shift Assignment with a site exists")
 
-        row = covering[0]
         check = self.make_check(employee=row.employee, roster_type=row.roster_type, date=row.end_date)
-        expected = frappe.get_all(
-            "Shift Assignment",
-            filters={
-                "employee": row.employee,
-                "roster_type": row.roster_type,
-                "docstatus": 1,
-                "status": "Active",
-                "start_date": ["<=", row.end_date],
-                "end_date": [">=", row.end_date],
-            },
-            fields=["site"],
-            order_by="start_date desc",
-            limit=1,
-        )[0].site
-        self.assertEqual(check.get_shift_site(), expected or None)
+        self.assertFalse(check.shift_assignment)
+        self.assertEqual(check.get_shift_site(), row.site)
+
+    def test_fallback_ignores_stored_site_supervisor_user(self):
+        # The stored Employee.custom_site_supervisor_user can be stale; the fallback reads the site live.
+        if frappe.get_meta("Employee").has_field("custom_site_supervisor_user"):
+            frappe.db.set_value("Employee", self.employee, "custom_site_supervisor_user", self.user_b, update_modified=False)
+        check = self.make_check()
+        self.assertEqual(check.get_approver_user(None), self.user_a)
 
     def test_both_supervisors_missing_does_not_raise(self):
         frappe.db.set_value("Operations Site", self.site_a, "site_supervisor", None, update_modified=False)
