@@ -86,9 +86,10 @@ def _active_employees(count, on_date):
 	return free[:count]
 
 
-def _leave(employee, from_date, to_date, status="Approved", docstatus=1):
+def _leave(employee, from_date, to_date, status="Approved", docstatus=1, leave_type=None):
 	doc = frappe.new_doc("Leave Application")
 	doc.employee = employee
+	doc.leave_type = leave_type
 	doc.from_date = from_date
 	doc.to_date = to_date
 	doc.status = status
@@ -227,6 +228,99 @@ class TestWhoIsCovering(FrappeTestCase):
 		self.assertIsNone(context[self.cover]["leave_from"])
 		self.assertIsNone(context[self.cover]["leave_to"])
 		self.assertEqual(context[self.cover]["absence_reason"], "Day Off")
+
+
+class TestWhoIsCoveringWhy(FrappeTestCase):
+	"""Stale covers, annual-leave relievers and the reason shown with them."""
+
+	def setUp(self):
+		self.date = _own_day()
+		self.cover, self.away = _active_employees(2, self.date)
+
+	def _relieve(self, original, **values):
+		return _schedule(self.cover, self.date, availability="Working", shift="SHIFT-COVERED",
+						 employee_name="Cover Person", **values)
+
+	def test_a_cover_whose_covered_row_is_working_again_is_stale(self):
+		# The absence is over: the original rides under their own name, nothing is marked.
+		original = _schedule(self.away, self.date, availability="Working", shift="SHIFT-COVERED")
+		self._relieve(original, is_relieving_schedule=1, relieving_employee_schedule=original)
+
+		self.assertNotIn(self.cover, relieving_assignments(self.date))
+		self.assertNotIn(self.cover, reliever_context(self.date))
+		resolved = apply_to_shift_map({self.away: "SHIFT-COVERED"}, self.date)
+		self.assertEqual(resolved[self.away], "SHIFT-COVERED")
+
+	def test_a_dangling_cover_is_kept_and_unnamed(self):
+		self._relieve(None, is_relieving_schedule=1, relieving_employee_schedule="does-not-exist")
+
+		overlay = relieving_assignments(self.date)
+
+		self.assertIn(self.cover, overlay)
+		self.assertIsNone(overlay[self.cover]["relieving_employee_name"])
+
+	def test_an_annual_leave_reliever_is_resolved_through_the_leave_application(self):
+		leave = _leave(self.away, add_days(self.date, -1), add_days(self.date, 2),
+					   leave_type="Annual Leave")
+		self._relieve(None, is_annual_leave_reliever=1, leave_application=leave)
+
+		overlay = relieving_assignments(self.date)
+
+		self.assertEqual(overlay[self.cover]["shift"], "SHIFT-COVERED")
+		self.assertEqual(overlay[self.cover]["relieving_employee"], self.away)
+		self.assertEqual(overlay[self.cover]["absence_reason"], "Annual Leave")
+		self.assertEqual(str(overlay[self.cover]["leave_from"]), add_days(self.date, -1))
+		self.assertEqual(str(overlay[self.cover]["leave_to"]), add_days(self.date, 2))
+		# The leave type survives the context pass that fills Day Off covers.
+		self.assertEqual(reliever_context(self.date)[self.cover]["absence_reason"], "Annual Leave")
+
+	def test_an_annual_leave_reliever_without_a_leave_type_reads_leave(self):
+		leave = _leave(self.away, add_days(self.date, -1), add_days(self.date, 2))
+		self._relieve(None, is_annual_leave_reliever=1, leave_application=leave)
+
+		self.assertEqual(relieving_assignments(self.date)[self.cover]["absence_reason"], "Leave")
+
+	def test_an_annual_leave_reliever_on_unapproved_leave_is_not_resolved(self):
+		leave = _leave(self.away, add_days(self.date, -1), add_days(self.date, 2),
+					   status="Open", docstatus=0)
+		self._relieve(None, is_annual_leave_reliever=1, leave_application=leave)
+
+		self.assertNotIn(self.cover, relieving_assignments(self.date))
+
+	def test_an_annual_leave_reliever_not_working_is_not_resolved(self):
+		leave = _leave(self.away, add_days(self.date, -1), add_days(self.date, 2))
+		_schedule(self.cover, self.date, availability="Day Off", shift="SHIFT-COVERED",
+				  is_annual_leave_reliever=1, leave_application=leave)
+
+		self.assertNotIn(self.cover, relieving_assignments(self.date))
+
+	def test_an_annual_leave_reliever_stops_when_the_leave_has_ended(self):
+		leave = _leave(self.away, add_days(self.date, -9), add_days(self.date, -1))
+		self._relieve(None, is_annual_leave_reliever=1, leave_application=leave)
+
+		self.assertNotIn(self.cover, relieving_assignments(self.date))
+
+	def test_the_relieving_schedule_row_wins_on_duplicates(self):
+		original = _schedule(self.away, self.date, availability="Day Off")
+		leave = _leave(self.away, add_days(self.date, -1), add_days(self.date, 2))
+		self._relieve(original, is_relieving_schedule=1, relieving_employee_schedule=original,
+					  is_annual_leave_reliever=1, leave_application=leave)
+
+		overlay = relieving_assignments(self.date)
+
+		self.assertEqual(overlay[self.cover]["absence_reason"], "Day Off")
+
+	def test_a_leave_span_makes_the_reason_leave(self):
+		original = _schedule(self.away, self.date, availability="Day Off")
+		self._relieve(original, is_relieving_schedule=1, relieving_employee_schedule=original)
+		_leave(self.away, add_days(self.date, -1), add_days(self.date, 2))
+
+		context = reliever_context(self.date)
+
+		self.assertEqual(context[self.cover]["absence_reason"], "Leave")
+
+	def test_no_relievers_gives_an_empty_overlay(self):
+		self.assertEqual(reliever_context(self.date), {})
 
 
 class TestTheShiftMapIsRewritten(FrappeTestCase):

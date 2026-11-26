@@ -378,9 +378,9 @@ function renderManifest($container, data) {
 	// carrying an attendance status is one the driver decided on; the bulk action means
 	// "everyone I have not marked yet is here", so it must not overwrite that.
 	function uncheckedRowIds(employees) {
+		// Row ids only: an employee id is not a manifest row and would hit every appearance.
 		return (employees || []).map(function (e) {
-			const id = (typeof e === "object" && e !== null) ? (e.id || e.name || "") : (e || "");
-			return (typeof e === "object" && e !== null) ? (e.row_id || id) : id;
+			return (typeof e === "object" && e !== null) ? (e.row_id || "") : "";
 		}).filter(function (rowId) {
 			return rowId && !(window.checkerState[rowId] || {}).attendance;
 		});
@@ -403,10 +403,13 @@ function renderManifest($container, data) {
 	}
 
 	function empChipHtml(e, chipStyle, interactive) {
-		interactive = interactive || false;
-		const id = (typeof e === "object" && e !== null) ? (e.id || e.name || "—") : (e || "—");
-		const name = (typeof e === "object" && e !== null) ? (e.name || "—") : (e || "—");
-		const rowId = (typeof e === "object" && e !== null) ? (e.row_id || id) : id;
+		const isObj = typeof e === "object" && e !== null;
+		const name = isObj ? (e.name || "—") : (e || "—");
+		// The row id is the only key for one appearance of a rider. It never falls back to
+		// the employee id: the same person on two trips would then share one state.
+		const rowId = isObj ? (e.row_id || "") : "";
+		// Without a row there is nothing to record attendance against, so no tap target.
+		interactive = !!interactive && !!rowId;
 		const rawMobile = (typeof e === "object" && e !== null) ? (e.mobile || "") : "";
 		const mobile = rawMobile.replace(/[^\d+\-() ]/g, "");
 
@@ -440,6 +443,17 @@ function renderManifest($container, data) {
 		const esc = s => s.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/'/g,"&#39;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 		const safeName = esc(displayName);
 		const safeMobile = esc(mobile);
+
+		// Reliever covering note: who this rider stands in for, why, and the leave dates.
+		let coveringHtml = "";
+		if (isObj && e.is_reliever) {
+			classes += " mfst-state-covering";
+			const coveredName = e.relieving_employee_name || __("Not available");
+			const coveringParts = [__("Covering {0}", [coveredName])];
+			if (e.absence_reason) coveringParts.push(__(e.absence_reason));
+			if (e.leave_from && e.leave_to) coveringParts.push(`${e.leave_from} → ${e.leave_to}`);
+			coveringHtml = `<span class="mfst-chip-covering">${esc(coveringParts.join(" · "))}</span>`;
+		}
 		let phoneIcon;
 
 		// For replacement chips, phone icon targets the reliever's number
@@ -469,8 +483,10 @@ function renderManifest($container, data) {
 
 		// Two-line chip layout for replacements: original name (struck) + reliever name below
 		const nameBlock = state.replacement
-			? `<span class="mfst-chip-names"><span class="mfst-chip-original">${safeName}</span>${replacementHtml}</span>`
-			: `<span class="mfst-chip-name">${safeName}</span>`;
+			? `<span class="mfst-chip-names"><span class="mfst-chip-original">${safeName}</span>${coveringHtml}${replacementHtml}</span>`
+			: (coveringHtml
+				? `<span class="mfst-chip-names"><span class="mfst-chip-name">${safeName}</span>${coveringHtml}</span>`
+				: `<span class="mfst-chip-name">${safeName}</span>`);
 
 		return `<span class="${classes}"${onclickAttr}>${nameBlock}${statusIcon}${phoneIcon}</span>`;
 	}
@@ -2596,6 +2612,8 @@ function getManifestCSS() {
 		.mfst-chip-names { display: flex; flex-direction: column; flex: 1; gap: 2px; line-height: 1.3; }
 		.mfst-chip-original { font-size: 12px; color: var(--mfst-text-dim); text-decoration: line-through; opacity: 0.7; }
 		.mfst-chip-reliever { font-size: 13px; font-weight: 600; color: var(--mfst-blue); display: flex; align-items: center; gap: 4px; }
+		.mfst-emp-chip.mfst-state-covering { border-left-width: 4px; border-left-style: solid; }
+		.mfst-chip-covering { font-size: 11px; font-weight: 500; color: var(--mfst-text-dim); line-height: 1.3; }
 
 		/* ── TRANSIT ── */
 		.mfst-transit { display: flex; align-items: center; gap: 8px; padding: 6px 0; color: var(--mfst-text-dim); }

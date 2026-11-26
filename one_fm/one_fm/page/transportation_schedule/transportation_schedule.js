@@ -1112,12 +1112,16 @@ function mountRoutePlannerApp(wrapper, data, preloaded) {
              * simply absent rather than showing a bare label.
              */
             empRelieverTitle(e) {
-                if (!this.empIsReliever(e) || !e || !e.relieving_employee_name) return '';
-                const who = __('Relieving {0}', [e.relieving_employee_name]);
+                if (!this.empIsReliever(e) || !e) return '';
+                // The server stamps "Not available" when the covered person cannot be
+                // resolved; the fallback only guards an older payload.
+                const who = __('Relieving {0}', [e.relieving_employee_name || __('Not available')]);
+                const parts = [who];
+                if (e.absence_reason) parts.push(__(e.absence_reason));
                 if (e.leave_from && e.leave_to) {
-                    return `${who} | ${__('Leave Span')}: ${e.leave_from} → ${e.leave_to}`;
+                    parts.push(`${__('Leave')}: ${e.leave_from} → ${e.leave_to}`);
                 }
-                return e.absence_reason ? `${who} | ${e.absence_reason}` : who;
+                return parts.join(' | ');
             },
 
             /** Count of relievers in an employee list (regulars = length − this). */
