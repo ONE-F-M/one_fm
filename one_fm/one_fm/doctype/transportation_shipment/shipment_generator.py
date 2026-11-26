@@ -371,7 +371,7 @@ def _write_roster(doc, demand: dict, roster: list, relievers: dict = None) -> No
 			row.update({
 				"is_reliever": 1,
 				"relieving_employee": cover.get("relieving_employee"),
-				"relieving_employee_name": cover.get("relieving_employee_name"),
+				"relieving_employee_name": _covered_name(cover),
 				"absence_reason": cover.get("absence_reason"),
 				"leave_from": cover.get("leave_from"),
 				"leave_to": cover.get("leave_to"),
@@ -381,6 +381,47 @@ def _write_roster(doc, demand: dict, roster: list, relievers: dict = None) -> No
 		row.idx = 0  # renumbered by append
 		doc.append("transportation_shipment_employee", row)
 	doc.headcount = len(doc.transportation_shipment_employee)
+
+
+def _covered_name(cover: dict) -> str:
+	"""The covered person's name, or "Not available" when their record is incomplete.
+
+	A reliever whose covered person cannot be resolved is still shown and marked; the
+	name reads as unavailable rather than blank or hidden.
+	"""
+	return (cover or {}).get("relieving_employee_name") or frappe._("Not available")
+
+
+def _date_or_none(value):
+	return str(value) if value else None
+
+
+def _row_signature(row) -> tuple:
+	"""What the driver sees for one stored rider: who, and the cover details if any."""
+	return (
+		row.employee_id,
+		row.employee_name,
+		row.relieving_employee or None,
+		row.relieving_employee_name or None,
+		row.absence_reason or None,
+		_date_or_none(row.leave_from),
+		_date_or_none(row.leave_to),
+	)
+
+
+def _roster_signature(emp: dict, cover: dict = None) -> tuple:
+	"""The same tuple for a rider the generator is about to write."""
+	if not cover:
+		return (emp["id"], emp["name"], None, None, None, None, None)
+	return (
+		emp["id"],
+		emp["name"],
+		cover.get("relieving_employee") or None,
+		_covered_name(cover),
+		cover.get("absence_reason") or None,
+		_date_or_none(cover.get("leave_from")),
+		_date_or_none(cover.get("leave_to")),
+	)
 
 
 def _pinned_rows(doc) -> list:
@@ -407,17 +448,14 @@ def _refresh_assigned_roster(name: str, demand: dict, roster: list, relievers: d
 	doc = frappe.get_doc("Transportation Shipment", name)
 	# The reliever tag is part of the crew, not decoration: the same people with a
 	# different person being covered is still a change the driver needs to see.
-	before = [
-		(row.employee_id, row.employee_name, row.relieving_employee or None)
-		for row in doc.transportation_shipment_employee
-	]
+	before = [_row_signature(row) for row in doc.transportation_shipment_employee]
 	pinned = _pinned_rows(doc)
 	held = {row.employee_id for row in pinned}
 	after = [
-		(emp["id"], emp["name"], (relievers.get(emp["id"]) or {}).get("relieving_employee"))
+		_roster_signature(emp, relievers.get(emp["id"]))
 		for emp in roster
 		if emp["id"] not in held
-	] + [(row.employee_id, row.employee_name, row.relieving_employee or None) for row in pinned]
+	] + [_row_signature(row) for row in pinned]
 	if before == after:
 		return False
 
