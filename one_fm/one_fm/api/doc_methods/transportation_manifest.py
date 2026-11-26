@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from frappe.utils import cint
 
 from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
 	retry_on_stale_timestamp,
@@ -11,7 +12,8 @@ def update_manifest_row_checkin(
 	attendance_status: str = None,
 	qoa_status: str = None,
 	qoa_reason: str = None,
-	reliever_employee: str = None
+	reliever_employee: str = None,
+	requires_reliever: int = None,
 ):
 	"""
 	Updates a specific child row in Transportation Manifest Details and saves the parent manifest.
@@ -29,13 +31,13 @@ def update_manifest_row_checkin(
 	return retry_on_stale_timestamp(
 		lambda: _apply_row_checkin(
 			parent_manifest, row_name, attendance_status, qoa_status,
-			qoa_reason, reliever_employee,
+			qoa_reason, reliever_employee, requires_reliever,
 		)
 	)
 
 
 def _apply_row_checkin(parent_manifest, row_name, attendance_status, qoa_status,
-					   qoa_reason, reliever_employee):
+					   qoa_reason, reliever_employee, requires_reliever=None):
 	"""Read the manifest, stamp the one row, save. Re-runnable on a save conflict."""
 	doc = frappe.get_doc("Transportation Manifest", parent_manifest)
 	doc.check_permission("write")
@@ -78,6 +80,10 @@ def _apply_row_checkin(parent_manifest, row_name, attendance_status, qoa_status,
 					row.requires_reliever = 1
 				else:
 					row.requires_reliever = 0
+
+			# "No, skip" on the reliever prompt: the seat is flagged and left unfilled.
+			if "requires_reliever" in frappe.form_dict:
+				row.requires_reliever = cint(requires_reliever)
 			found = True
 			break
 			

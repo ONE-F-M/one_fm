@@ -1798,7 +1798,11 @@ function renderManifest($container, data, partial) {
 			actionBtn = `<button class="mfst-depart-btn trigger" onclick="window._mfst_triggerStop('${manifestName}', ${seq}, '${safeVeh}', '${safeTrip}')">
 				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">fact_check</span> Trigger Attendance Check${runSuffix}</button>`;
 		} else if (manifestName && isActive) {
-			actionBtn = `<button class="mfst-depart-btn complete" onclick="window._mfst_completeStop('${manifestName}', ${seq}, '${safeVeh}', '${safeTrip}')">
+			// Locked only once every boarding row is checked in.
+			const pendingChecks = uncheckedRowIds(employees).length;
+			const lockState = pendingChecks
+				? ` disabled title="${escHtml(__("Check in every employee before locking this stop"))}"` : "";
+			actionBtn = `<button class="mfst-depart-btn complete"${lockState} onclick="window._mfst_completeStop('${manifestName}', ${seq}, '${safeVeh}', '${safeTrip}')">
 				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">lock</span> Complete &amp; Lock Stop ${seq}${lockSuffix}</button>`;
 		}
 
@@ -2219,6 +2223,12 @@ function renderManifest($container, data, partial) {
 
 	$container.on("click", "#mfst-btn-rambo-no", function() {
 		closeRamboPrompt();
+		// The seat stays unfilled; the row is flagged as needing a reliever.
+		const rowId = ramboPromptEmpId;
+		queueCheckIn({
+			method: "one_fm.one_fm.api.doc_methods.transportation_manifest.update_manifest_row_checkin",
+			args: { row_name: rowId, requires_reliever: 1 },
+		});
 		rerender();
 	});
 
@@ -2412,8 +2422,7 @@ function renderManifest($container, data, partial) {
 			method: "one_fm.one_fm.api.doc_methods.transportation_manifest.update_manifest_row_checkin",
 			args: {
 				row_name: rowId,
-				// A QOA fail keeps the worker Present; only an absence is saved as Absent.
-				attendance_status: ramboPromptReason === "qoa_fail" ? "Present" : "Absent",
+				// Attendance is not sent: the row keeps the Absent or Present + Fail it was saved with.
 				reliever_employee: reliever.name
 			},
 			callback: function(r) {

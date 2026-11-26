@@ -236,6 +236,19 @@ class TestTransportationManifest(FrappeTestCase):
 		row = self._checked_in_manifest({"attendance_status": "Present", "qoa_status": "Pass"})
 		self.assertRaises(frappe.ValidationError, self._checkin_reliever, row, "Present")
 
+	def test_api_skip_flags_requires_reliever_without_a_reliever(self):
+		from one_fm.one_fm.api.doc_methods.transportation_manifest import update_manifest_row_checkin
+
+		row = self._checked_in_manifest({"attendance_status": "Absent"})
+		frappe.local.form_dict = frappe._dict(row_name=row, requires_reliever=1)
+		try:
+			saved = update_manifest_row_checkin(row, requires_reliever=1)["row"]
+		finally:
+			frappe.local.form_dict = frappe._dict()
+		self.assertEqual(saved["requires_reliever"], 1)
+		self.assertFalse(saved["reliever_employee"])
+		self.assertEqual(saved["attendance_status"], "Absent")
+
 	def test_reliever_replacement_validation(self):
 		# Assign reliever employee
 		doc1 = frappe.new_doc("Transportation Manifest")
@@ -707,6 +720,24 @@ class TestTransportationManifest(FrappeTestCase):
 		self.assertTrue(all(s["status"] == "Completed" for s in sheet["stops"]))
 
 
+
+	def test_complete_stop_refuses_unchecked_boarding_rows(self):
+		from one_fm.one_fm.doctype.transportation_manifest.manifest_sheet import (
+			trigger_attendance_check,
+			complete_stop,
+		)
+
+		doc = self._make_two_stop_manifest()
+		for row in doc.transportation_manifest_details:
+			row.employee_action = "Boarding"
+		doc.save()
+		trigger_attendance_check(doc.name, 1)
+		self.assertRaises(frappe.ValidationError, complete_stop, doc.name, 1)
+
+		doc.reload()
+		doc.transportation_manifest_details[0].attendance_status = "Absent"
+		doc.save()
+		self.assertEqual(complete_stop(doc.name, 1)["active_stop_sequence"], 2)
 
 class TestTripTimeSync(FrappeTestCase):
 	"""sync_manifest_details stamps trip_time from the departure callable."""
