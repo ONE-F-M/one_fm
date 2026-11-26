@@ -88,14 +88,17 @@ def relieving_assignments(on_date=None, shift_names=None) -> dict:
 	# Only somebody actually working is on the bus; a relieving row marked Day Off is a
 	# scheduling artefact, not a passenger.
 	rows = [r for r in rows if r.shift and r.employee_availability == "Working"]
-	if not rows:
-		return {}
 
-	covered = _covered_employees([r.relieving_employee_schedule for r in rows])
+	covered = _covered_employees([r.relieving_employee_schedule for r in rows]) if rows else {}
 
 	overlay = {}
 	for row in rows:
 		original = covered.get(row.relieving_employee_schedule) or {}
+		# A cover whose covered row is Working again is stale: the absence it stood in
+		# for is over (or was never real), so the original rides under their own name
+		# and nothing is marked. A MISSING covered row is the dangling case and stays.
+		if original.get("employee_availability") == "Working":
+			continue
 		overlay[row.employee] = {
 			"shift": row.shift,
 			"site": row.site,
@@ -105,7 +108,72 @@ def relieving_assignments(on_date=None, shift_names=None) -> dict:
 			# there is one, is filled in by reliever_context below.
 			"absence_reason": original.get("employee_availability"),
 		}
+
+	# Annual-leave relievers are a second read: they carry no relieving-schedule back-link,
+	# only the Leave Application they cover. A relieving-schedule row wins on duplicates.
+	for employee, data in _annual_leave_relievers(on_date, shift_names).items():
+		overlay.setdefault(employee, data)
 	return overlay
+
+
+def _annual_leave_relievers(on_date, shift_names=None) -> dict:
+	"""``{employee: {...}}`` for people working a post because its owner is on annual leave.
+
+	The covered person and the span come from the Leave Application the schedule row points
+	at, and only while that leave still covers ``on_date`` - once it ends the reliever stops
+	being resolved.
+	"""
+	filters = {
+		"date": on_date,
+		"is_annual_leave_reliever": 1,
+		"employee_availability": "Working",
+	}
+	if shift_names is not None:
+		if not shift_names:
+			return {}
+		filters["shift"] = ["in", list(shift_names)]
+
+	rows = [
+		r for r in frappe.get_all(
+			"Employee Schedule",
+			filters=filters,
+			fields=["employee", "employee_name", "shift", "site", "leave_application"],
+		)
+		if r.shift and r.leave_application
+	]
+	if not rows:
+		return {}
+
+	applications = {
+		app.name: app
+		for app in frappe.get_all(
+			"Leave Application",
+			filters={
+				"name": ["in", list({r.leave_application for r in rows})],
+				"docstatus": 1,
+				"status": "Approved",
+				"from_date": ["<=", on_date],
+				"to_date": [">=", on_date],
+			},
+			fields=["name", "employee", "employee_name", "from_date", "to_date"],
+		)
+	}
+
+	result = {}
+	for row in rows:
+		app = applications.get(row.leave_application)
+		if not app or app.employee == row.employee:
+			continue
+		result[row.employee] = {
+			"shift": row.shift,
+			"site": row.site,
+			"relieving_employee": app.employee,
+			"relieving_employee_name": app.employee_name,
+			"absence_reason": "Leave",
+			"leave_from": app.from_date,
+			"leave_to": app.to_date,
+		}
+	return result
 
 
 def _covered_employees(schedule_names) -> dict:
@@ -145,7 +213,13 @@ def reliever_context(on_date=None, shift_names=None) -> dict:
 
 	for data in overlay.values():
 		span = spans.get(data.get("relieving_employee"))
-		data["leave_from"], data["leave_to"] = span if span else (None, None)
+		if span:
+			data["leave_from"], data["leave_to"] = span
+			# Away on approved leave, whatever the covered schedule row said.
+			data["absence_reason"] = "Leave"
+		else:
+			data["leave_from"] = data.get("leave_from")
+			data["leave_to"] = data.get("leave_to")
 	return overlay
 
 
