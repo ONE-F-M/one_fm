@@ -905,3 +905,104 @@ class TestManifestDataRestrictFlag(FrappeTestCase):
 		result, _setting = self._manifest_data(0)
 		self.assertEqual(result["status"], "ok")
 		self.assertEqual(result["restrict_reliever_search_to_rambo"], 0)
+
+
+def _find_key(node, key):
+	"""First value stored under ``key`` anywhere inside a nested dict/list result."""
+	if isinstance(node, dict):
+		if key in node:
+			return node[key]
+		for value in node.values():
+			found = _find_key(value, key)
+			if found is not None:
+				return found
+	elif isinstance(node, (list, tuple)):
+		for value in node:
+			found = _find_key(value, key)
+			if found is not None:
+				return found
+	return None
+
+
+class TestManifestCarriesTheRelieverDetails(FrappeTestCase):
+	"""WI-004956 AC3/AC6/AC8: the manifest riders carry the cover stamped on their row."""
+
+	def _riders(self, stored_rows):
+		plan = frappe._dict(name="PLAN-1", title="Plan")
+		real_get_value = _ts.frappe.db.get_value
+		real_get_all = _ts.frappe.get_all
+		row = frappe._dict(
+			vehicle=None, shift=None, transportation_shipment="SHIP-1", card_id="C1",
+			direction="OUTBOUND", accommodation="ACC", stop_location="STOP",
+			headcount=1, start_time="2026-03-10T06:00:00Z", end_time="2026-03-10T07:00:00Z",
+			trip_group=None, trip_name=None, stop_index=0, transit_minutes=0,
+			buffer_minutes=0, origin_location=None,
+		)
+		captured = {}
+
+		def get_all(doctype, *args, **kwargs):
+			if doctype == "Transportation Shipment Employee":
+				captured["fields"] = kwargs.get("fields")
+				return [frappe._dict(r) for r in stored_rows]
+			return real_get_all(doctype, *args, **kwargs)
+
+		with patch.object(_ts, "_route_plan_exists", return_value=True), \
+			patch.object(_ts.frappe.db, "get_value", side_effect=lambda doctype, *a, **k: (
+				plan if doctype == "Route Plan" else real_get_value(doctype, *a, **k))), \
+			patch.object(_ts.frappe, "has_permission", return_value=True), \
+			patch.object(_ts, "get_plan_rows", return_value=[row]), \
+			patch.object(_ts, "get_route_planner_data", return_value={"status": "error"}), \
+			patch.object(_ts.frappe, "get_all", side_effect=get_all):
+			result = _ts.get_manifest_data_for_plan("PLAN-1")
+		riders = _find_key(result, "shipmentEmployees")
+		return captured.get("fields") or [], [e for emps in (riders or {}).values() for e in emps]
+
+	def _stored(self, **values):
+		base = {"parent": "SHIP-1", "employee_id": "E1", "employee_name": "Rider One",
+				"cell_number": "", "is_reliever": 0, "relieving_employee_name": None,
+				"absence_reason": None, "leave_from": None, "leave_to": None}
+		base.update(values)
+		return base
+
+	def test_the_rider_query_asks_for_the_cover_fields(self):
+		fields, _riders = self._riders([self._stored()])
+		for field in ("is_reliever", "relieving_employee_name", "absence_reason",
+					  "leave_from", "leave_to"):
+			self.assertIn(field, fields)
+
+	def test_a_reliever_keeps_the_cover_stamped_on_its_row(self):
+		_fields, riders = self._riders([self._stored(
+			is_reliever=1, relieving_employee_name="Covered Person", absence_reason="Annual Leave",
+			leave_from="2026-03-08", leave_to="2026-03-12")])
+		self.assertEqual(len(riders), 1)
+		rider = riders[0]
+		self.assertIs(rider["is_reliever"], True)
+		self.assertEqual(rider["relieving_employee_name"], "Covered Person")
+		self.assertEqual(rider["absence_reason"], "Annual Leave")
+		self.assertEqual(rider["leave_from"], "2026-03-08")
+		self.assertEqual(rider["leave_to"], "2026-03-12")
+
+	def test_a_regular_rider_carries_no_cover(self):
+		_fields, riders = self._riders([self._stored()])
+		rider = riders[0]
+		self.assertIs(rider["is_reliever"], False)
+		self.assertIsNone(rider["leave_from"])
+		self.assertIsNone(rider["leave_to"])
+
+
+class TestCardsMarkOnlyTheRowFlag(FrappeTestCase):
+	"""WI-004956 AC5/AC8: a rider is badged from its own row, never from a standing role."""
+
+	def test_the_card_builder_reads_the_row_flag_not_the_rambo_role(self):
+		import inspect
+
+		source = inspect.getsource(_ts._build_transportation_shipment_cards)
+		self.assertIn('"is_reliever": bool(row.is_reliever)', source)
+		self.assertNotIn("custom_is_rambo_reliever", source)
+		self.assertNotIn("reliever_ids", source)
+
+	def test_the_manifest_has_no_employee_only_fallback(self):
+		import inspect
+
+		source = inspect.getsource(_ts.get_manifest_data_for_plan)
+		self.assertNotIn("idx_employee", source)
