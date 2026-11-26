@@ -1907,7 +1907,6 @@ def _rebase_stamp(stamp, departure):
 		return stamp
 
 
-@frappe.whitelist()
 def _index_manifest_rows(rows) -> tuple:
 	"""Manifest detail rows keyed by (employee, stop_id, trip_id, action) and by
 	(employee, stop_name, trip_id, action), every row kept in row order."""
@@ -1945,8 +1944,12 @@ def _claim_manifest_row(indexes, employee, stop_location, trip_id, is_return, cl
 	return None
 
 
-def get_manifest_data_for_plan(plan_name: str):
+@frappe.whitelist()
+def get_manifest_data_for_plan(plan_name: str, vehicles: str | None = None):
 	"""Build manifest ROUTE_DATA from a saved Route Plan.
+
+	``vehicles`` (JSON list) narrows the build to those vehicles, so the page can draw
+	one departure slot before the whole day has loaded.
 
 	This is the server-side equivalent of the client-side buildManifestData().
 	It reconstructs the manifest JSON from the plan's saved assignments and
@@ -1962,7 +1965,8 @@ def get_manifest_data_for_plan(plan_name: str):
 	frappe.has_permission("Route Plan", "read", plan_name, throw=True)
 	# In the order the plan lists them (idx, then creation): the rows of each vehicle
 	# keep the trip order they were saved in.
-	assignments = get_plan_rows(plan_name)
+	vehicles = frappe.parse_json(vehicles) if vehicles else None
+	assignments = get_plan_rows(plan_name, vehicles=vehicles)
 
 	# A camp leg describes a stop the bus makes; no card is filed against it and it
 	# carries no roster, so the manifest is compiled from the rows that stand for one.
@@ -1996,20 +2000,10 @@ def get_manifest_data_for_plan(plan_name: str):
 	if vehicle_ids:
 		for v in frappe.get_all("Vehicle",
 			filters={"name": ["in", vehicle_ids]},
-			fields=["name", "license_plate", "location", "seats",
+			fields=["name", "license_plate", "location", "seats", "custom_max_passenger_capacity",
 					"one_fm_vehicle_type", "make", "model", "employee"]
 		):
 			vehicle_map[v.name] = v
-
-	# Batch-fetch driver names
-	emp_ids_for_drivers = [v.employee for v in vehicle_map.values() if v.employee]
-	driver_map = {}
-	if emp_ids_for_drivers:
-		for row in frappe.get_all("Employee",
-			filters={"name": ["in", emp_ids_for_drivers]},
-			fields=["name", "employee_name"]
-		):
-			driver_map[row.name] = row.employee_name
 
 	# Batch-fetch accommodation labels for vehicle locations
 	veh_locations = list({v.location for v in vehicle_map.values() if v.location})
@@ -2127,7 +2121,19 @@ def get_manifest_data_for_plan(plan_name: str):
 
 		# Always sync rows — handles both new and existing manifests
 		v_rows = [row for row in rows if row.vehicle == v_id]
-		rows_changed = sync_manifest_details(manifest_doc, v_rows, card_emp_map)
+		run_departure = _run_departures(v_rows, leg_rows.get(v_id, []))
+
+		# trip_time: when the bus leaves this row's camp, else when its run leaves.
+		def departure_of(a_row, run_departure=run_departure):
+			stamp = (
+				camp_departure.get((a_row.trip_group, a_row.origin_location))
+				or camp_departure.get(a_row.trip_group)
+				or run_departure.get(a_row.trip_group or f"\0{a_row.card_id}")
+			)
+			clock = _time_field(_local_seconds(stamp))
+			return clock[:5] if clock else None
+
+		rows_changed = sync_manifest_details(manifest_doc, v_rows, card_emp_map, departure_of=departure_of)
 
 		# The manifest header inherits the run's direction and, for a merged run, its
 		# shared group key. Read from the assignment rows rather than passed
@@ -2156,6 +2162,19 @@ def get_manifest_data_for_plan(plan_name: str):
 			manifest_doc.save()
 
 		manifests[v_id] = manifest_doc
+
+	# Trip header driver: the manifest's driver, else the vehicle's.
+	driver_of = {
+		vid: (m.driver_name if m else None) or (vehicle_map.get(vid) or {}).get("employee")
+		for vid, m in ((vid, manifests.get(vid)) for vid in vehicle_ids)
+	}
+	driver_map = {}
+	if any(driver_of.values()):
+		for row in frappe.get_all("Employee",
+			filters={"name": ["in", list({d for d in driver_of.values() if d})]},
+			fields=["name", "employee_name", "cell_number"]
+		):
+			driver_map[row.name] = row
 
 	# Resolve Accommodation display labels once (collapsing Mahboula sub-camps),
 	# so the manifest page can group boarding staff camp-by-camp (MA2-11).
@@ -2232,6 +2251,8 @@ def get_manifest_data_for_plan(plan_name: str):
 				emp_copy["pickup_accommodation"] = matching_row.pickup_accommodation
 				emp_copy["pickup_camp_label"] = _acc_label(matching_row.pickup_accommodation)
 				emp_copy["stop_sequence"] = matching_row.stop_sequence or 1
+				emp_copy["trip_time"] = matching_row.trip_time
+				emp_copy["employee_action"] = matching_row.employee_action
 				emp_copy["operations_shift"] = matching_row.operations_shift
 				emp_copy["operations_site"] = matching_row.operations_site
 				emp_copy["operations_role"] = matching_row.operations_role
@@ -2330,7 +2351,9 @@ def get_manifest_data_for_plan(plan_name: str):
 	for vi, vid in enumerate(vehicle_order):
 		v_doc = vehicle_map.get(vid, {})
 		v_label = vid
-		driver_name = driver_map.get(v_doc.get("employee"), "\u2014") if v_doc.get("employee") else "\u2014"
+		driver_id = driver_of.get(vid)
+		driver = driver_map.get(driver_id) or {}
+		driver_name = driver.get("employee_name") or driver_id or "\u2014"
 		acc_label = veh_acc_map.get(v_doc.get("location"), v_doc.get("location", ""))
 		if acc_label in MAHBOULA_LABELS:
 			acc_label = "Mahboula Camp"
@@ -2340,7 +2363,10 @@ def get_manifest_data_for_plan(plan_name: str):
 		v_meta[v_label] = {
 			"accommodation": acc_label,
 			"driver": driver_name,
+			"driver_id": driver_id or "",
+			"driver_mobile": driver.get("cell_number") or "",
 			"seats": v_doc.get("seats") or 0,
+			"capacity": v_doc.get("custom_max_passenger_capacity") or 0,
 			"location": v_doc.get("location", ""),
 			"license_plate": v_doc.get("license_plate", ""),
 			"make": v_doc.get("make", ""),

@@ -31,7 +31,7 @@ def _system_fields(row) -> tuple:
 	"""The fields the sync owns, in a fixed order; scheduled_time last."""
 	return (
 		row.stop_name or "", row.stop_type or "", row.trip_name or "", row.employee_name or "",
-		row.stop_id or "", row.trip_id or "", row.scheduled_time,
+		row.stop_id or "", row.trip_id or "", row.trip_time or "", row.scheduled_time,
 	)
 
 
@@ -39,7 +39,7 @@ def _same_system_fields(before: tuple, after: tuple) -> bool:
 	return before[:-1] == after[:-1] and _same_time(before[-1], after[-1])
 
 
-def sync_manifest_details(manifest_doc, assignment_rows, emp_map):
+def sync_manifest_details(manifest_doc, assignment_rows, emp_map, departure_of=None):
 	"""Upsert child rows using compound key: (employee, trip_id, stop_id, employee_action).
 
 	New employees/stops are appended. Existing rows have system fields refreshed
@@ -52,7 +52,9 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map):
 		emp_map: Dict mapping card_id -> the card's riders, whichever way a leg of it
 			travels. There used to be a second map for RETURN legs and nothing ever
 			filled it, so every return row on a driver's manifest listed nobody while
-			its card carried the people (WI-002401).
+			its card carried the people.
+		departure_of: Optional callable(assignment_row) -> "HH:MM", the local time the
+			bus leaves this row's camp; written to ``trip_time``.
 
 	Returns:
 		True if any rows were added or updated.
@@ -101,6 +103,7 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map):
 		# there so the plan stays the single answer (WI-002171 AC 3.5).
 		action = "Dropping Off" if direction == "RETURN" else "Boarding"
 		stop_id_val = f"{a_row.stop_location or ''}|{direction}"
+		trip_time = (departure_of(a_row) if departure_of else None) or ""
 
 		for emp in emps:
 			emp_id = emp.get("id")
@@ -152,6 +155,8 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map):
 				row.scheduled_time = time_str
 				row.trip_name = new_trip_name
 				row.employee_name = new_emp_name
+				if departure_of:
+					row.trip_time = trip_time
 				# Backfill stop_id for pre-existing rows
 				if not row.stop_id or row.stop_id != stop_id_val:
 					row.stop_id = stop_id_val
@@ -172,6 +177,7 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map):
 					"stop_type": "Return" if direction == "RETURN" else "Pick Up",
 					"employee_action": action,
 					"scheduled_time": time_str,
+					"trip_time": trip_time,
 					"requires_reliever": 0,
 				})
 				changed = True
