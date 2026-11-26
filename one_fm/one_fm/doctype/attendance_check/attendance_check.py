@@ -200,7 +200,8 @@ class AttendanceCheck(Document):
         if employee_data.user_id and has_super_user_role(employee_data.user_id):
             return employee_data.user_id
 
-        check_name = self.name or f"{employee} {self.date}"
+        # before_insert runs before naming; build the name the autoname expression will give
+        check_name = self.name or f"HR-AC-{employee}_{self.date}_{self.roster_type}"
 
         # 1. Supervisor of the Operations Site on the Shift Assignment
         if shift_site:
@@ -209,7 +210,7 @@ class AttendanceCheck(Document):
                 frappe.log_error(
                     title="Attendance Check Approver",
                     message=_("Operations Site {0} has no supervisor — used employee's default site supervisor").format(shift_site)
-                        + f"\nAttendance Check: {check_name}"
+                        + "\n" + _("Attendance Check: {0}").format(check_name)
                 )
             else:
                 supervisor_user = frappe.db.get_value("Employee", site_supervisor, "user_id")
@@ -218,7 +219,7 @@ class AttendanceCheck(Document):
                 frappe.log_error(
                     title="Attendance Check Approver",
                     message=_("Site supervisor {0} has no user account linked").format(site_supervisor)
-                        + f"\nAttendance Check: {check_name}"
+                        + "\n" + _("Attendance Check: {0}").format(check_name)
                 )
 
         # 2. Fallback: supervisor of the Employee's default site (resolved live)
