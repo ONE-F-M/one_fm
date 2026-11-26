@@ -3,7 +3,7 @@ import requests
 from frappe import _
 from frappe.utils import cint, get_datetime
 from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
-from one_fm.one_fm.doctype.transportation_shipment.roster_overlay import apply_to_shift_map
+from one_fm.one_fm.doctype.transportation_shipment.roster_overlay import absent_employees, apply_to_shift_map
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
 from one_fm.operations.doctype.route_plan.route_plan import (
     _card_direction,
@@ -337,22 +337,26 @@ def get_grouped_employees_by_accommodation(skipped: dict | None = None, on_date=
     shift_names = [s.name for s in active_shifts]
 
     # 2. Today's rostered shift per Active employee: Working rows only, Basic over Over-Time.
-    #    Day Off, leave and every other availability get no seat.
+    #    Day Off, leave and every other availability get no seat. All rows are read so the
+    #    skip reason can tell a day off from no row at all.
     from one_fm.one_fm.page.transportation_schedule.traceability_matrix import _roster_row
 
     active = set(shift_names)
     rows_of = {}
     for row in frappe.get_all("Employee Schedule",
-        filters={"date": on_date or frappe.utils.today(), "employee_availability": "Working"},
+        filters={"date": on_date or frappe.utils.today()},
         fields=["employee", "shift", "employee_availability", "roster_type"]
     ):
         rows_of.setdefault(row.employee, []).append(row)
 
     emp_shift_map = {}
     for emp in frappe.get_all("Employee", filters={"status": "Active"}, pluck="name"):
-        row = _roster_row(rows_of.get(emp, []))
-        if not row or not row.shift:
-            skip([emp], _("Not rostered to work today"))
+        rows = rows_of.get(emp, [])
+        row = _roster_row(rows)
+        if not row and rows:
+            skip([emp], _("Day off applied ({0})").format(rows[0].employee_availability))
+        elif not row or not row.shift:
+            skip([emp], _("No roster entry"))
         elif row.shift not in active:
             skip([emp], _("Rostered shift {0} is not Active").format(row.shift))
         else:
@@ -363,10 +367,15 @@ def get_grouped_employees_by_accommodation(skipped: dict | None = None, on_date=
 
     # The overlay drops anyone on approved leave or being relieved, and files a reliever
     # under the shift they cover. It is resolved per date and stored nowhere.
+    rostered = set(emp_shift_map)
     emp_shift_map = apply_to_shift_map(emp_shift_map, on_date)
     if skipped is not None:
         for emp in emp_shift_map:
             skipped.pop(emp, None)
+        dropped = rostered - set(emp_shift_map)
+        on_leave = absent_employees(on_date, dropped) if dropped else {}
+        for emp in dropped:
+            skipped[emp] = _("On approved leave") if emp in on_leave else _("Day off applied (covered by a reliever)")
 
     # After the overlay, so a reliever is judged by the site of the shift they cover.
     no_transport = sites_without_transport()
@@ -454,7 +463,7 @@ def get_grouped_employees_by_accommodation(skipped: dict | None = None, on_date=
     for acc_key, data in accommodation_map.items():
         lookup_id = data["lookup_id"]
         if lookup_id not in acc_stop_map:
-            skip([e.name for e in data["employees"]], _("Camp {0} has no transport stop").format(lookup_id))
+            skip([e.name for e in data["employees"]], _("No stop location: camp {0} has no transport stop").format(lookup_id))
             continue
 
         nested_map[acc_key] = {

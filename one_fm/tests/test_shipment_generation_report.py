@@ -116,7 +116,7 @@ class TestTheDemand(ReconcileCase):
 		skipped = {}
 		self._grouped(get_all, {}, skipped)
 
-		self.assertEqual(skipped["E1"], "Not rostered to work today")
+		self.assertEqual(skipped["E1"], "No roster entry")
 		self.assertEqual(skipped["E2"], "Rostered shift S-OLD is not Active")
 
 	def test_demand_follows_todays_roster_not_the_master_shift(self):
@@ -137,7 +137,7 @@ class TestTheDemand(ReconcileCase):
 
 		shifts = {s: sorted(ids) for s, ids in nested["ACC-1"]["shifts"].items()}
 		self.assertEqual(shifts, {"S2": ["E1", "E4"], "S3": ["E2"]})
-		self.assertEqual(skipped, {"E3": "Not rostered to work today"})
+		self.assertEqual(skipped, {"E3": "Day off applied (Day Off)"})
 
 	def test_a_reliever_rides_the_shift_they_cover(self):
 		get_all = _tables(["S1", "S2"], {"E1": "S1", "R1": "S1"}, {"ACC-1": "Camp One"}, ["ACC-1"])
@@ -173,8 +173,7 @@ class TestSkipReasons(FrappeTestCase):
 
 		self.assertEqual(demands, [])
 		self.assertEqual(set(skipped), {"E1", "E2"})
-		self.assertIn("SITE-1", skipped["E1"])
-		self.assertIn("no route", skipped["E1"])
+		self.assertEqual(skipped["E1"], "No shift location: site SITE-1 has no map coordinates")
 
 	def test_zero_coordinates_count_as_none(self):
 		with patch.object(ts.frappe.db, "get_value", return_value=(0.0, 0.0)):
@@ -188,11 +187,11 @@ class TestSkipReasons(FrappeTestCase):
 			{"id": "E4", "name": "Four", "status": matrix.STATUS_POOL},
 		]
 		with patch.object(matrix, "_build_rows", return_value=rows):
-			unplaced = gen._unplaced({"E1": "Camp X has no transport stop"}, {"E3": {}})
+			unplaced = gen._unplaced({"E1": "No stop location: camp X has no transport stop"}, {"E3": {}})
 
 		self.assertEqual(
 			[(r["employee"], r["reason"]) for r in unplaced],
-			[("E1", "Camp X has no transport stop"), ("E2", "Demand produced but no card; see Error Log")],
+			[("E1", "No stop location: camp X has no transport stop"), ("E2", "Demand produced but no card; see Error Log")],
 		)
 
 	def test_the_matrix_says_why(self):
@@ -223,8 +222,8 @@ class TestTheRunKeepsWhatItMade(ReconcileCase):
 			pluck="generation_key",
 		)) - {None}
 
-		def prune(current_keys, keep=None):
-			return real_prune(set(current_keys) | pool, keep=keep)
+		def prune(current_keys, **kwargs):
+			return real_prune(set(current_keys) | pool, **kwargs)
 
 		with patch.object(gen._SeatCheck, "room", return_value=0):
 			summary = self._run([demand], [parent], _prune_stale=prune)
