@@ -15,7 +15,7 @@ demand has disappeared. Assigned shipments are never touched.
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, escape_html, get_datetime, getdate, today
+from frappe.utils import add_days, escape_html, get_datetime, get_time, getdate, today
 
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
 	driver_employees,
@@ -164,7 +164,7 @@ def build_demand_descriptors(nested_map: dict, skipped: dict | None = None) -> l
 		lookup_id = acc_data["lookup_id"]
 		if not get_coords("Accommodation", lookup_id):
 			for emp_list in acc_data["shifts"].values():
-				skip(emp_list, _("Camp {0} transport stop has no coordinates").format(lookup_id))
+				skip(emp_list, _("No stop location: camp {0} transport stop has no coordinates").format(lookup_id))
 			continue
 
 		olm_groups = {}
@@ -240,9 +240,9 @@ def build_demand_descriptors(nested_map: dict, skipped: dict | None = None) -> l
 			if not handled:
 				site_loc = site_location_map.get(operations_site)
 				if not site_loc:
-					skip(employee_list, _("Shift {0} has no site (no route)").format(shift_name))
+					skip(employee_list, _("No shift location: shift {0} has no site").format(shift_name))
 				elif not get_coords("Location", site_loc):
-					skip(employee_list, _("Site {0} location has no coordinates (no route)").format(operations_site))
+					skip(employee_list, _("No shift location: site {0} has no map coordinates").format(operations_site))
 				else:
 					demands.append({
 						"acc_name": acc_name,
@@ -260,7 +260,7 @@ def build_demand_descriptors(nested_map: dict, skipped: dict | None = None) -> l
 		# ── Emit aggregated OLM demands for this accommodation ──
 		for (stop_location, start_key, end_key), grp in olm_groups.items():
 			if not get_coords("Location", stop_location):
-				skip(grp["employees"], _("Stop {0} has no coordinates (no route)").format(stop_location))
+				skip(grp["employees"], _("No stop location: stop {0} has no coordinates").format(stop_location))
 				continue
 			# Several shifts can share one window - different roles finishing together -
 			# so the card names the one it serves when there is one, and lists them all
@@ -371,7 +371,7 @@ def _write_roster(doc, demand: dict, roster: list, relievers: dict = None) -> No
 			row.update({
 				"is_reliever": 1,
 				"relieving_employee": cover.get("relieving_employee"),
-				"relieving_employee_name": cover.get("relieving_employee_name"),
+				"relieving_employee_name": _covered_name(cover),
 				"absence_reason": cover.get("absence_reason"),
 				"leave_from": cover.get("leave_from"),
 				"leave_to": cover.get("leave_to"),
@@ -383,11 +383,197 @@ def _write_roster(doc, demand: dict, roster: list, relievers: dict = None) -> No
 	doc.headcount = len(doc.transportation_shipment_employee)
 
 
+def _covered_name(cover: dict) -> str:
+	"""The covered person's name, or "Not available" when their record is incomplete.
+
+	A reliever whose covered person cannot be resolved is still shown and marked; the
+	name reads as unavailable rather than blank or hidden.
+	"""
+	return (cover or {}).get("relieving_employee_name") or frappe._("Not available")
+
+
+def _date_or_none(value):
+	return str(value) if value else None
+
+
+def _row_signature(row) -> tuple:
+	"""What the driver sees for one stored rider: who, and the cover details if any."""
+	return (
+		row.employee_id,
+		row.employee_name,
+		row.relieving_employee or None,
+		row.relieving_employee_name or None,
+		row.absence_reason or None,
+		_date_or_none(row.leave_from),
+		_date_or_none(row.leave_to),
+	)
+
+
+def _roster_signature(emp: dict, cover: dict = None) -> tuple:
+	"""The same tuple for a rider the generator is about to write."""
+	if not cover:
+		return (emp["id"], emp["name"], None, None, None, None, None)
+	return (
+		emp["id"],
+		emp["name"],
+		cover.get("relieving_employee") or None,
+		_covered_name(cover),
+		cover.get("absence_reason") or None,
+		_date_or_none(cover.get("leave_from")),
+		_date_or_none(cover.get("leave_to")),
+	)
+
+
 def _pinned_rows(doc) -> list:
 	return [row for row in doc.get("transportation_shipment_employee") or [] if row.get("assignment_scope")]
 
 
-def _refresh_assigned_roster(name: str, demand: dict, roster: list, relievers: dict = None) -> bool:
+# ─── What a run changed, per card ─────────────────────────────────────────────
+#
+# Riders are compared by employee_id. _write_roster re-creates every child row, so
+# Frappe's Version diff (which matches rows by name) reports every rider as replaced.
+
+RIDER = "Rider"
+COVERING = "Covering"
+HEADER_FIELDS = ("start_time", "end_time", "operations_site", "stop_location", "routing_type_badge",
+				 "aggregated_shifts")
+HEADER_LABELS = {
+	"start_time": "Start Time",
+	"end_time": "End Time",
+	"operations_site": "Operations Site",
+	"stop_location": "Stop Location",
+	"routing_type_badge": "Routing Type",
+	"aggregated_shifts": "Shifts",
+}
+
+
+def _crew(doc) -> dict:
+	"""{employee_id: row signature} for the card's stored riders."""
+	return {row.employee_id: _row_signature(row) for row in doc.get("transportation_shipment_employee") or []}
+
+
+def _cover_label(sig) -> str:
+	"""Who a rider covers, as one line: name, reason and leave dates when known."""
+	if not sig[2]:
+		return ""
+	details = ", ".join(str(v) for v in (sig[4], sig[5] and sig[6] and f"{sig[5]} - {sig[6]}") if v)
+	return f"{sig[3] or sig[2]} ({details})" if details else (sig[3] or sig[2])
+
+
+def _change(emp, name, field, old, new) -> dict:
+	return {"employee": emp, "employee_name": name, "shift": None, "field": field,
+			"old": old or "", "new": new or "", "reason": None}
+
+
+def _crew_diff(before: dict, after: dict) -> list:
+	"""Riders added, removed, and riders whose cover changed, matched by employee id.
+
+	Both sides are ``{employee_id: signature}`` (see _row_signature); order is ignored.
+	"""
+	changes = []
+	for emp, sig in after.items():
+		if emp not in before:
+			changes.append(_change(emp, sig[1], RIDER, "", sig[1]))
+		elif before[emp][2:] != sig[2:]:
+			changes.append(_change(emp, sig[1], COVERING, _cover_label(before[emp]), _cover_label(sig)))
+	for emp, sig in before.items():
+		if emp not in after:
+			changes.append(_change(emp, sig[1], RIDER, sig[1], ""))
+	return changes
+
+
+def _header_value(field, value):
+	if not value:
+		return None
+	if field in ("start_time", "end_time"):
+		# The database gives timedelta, the demand whatever Operations Shift returned.
+		return str(get_time(value))
+	return str(value)
+
+
+def _header(doc) -> dict:
+	return {field: _header_value(field, doc.get(field)) for field in HEADER_FIELDS}
+
+
+def _header_diff(before: dict, doc) -> list:
+	"""Header fields that differ between ``before`` (raw values) and ``doc``."""
+	changes = []
+	for field in HEADER_FIELDS:
+		old, new = _header_value(field, before.get(field)), _header_value(field, doc.get(field))
+		if old != new:
+			changes.append(_change(None, None, _(HEADER_LABELS[field]), old, new))
+	return changes
+
+
+def _record(summary: dict, card, action: str, changes=(), direction=None, note=None) -> None:
+	"""Add one card's result to summary["cards"]; a card already listed is merged.
+
+	``card`` is a shipment doc, a live-card row, or a dict with name/status/accommodation/shift.
+	"""
+	cards = summary.setdefault("cards", [])
+	name = card.get("name")
+	# ponytail: linear scan, about a thousand live cards a run
+	entry = next((e for e in cards if e["card"] == name), None)
+	if entry:
+		entry["changes"].extend(changes)
+		if action != "unchanged" and (entry["action"] == "unchanged" or action == "cancelled"):
+			entry["action"] = action
+		entry["note"] = note or entry.get("note")
+		return
+	cards.append({
+		"card": name,
+		"action": action,
+		"direction": direction or (_own_direction(card) if card.get("trip_direction") else card.get("direction")),
+		"status": card.get("status"),
+		"accommodation": card.get("accommodation"),
+		"shift": card.get("operations_shift") or card.get("aggregated_shifts") or card.get("shift"),
+		"note": note,
+		"changes": list(changes),
+	})
+
+
+def _card_shifts(card) -> set:
+	if not card:
+		return set()
+	shifts = {card.get("operations_shift")} | set((card.get("aggregated_shifts") or "").split(", "))
+	return shifts - {None, ""}
+
+
+def _rider_reason(change: dict, old_card, new_card, emp_shift: dict, skip_reason: str | None) -> str:
+	"""Why a rider joined or left a card, in the coordinator's terms.
+
+	``old_card`` carried the rider before the run, ``new_card`` carries them now; either is
+	None when there is no such card. Cards are dicts with accommodation, operations_shift,
+	aggregated_shifts and is_split_overflow.
+	"""
+	if change["field"] == COVERING:
+		return _("Reliever changed")
+	if change["field"] != RIDER:
+		return _("Shift times, stop or route changed")
+
+	added = bool(change["new"])
+	if not (old_card if added else new_card):
+		if added:
+			return _("Employee added to roster")
+		if skip_reason and skip_reason.startswith((_("Day off applied"), _("On approved leave"))):
+			return skip_reason
+		if skip_reason:
+			return _("Employee removed from roster: {0}").format(skip_reason)
+		return _("Employee removed from roster")
+
+	old_card, new_card = old_card or {}, new_card or {}
+	if old_card.get("accommodation") != new_card.get("accommodation"):
+		return _("Accommodation changed")
+	shift = emp_shift.get(change["employee"])
+	if shift and shift not in _card_shifts(old_card):
+		return _("Shift changed")
+	if new_card.get("is_split_overflow"):
+		return _("Moved to overflow card (bus full)")
+	return _("Shift times, stop or route changed")
+
+
+def _refresh_assigned_roster(name: str, demand: dict, roster: list, relievers: dict = None,
+							 changes: list | None = None) -> bool:
 	"""Bring a PLACED card's crew up to date without disturbing where it is placed.
 
 	A shipment answers two different questions: WHERE the bus goes, which the Route
@@ -401,26 +587,25 @@ def _refresh_assigned_roster(name: str, demand: dict, roster: list, relievers: d
 	alone: generation_key and pair_group are what the Route Plan Assignment row
 	points at, and rewriting them would orphan the placement this is trying to
 	preserve. Returns True when something actually changed, so an unchanged card is
-	not saved and does not churn `modified`.
+	not saved and does not churn `modified`. ``changes``, when given, receives the crew diff.
 	"""
 	relievers = relievers or {}
 	doc = frappe.get_doc("Transportation Shipment", name)
 	# The reliever tag is part of the crew, not decoration: the same people with a
 	# different person being covered is still a change the driver needs to see.
-	before = [
-		(row.employee_id, row.employee_name, row.relieving_employee or None)
-		for row in doc.transportation_shipment_employee
-	]
+	before = [_row_signature(row) for row in doc.transportation_shipment_employee]
 	pinned = _pinned_rows(doc)
 	held = {row.employee_id for row in pinned}
 	after = [
-		(emp["id"], emp["name"], (relievers.get(emp["id"]) or {}).get("relieving_employee"))
+		_roster_signature(emp, relievers.get(emp["id"]))
 		for emp in roster
 		if emp["id"] not in held
-	] + [(row.employee_id, row.employee_name, row.relieving_employee or None) for row in pinned]
+	] + [_row_signature(row) for row in pinned]
 	if before == after:
 		return False
 
+	if changes is not None:
+		changes.extend(_crew_diff({sig[0]: sig for sig in before}, {sig[0]: sig for sig in after}))
 	_write_roster(doc, demand, roster, relievers)
 	doc.save(ignore_permissions=True)
 	return True
@@ -461,7 +646,8 @@ def generate_transportation_shipments() -> dict:
 
 		summary = {"created": 0, "updated": 0, "refreshed": 0, "deleted": 0, "errors": 0,
 		           "repaired": 0, "overflowed": 0, "flagged": 0, "pruned": False, "expired": expired,
-		           "skipped_sites": {site: len(emps) for site, emps in skipped_sites.items()}}
+		           "skipped_sites": {site: len(emps) for site, emps in skipped_sites.items()},
+		           "cards": []}
 
 		# A rider pinned to a card by hand rides that card only, so they leave the demand
 		# roster of that direction and no demand card seats them as well.
@@ -496,11 +682,14 @@ def generate_transportation_shipments() -> dict:
 			# crew rostered on it yesterday, not the one starting tonight.
 			yesterday = add_days(today(), -1)
 			night_relievers = reliever_context(yesterday)
-			for demand in build_demand_descriptors(get_grouped_employees_by_accommodation(on_date=yesterday)):
+			night_map = get_grouped_employees_by_accommodation(on_date=yesterday)
+			for demand in build_demand_descriptors(night_map):
 				if demand["employees"] and _overnight(demand):
 					for emp in target(demand, "Return", night_relievers):
 						skipped.pop(emp["id"], None)
-			_reconcile(targets, set(targets), summary, failed)
+			emp_shift = _employee_shifts(night_map)
+			emp_shift.update(_employee_shifts(nested_map))
+			_reconcile(targets, set(targets), summary, failed, emp_shift=emp_shift, skipped=skipped)
 		current_keys = set(targets)
 
 		_report(summary, skipped, failed, scheduled)
@@ -521,15 +710,31 @@ def generate_transportation_shipments() -> dict:
 	return summary
 
 
+def _employee_shifts(nested_map: dict) -> dict:
+	"""{employee: rostered shift} from a demand map."""
+	return {
+		emp: shift
+		for acc_data in (nested_map or {}).values() if isinstance(acc_data, dict)
+		for shift, emps in (acc_data.get("shifts") or {}).items()
+		for emp in emps
+	}
+
+
 def _overnight(demand: dict) -> bool:
 	"""A shift whose end time is at or before its start time ends the next morning."""
 	start, end = demand.get("start_time"), demand.get("end_time")
 	return start is not None and end is not None and end <= start
 
 
-def _reconcile(targets: dict, current_keys: set, summary: dict, failed: dict) -> None:
-	"""Put today's demand on cards, settle orphaned placed cards and prune the pool."""
+def _reconcile(targets: dict, current_keys: set, summary: dict, failed: dict,
+			   emp_shift: dict | None = None, skipped: dict | None = None) -> None:
+	"""Put today's demand on cards, settle orphaned placed cards and prune the pool.
+
+	Every card the run touches is recorded in summary["cards"], each rider change with a reason.
+	"""
 	cards = _live_cards()
+	# Where each rider was before anything is written.
+	before = {(emp, _own_direction(card)): card.name for card in cards.values() for emp in card.riders}
 	summary["repaired"] = _repair_mixed_keys(cards, current_keys)
 	families = _families(cards, current_keys)
 	seats = _SeatCheck()
@@ -549,6 +754,7 @@ def _reconcile(targets: dict, current_keys: set, summary: dict, failed: dict) ->
 				_write_shipment(doc, demand, direction, roster, gen_key, pair_group, relievers)
 				doc.insert(ignore_permissions=True)
 				summary["created"] += 1
+				_record(summary, doc, "created", _crew_diff({}, _crew(doc)))
 				owner.update({(emp["id"], direction): doc.name for emp in roster})
 				carrying.add(doc.name)
 				continue
@@ -570,7 +776,41 @@ def _reconcile(targets: dict, current_keys: set, summary: dict, failed: dict) ->
 
 	summary["pruned"] = True
 	# carrying includes overflow cards made this run: their `#n` keys are never produced.
-	summary["deleted"] = _prune_stale(current_keys, keep=produced | carrying)
+	removed = []
+	summary["deleted"] = _prune_stale(current_keys, keep=produced | carrying, removed=removed)
+	for card in removed:
+		_record(summary, card, "cancelled")
+
+	_explain(summary, cards, before, owner, emp_shift or {}, skipped or {})
+
+
+def _explain(summary: dict, cards: dict, before: dict, owner: dict, emp_shift: dict, skipped: dict) -> None:
+	"""Fill each recorded card's camp and shift, and each change's shift and reason."""
+	fields = ["name", "status", "accommodation", "operations_shift", "aggregated_shifts", "is_split_overflow"]
+	touched = [e["card"] for e in summary.get("cards", []) if e["action"] != "cancelled"]
+	now = {
+		row.name: row
+		for row in (frappe.get_all("Transportation Shipment", filters={"name": ["in", touched]}, fields=fields)
+					if touched else [])
+	}
+
+	for entry in summary.get("cards", []):
+		card = now.get(entry["card"]) or cards.get(entry["card"]) or {}
+		entry["accommodation"] = entry["accommodation"] or card.get("accommodation")
+		entry["shift"] = entry["shift"] or card.get("operations_shift") or card.get("aggregated_shifts")
+		entry["status"] = card.get("status") or entry["status"]
+		for change in entry["changes"]:
+			emp = change["employee"]
+			change["shift"] = emp_shift.get(emp) or entry["shift"]
+			if change["field"] == RIDER and change["new"]:
+				old = before.get((emp, entry["direction"]))
+				old_card = cards.get(old) if old and old != entry["card"] else None
+				new_card = card
+			else:
+				old_card = cards.get(entry["card"]) or card
+				new = owner.get((emp, entry["direction"]))
+				new_card = (now.get(new) or cards.get(new) or {}) if new and new != entry["card"] else None
+			change["reason"] = _rider_reason(change, old_card, new_card, emp_shift, skipped.get(emp))
 
 
 # ─── What the run left undone ─────────────────────────────────────────────────
@@ -583,6 +823,9 @@ def _report(summary: dict, skipped: dict, failed: dict, scheduled: bool) -> None
 	summary["generated"] = summary["created"] + summary["overflowed"]
 	summary["failed"] = list(failed.values())
 	summary["skipped"] = _unplaced(skipped, failed)
+	actions = [entry["action"] for entry in summary.setdefault("cards", [])]
+	summary["counts"] = {action: actions.count(action) for action in ("created", "updated", "unchanged", "cancelled")}
+	summary["counts"].update(skipped=len(summary["skipped"]), failed=len(summary["failed"]))
 
 	# The Traceability Matrix shows the same reason against each Missing row.
 	frappe.cache.set_value(
@@ -685,7 +928,8 @@ def _live_cards() -> dict:
 		"Transportation Shipment",
 		filters={"source_doctype": "Operations Shift", "status": ["in", LIVE_STATUSES]},
 		fields=["name", "status", "generation_key", "trip_direction", "pre_merge_trip_direction",
-				"is_split_overflow", "split_root", "needs_replan", "creation"],
+				"is_split_overflow", "split_root", "needs_replan", "creation",
+				"accommodation", "operations_shift", "aggregated_shifts"],
 		order_by="creation asc",
 	):
 		row.riders = []
@@ -905,16 +1149,24 @@ def _distribute(family, demand, direction, roster, gen_key, pair_group, reliever
 
 	root = family[0]
 	changed = set()
+	changes = {card.name: [] for card in family}
 
 	def write(card):
 		crew = [by_id[emp] for emp in order if holder.get(emp) == card.name]
 		if card is root and card.status == "Unassigned":
 			# Unplaced, so its header follows the demand too (times, sites, shifts).
 			doc = frappe.get_doc("Transportation Shipment", card.name)
+			header, riders = _header(doc), _crew(doc)
 			_write_shipment(doc, demand, direction, crew, gen_key, pair_group, relievers)
-			doc.save(ignore_permissions=True)
-			changed.add(card.name)
-		elif _refresh_assigned_roster(card.name, demand, crew, relievers):
+			after = _crew(doc)
+			diff = _header_diff(header, doc) + _crew_diff(riders, after)
+			# Nothing a rider or driver sees moved: no save, no `modified` churn, no Version.
+			if diff or riders != after:
+				doc.save(ignore_permissions=True)
+			if diff:
+				changed.add(card.name)
+				changes[card.name].extend(diff)
+		elif _refresh_assigned_roster(card.name, demand, crew, relievers, changes=changes[card.name]):
 			changed.add(card.name)
 
 	for card in family:
@@ -947,12 +1199,15 @@ def _distribute(family, demand, direction, roster, gen_key, pair_group, reliever
 			_delete_card(card.name)
 			summary["deleted"] += 1
 			changed.discard(card.name)
+			_record(summary, card, "cancelled", changes[card.name])
 			continue
 		empty = not carries and card.status == "Assigned"
 		_set_replan_flag(card, _("No riders are left on this card.") if empty else None)
+		_record(summary, card, "updated" if changes[card.name] else "unchanged", changes[card.name])
 
 	if root.status == "Unassigned":
-		summary["updated"] += 1
+		# Counts only a pool card that really changed.
+		summary["updated"] += root.name in changed
 		changed.discard(root.name)
 	summary["refreshed"] += len(changed)
 
@@ -960,6 +1215,9 @@ def _distribute(family, demand, direction, roster, gen_key, pair_group, reliever
 		overflow = _new_overflow(root.name, demand, direction, [by_id[emp] for emp in waiting], relievers)
 		holder.update({emp: overflow for emp in waiting})
 		summary["overflowed"] += 1
+		_record(summary, frappe._dict(name=overflow, status="Unassigned"), "created", _crew_diff({}, {
+			emp: _roster_signature(by_id[emp], (relievers or {}).get(emp)) for emp in waiting
+		}), direction=direction)
 
 	return holder
 
@@ -1018,16 +1276,20 @@ def _settle_orphans(cards: dict, produced: set, owner: dict, summary: dict) -> i
 			left = [emp for emp in card.riders if emp in gone and emp not in moved]
 			stays = [emp for emp in card.riders if emp not in moved and emp not in gone]
 
+			changes = []
 			if moved or left:
 				doc = frappe.get_doc("Transportation Shipment", card.name)
 				for row in [r for r in doc.transportation_shipment_employee
 							if r.employee_id in moved or r.employee_id in gone]:
+					changes.append(_change(row.employee_id, row.employee_name, RIDER, row.employee_name, ""))
 					doc.remove(row)
 				doc.headcount = len(doc.transportation_shipment_employee)
 				doc.save(ignore_permissions=True)
 				summary["refreshed"] += 1
 
-			_set_replan_flag(card, _replan_reason(moved, stays, left))
+			reason = _replan_reason(moved, stays, left)
+			_set_replan_flag(card, reason)
+			_record(summary, card, "updated" if changes else "unchanged", changes, note=reason)
 			flagged += 1
 		except Exception:
 			summary["errors"] += 1
@@ -1135,17 +1397,19 @@ class _SeatCheck:
 			and _peak_concurrent_headcount(trips) <= limit
 
 
-def _prune_stale(current_keys: set, keep=None) -> int:
+def _prune_stale(current_keys: set, keep=None, removed: list | None = None) -> int:
 	"""Delete Unassigned shift-generated shipments whose demand disappeared.
 
 	``keep`` spares the cards a run has just reconciled: an unplaced overflow card's
-	`#n` key is never produced, but its riders are still today's demand.
+	`#n` key is never produced, but its riders are still today's demand. ``removed``,
+	when given, receives each deleted card (name, accommodation, shift, direction).
 	"""
 	keep = set(keep or ()) | set(_pins().values())
 	stale = frappe.get_all(
 		"Transportation Shipment",
 		filters={"source_doctype": "Operations Shift", "status": "Unassigned"},
-		fields=["name", "generation_key"],
+		fields=["name", "generation_key", "accommodation", "operations_shift", "aggregated_shifts",
+				"trip_direction", "pre_merge_trip_direction"],
 	)
 	deleted = 0
 	for row in stale:
@@ -1156,6 +1420,12 @@ def _prune_stale(current_keys: set, keep=None) -> int:
 				_release_manifest_references(row.name)
 				_delete_card(row.name)
 				deleted += 1
+				if removed is not None:
+					removed.append(frappe._dict(
+						name=row.name, status="Unassigned", accommodation=row.accommodation,
+						shift=row.operations_shift or row.aggregated_shifts,
+						direction=_own_direction(frappe._dict(row)),
+					))
 			except Exception:
 				frappe.log_error(frappe.get_traceback(), "Transportation Shipment Prune Error")
 	return deleted

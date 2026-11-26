@@ -86,7 +86,7 @@ class TestTheBusHome(FrappeTestCase):
 		self._targets(
 			[dict(DAY, employees=_roster("T1"))],
 			[dict(NIGHT, employees=_roster("Y1"))],
-			skipped_today={"Y1": "Not rostered to work today", "Z1": "Not rostered to work today"},
+			skipped_today={"Y1": "No roster entry", "Z1": "No roster entry"},
 		)
 		self.assertNotIn("Y1", self.skipped)
 		self.assertIn("Z1", self.skipped)
