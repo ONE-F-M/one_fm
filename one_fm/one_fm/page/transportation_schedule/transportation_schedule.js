@@ -5776,13 +5776,18 @@ function mountRoutePlannerApp(wrapper, data, preloaded) {
                 });
             },
 
-            // Counts plus every eligible employee the run left without a card, and why.
+            // One count per result; each non-zero count opens the cards, riders and reasons behind it.
             showGenerateSummary(s) {
                 const esc = frappe.utils.escape_html;
-                const rows = [
-                    ...(s.failed || []).map(r => [__('Failed'), r]),
-                    ...(s.skipped || []).map(r => [__('Skipped'), r]),
-                ];
+                const counts = s.counts || {};
+                const labels = {
+                    created: __('Created'),
+                    updated: __('Updated'),
+                    unchanged: __('Unchanged'),
+                    cancelled: __('Cancelled'),
+                    skipped: __('Skipped'),
+                    failed: __('Failed'),
+                };
                 const extra = [];
                 // A placed card whose crew changed is reported apart from a rewritten pool
                 // card: the run stayed where the dispatcher put it, only its people moved.
@@ -5798,26 +5803,67 @@ function mountRoutePlannerApp(wrapper, data, preloaded) {
                     extra.push(__('Skipped sites (Transport Required = No): {0}',
                         [skippedSites.map(([site, n]) => `${site} (${n})`).join(', ')]));
                 }
-                const table = rows.length
-                    ? `<table class="table table-sm table-bordered mt-3 mb-0">
-                        <thead><tr>${[__('Result'), __('Employee'), __('Name'), __('Reason')].map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
-                        <tbody>${rows.map(([result, r]) => `<tr><td>${esc(result)}</td><td>${esc(r.employee || '')}</td><td>${esc(r.employee_name || '')}</td><td>${esc(r.reason || '')}</td></tr>`).join('')}</tbody>
-                       </table>`
-                    : '';
-                frappe.msgprint({
+                const tiles = Object.entries(labels).map(([key, label]) => {
+                    const n = counts[key] || 0;
+                    const count = n
+                        ? `<button type="button" class="btn btn-link p-0 font-weight-bold" data-action="${key}">${n}</button>`
+                        : `<span class="font-weight-bold">${n}</span>`;
+                    return `<div class="mr-4">${count} ${esc(label)}</div>`;
+                }).join('');
+                const dialog = frappe.msgprint({
                     title: __('Shipments Generated'),
-                    indicator: (rows.length || s.flagged) ? 'orange' : 'green',
-                    wide: rows.length > 0,
-                    message: `<div class="d-flex flex-wrap">
-                            <div class="mr-4"><span class="font-weight-bold">${s.generated || 0}</span> ${__('generated')}</div>
-                            <div class="mr-4"><span class="font-weight-bold">${s.updated || 0}</span> ${__('updated')}</div>
-                            <div class="mr-4"><span class="font-weight-bold">${(s.skipped || []).length}</span> ${__('skipped')}</div>
-                            <div class="mr-4"><span class="font-weight-bold">${s.deleted || 0}</span> ${__('deleted')}</div>
-                            <div class="mr-4"><span class="font-weight-bold">${(s.failed || []).length}</span> ${__('failed')}</div>
-                        </div>
-                        ${extra.length ? `<div class="text-muted small mt-2">${esc(extra.join(', '))}</div>` : ''}
-                        ${table}`,
+                    indicator: (counts.skipped || counts.failed || s.flagged) ? 'orange' : 'green',
+                    message: `<div class="d-flex flex-wrap">${tiles}</div>
+                        ${extra.length ? `<div class="text-muted small mt-2">${esc(extra.join(', '))}</div>` : ''}`,
                 });
+                dialog.$wrapper.find('[data-action]').on('click', (e) => {
+                    const action = $(e.currentTarget).attr('data-action');
+                    this.showGenerateDetail(s, action, labels[action]);
+                });
+            },
+
+            // The rows behind one summary count, with a text filter.
+            showGenerateDetail(s, action, label) {
+                const esc = frappe.utils.escape_html;
+                const text = (v) => esc(v == null ? '' : String(v));
+                const link = (name) =>
+                    `<a href="/app/transportation-shipment/${encodeURIComponent(name)}" target="_blank">${text(name)}</a>`;
+                const who = (c) => c.employee ? `${text(c.employee_name)} (${text(c.employee)})` : '';
+                let head, rows;
+                if (action === 'skipped' || action === 'failed') {
+                    head = [__('Employee'), __('Name'), __('Reason')];
+                    rows = (s[action] || []).map(r => [text(r.employee), text(r.employee_name), text(r.reason)]);
+                } else {
+                    const cards = (s.cards || []).filter(c => c.action === action);
+                    if (action === 'unchanged') {
+                        head = [__('Card'), __('Direction'), __('Accommodation'), __('Shift'), __('Status'), __('Note')];
+                        rows = cards.map(c => [link(c.card), text(c.direction), text(c.accommodation),
+                            text(c.shift), text(c.status), text(c.note)]);
+                    } else {
+                        head = [__('Card'), __('Direction'), __('Employee'), __('Shift'), __('Field'),
+                            __('Old'), __('New'), __('Reason')];
+                        rows = cards.flatMap(c => (c.changes || []).length
+                            ? c.changes.map(ch => [link(c.card), text(c.direction), who(ch), text(ch.shift),
+                                text(__(ch.field)), text(ch.old), text(ch.new), text(ch.reason)])
+                            : [[link(c.card), text(c.direction), '', text(c.shift), '', '', '', text(c.note)]]);
+                    }
+                }
+                const d = new frappe.ui.Dialog({ title: `${label} (${rows.length})`, size: 'extra-large' });
+                d.$body.html(`
+                    <input type="search" class="form-control form-control-sm mb-3" placeholder="${text(__('Search'))}">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead><tr>${head.map(h => `<th>${text(h)}</th>`).join('')}</tr></thead>
+                            <tbody>${rows.map(r => `<tr>${r.map(v => `<td>${v}</td>`).join('')}</tr>`).join('')}</tbody>
+                        </table>
+                    </div>`);
+                d.$body.find('input[type=search]').on('input', function () {
+                    const q = (this.value || '').toLowerCase();
+                    d.$body.find('tbody tr').each(function () {
+                        $(this).toggleClass('d-none', !!q && !this.textContent.toLowerCase().includes(q));
+                    });
+                });
+                d.show();
             },
 
             // Re-read the pool from the persisted shipments. Anything that changes a card
