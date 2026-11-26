@@ -92,7 +92,6 @@ def create_resignation(
         doc.employment_type = emp.get("employment_type")
         doc.project_allocation = emp.get("project")
         doc.designation = emp.get("designation")
-        # The Frappe workflow is inactive; the process map's "Set State: Draft" step sets workflow_state
         doc.insert()
 
         # Step 2: Attach the letter (must happen after insert so the doc has a name)
@@ -108,7 +107,9 @@ def create_resignation(
             }
             handle_attachment_internal(doc, doc, att_data, "resignation_letter")
 
-        return {"status": "success", "message": _("Resignation saved. Submit it for review."), "name": doc.name}
+        doc.reload()
+        apply_workflow(doc, "Submit for Review")
+        return {"status": "success", "message": _("Resignation submitted successfully"), "name": doc.name}
 
     except Exception as e:
         frappe.log_error("Create Resignation Error", f"Exception: {str(e)}\n\nTraceback:\n{frappe.get_traceback()}")
