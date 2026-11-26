@@ -1056,3 +1056,9 @@ class TestEachAppearanceGetsItsOwnManifestRow(FrappeTestCase):
 		indexes = _ts._index_manifest_rows([row])
 
 		self.assertEqual(self._claim(indexes, set(), "TRIP-A").name, "ROW-OLD")
+
+
+class TestManifestEndpointIsWhitelisted(FrappeTestCase):
+	def test_only_the_endpoint_is_whitelisted(self):
+		self.assertIn(_ts.get_manifest_data_for_plan, frappe.whitelisted)
+		self.assertNotIn(_ts._index_manifest_rows, frappe.whitelisted)

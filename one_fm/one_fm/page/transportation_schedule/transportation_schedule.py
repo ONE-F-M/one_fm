@@ -1907,7 +1907,6 @@ def _rebase_stamp(stamp, departure):
 		return stamp
 
 
-@frappe.whitelist()
 def _index_manifest_rows(rows) -> tuple:
 	"""Manifest detail rows keyed by (employee, stop_id, trip_id, action) and by
 	(employee, stop_name, trip_id, action), every row kept in row order."""
@@ -1945,6 +1944,7 @@ def _claim_manifest_row(indexes, employee, stop_location, trip_id, is_return, cl
 	return None
 
 
+@frappe.whitelist()
 def get_manifest_data_for_plan(plan_name: str):
 	"""Build manifest ROUTE_DATA from a saved Route Plan.
 
