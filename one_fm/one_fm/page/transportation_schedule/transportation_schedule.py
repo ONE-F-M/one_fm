@@ -1133,8 +1133,7 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             "name": row.employee_name or row.employee_id,
             "mobile": row.cell_number or "",
             # Only the row flag marks a reliever: they are standing in for somebody on THIS
-            # card today. The Rambo standing role (`custom_is_rambo_reliever`) no longer
-            # counts, so a regular employee is never badged on another trip's card.
+            # card today. The standing Rambo role on Employee does not count.
             "is_reliever": bool(row.is_reliever),
             # Only set when this rider is covering someone, and only for the day the card
             # was generated for - the drawer prints it as "Relieving X | ...".
@@ -1909,6 +1908,43 @@ def _rebase_stamp(stamp, departure):
 
 
 @frappe.whitelist()
+def _index_manifest_rows(rows) -> tuple:
+	"""Manifest detail rows keyed by (employee, stop_id, trip_id, action) and by
+	(employee, stop_name, trip_id, action), every row kept in row order."""
+	primary, by_stop_name = {}, {}
+	for r in rows:
+		primary.setdefault(
+			(r.employee, r.stop_id or "", r.trip_id or "", r.employee_action), []
+		).append(r)
+		by_stop_name.setdefault(
+			(r.employee, r.stop_name or "", r.trip_id or "", r.employee_action), []
+		).append(r)
+	return primary, by_stop_name
+
+
+def _claim_manifest_row(indexes, employee, stop_location, trip_id, is_return, claimed: set):
+	"""The manifest row for one appearance of ``employee``, or None.
+
+	Matches on stop_id, then on stop_name for rows made before stop_id existed, always on
+	the same trip and action. There is no employee-only fallback, so a row from another
+	trip never lends its attendance or replacement. A row is handed out once (``claimed``).
+	"""
+	primary, by_stop_name = indexes
+	action = "Dropping Off" if is_return else "Boarding"
+	direction = "RETURN" if is_return else "OUTBOUND"
+	stop_location = stop_location or ""
+	keys = (
+		(primary, (employee, f"{stop_location}|{direction}", trip_id or "", action)),
+		(by_stop_name, (employee, stop_location, trip_id or "", action)),
+	)
+	for index, key in keys:
+		for r in index.get(key, ()):
+			if id(r) not in claimed:
+				claimed.add(id(r))
+				return r
+	return None
+
+
 def get_manifest_data_for_plan(plan_name: str):
 	"""Build manifest ROUTE_DATA from a saved Route Plan.
 
@@ -2147,32 +2183,17 @@ def get_manifest_data_for_plan(plan_name: str):
 		):
 			reliever_info[_e.name] = _e
 
-	# Per manifest, built once: every row for each lookup key, in row order. A passenger can
-	# appear more than once under one key, so each appearance is handed its own row in
-	# turn (see _next_row) rather than all of them sharing the first.
+	# Per manifest, built once. Rows handed out are remembered so two appearances under
+	# one key get two rows (see _claim_manifest_row).
 	_row_index_cache = {}
 	_claimed_rows = set()
 
 	def _row_indexes(vehicle_id, manifest_doc):
 		if vehicle_id not in _row_index_cache:
-			primary, by_stop_name = {}, {}
-			for r in manifest_doc.transportation_manifest_details:
-				primary.setdefault(
-					(r.employee, r.stop_id or "", r.trip_id or "", r.employee_action), []
-				).append(r)
-				by_stop_name.setdefault(
-					(r.employee, r.stop_name or "", r.trip_id or "", r.employee_action), []
-				).append(r)
-			_row_index_cache[vehicle_id] = (primary, by_stop_name)
+			_row_index_cache[vehicle_id] = _index_manifest_rows(
+				manifest_doc.transportation_manifest_details
+			)
 		return _row_index_cache[vehicle_id]
-
-	def _next_row(index, key):
-		"""The first row under ``key`` not already given to an earlier appearance."""
-		for r in index.get(key, ()):
-			if id(r) not in _claimed_rows:
-				_claimed_rows.add(id(r))
-				return r
-		return None
 
 	def _acc_label(acc):
 		if not acc:
@@ -2188,25 +2209,12 @@ def get_manifest_data_for_plan(plan_name: str):
 			return emp_list
 			
 		enriched = []
-		action = "Dropping Off" if is_return else "Boarding"
-		stop_location_normalized = stop_location or ""
-		idx_primary, idx_stop_name = _row_indexes(vehicle_id, manifest_doc)
-		direction = "RETURN" if is_return else "OUTBOUND"
-		stop_id_val = f"{stop_location_normalized}|{direction}"
-		
+		indexes = _row_indexes(vehicle_id, manifest_doc)
+
 		for emp in emp_list:
-			emp_id = emp.get("id")
-			# Primary match: compound key using stop_id
-			matching_row = _next_row(
-				idx_primary, (emp_id, stop_id_val, trip_id or "", action)
+			matching_row = _claim_manifest_row(
+				indexes, emp.get("id"), stop_location, trip_id, is_return, _claimed_rows
 			)
-			# Fallback: match by stop_name for rows created before stop_id was added.
-			# There is no employee-only fallback: a row from another trip or stop must
-			# never lend its attendance or replacement to this appearance.
-			if not matching_row:
-				matching_row = _next_row(
-					idx_stop_name, (emp_id, stop_location_normalized, trip_id or "", action)
-				)
 
 			emp_copy = dict(emp)
 			# Manifest link is stamped regardless of match so the page can wire the

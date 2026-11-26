@@ -258,7 +258,7 @@ class TestRelieverRamboChip(FrappeTestCase):
 
 
 class TestChipShowsWhoARelieverCovers(FrappeTestCase):
-	"""WI-004956: a reliever's chip says who they cover, why, and the leave dates."""
+	"""A reliever's chip says who they cover, why, and the leave dates."""
 
 	@classmethod
 	def setUpClass(cls):
@@ -308,3 +308,9 @@ class TestChipShowsWhoARelieverCovers(FrappeTestCase):
 
 	def test_a_chip_without_a_row_is_not_interactive(self):
 		self.assertIn("interactive = !!interactive && !!rowId;", self.chip)
+
+	def test_mark_all_present_sends_row_ids_only(self):
+		helper = re.search(r"function uncheckedRowIds\(.*?\n\t\}\n", self.js, re.S)
+		self.assertIsNotNone(helper, msg="uncheckedRowIds not found")
+		self.assertNotIn("row_id || id", helper.group(0))
+		self.assertNotIn("e.id", helper.group(0))

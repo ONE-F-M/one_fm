@@ -378,9 +378,9 @@ function renderManifest($container, data) {
 	// carrying an attendance status is one the driver decided on; the bulk action means
 	// "everyone I have not marked yet is here", so it must not overwrite that.
 	function uncheckedRowIds(employees) {
+		// Row ids only: an employee id is not a manifest row and would hit every appearance.
 		return (employees || []).map(function (e) {
-			const id = (typeof e === "object" && e !== null) ? (e.id || e.name || "") : (e || "");
-			return (typeof e === "object" && e !== null) ? (e.row_id || id) : id;
+			return (typeof e === "object" && e !== null) ? (e.row_id || "") : "";
 		}).filter(function (rowId) {
 			return rowId && !(window.checkerState[rowId] || {}).attendance;
 		});

@@ -309,7 +309,7 @@ class TestAPlacedCardTheRosterNoLongerProduces(ReconcileCase):
 
 
 class TestACoveredNameIsNeverBlank(ReconcileCase):
-	"""WI-004956 AC6: a reliever whose covered person is unknown is still marked."""
+	"""AC6: a reliever whose covered person is unknown is still marked."""
 
 	def _rows(self, name):
 		return frappe.get_all(
@@ -380,6 +380,15 @@ class TestACoveredNameIsNeverBlank(ReconcileCase):
 		row = self._rows(card)[0]
 		self.assertEqual(row.absence_reason, "Leave")
 		self.assertEqual(str(row.leave_from), "2026-01-01")
+
+	def test_only_the_leave_end_moving_is_a_change(self):
+		card = self._card(_key("L"), ["E1"])
+		cover = {"relieving_employee": None, "relieving_employee_name": "Covered Person",
+				 "absence_reason": "Annual Leave", "leave_from": "2026-01-01", "leave_to": "2026-01-05"}
+		self._refresh(card, _roster("E1"), {"E1": cover})
+
+		self.assertTrue(self._refresh(card, _roster("E1"), {"E1": dict(cover, leave_to="2026-01-09")}))
+		self.assertEqual(str(self._rows(card)[0].leave_to), "2026-01-09")
 
 
 class TestTheSeatCheck(FrappeTestCase):

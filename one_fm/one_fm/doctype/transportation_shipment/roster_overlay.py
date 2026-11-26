@@ -154,7 +154,7 @@ def _annual_leave_relievers(on_date, shift_names=None) -> dict:
 				"from_date": ["<=", on_date],
 				"to_date": [">=", on_date],
 			},
-			fields=["name", "employee", "employee_name", "from_date", "to_date"],
+			fields=["name", "employee", "employee_name", "leave_type", "from_date", "to_date"],
 		)
 	}
 
@@ -167,7 +167,7 @@ def _annual_leave_relievers(on_date, shift_names=None) -> dict:
 			"shift": row.shift,
 			"relieving_employee": app.employee,
 			"relieving_employee_name": app.employee_name,
-			"absence_reason": "Leave",
+			"absence_reason": app.leave_type or "Leave",
 			"leave_from": app.from_date,
 			"leave_to": app.to_date,
 		}
@@ -210,14 +210,14 @@ def reliever_context(on_date=None, shift_names=None) -> dict:
 	spans = absent_employees(on_date, covered_ids) if covered_ids else {}
 
 	for data in overlay.values():
+		# Annual-leave entries already carry their own span and leave type.
+		if data.get("leave_from"):
+			continue
 		span = spans.get(data.get("relieving_employee"))
+		data["leave_from"], data["leave_to"] = span or (None, None)
 		if span:
-			data["leave_from"], data["leave_to"] = span
 			# Away on approved leave, whatever the covered schedule row said.
 			data["absence_reason"] = "Leave"
-		else:
-			data["leave_from"] = data.get("leave_from")
-			data["leave_to"] = data.get("leave_to")
 	return overlay
 
 

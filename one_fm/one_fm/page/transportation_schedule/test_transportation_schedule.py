@@ -925,7 +925,7 @@ def _find_key(node, key):
 
 
 class TestManifestCarriesTheRelieverDetails(FrappeTestCase):
-	"""WI-004956 AC3/AC6/AC8: the manifest riders carry the cover stamped on their row."""
+	"""AC3/AC6/AC8: the manifest riders carry the cover stamped on their row."""
 
 	def _riders(self, stored_rows):
 		plan = frappe._dict(name="PLAN-1", title="Plan")
@@ -991,7 +991,7 @@ class TestManifestCarriesTheRelieverDetails(FrappeTestCase):
 
 
 class TestCardsMarkOnlyTheRowFlag(FrappeTestCase):
-	"""WI-004956 AC5/AC8: a rider is badged from its own row, never from a standing role."""
+	"""AC5/AC8: a rider is badged from its own row, never from a standing role."""
 
 	def test_the_card_builder_reads_the_row_flag_not_the_rambo_role(self):
 		import inspect
@@ -1006,3 +1006,53 @@ class TestCardsMarkOnlyTheRowFlag(FrappeTestCase):
 
 		source = inspect.getsource(_ts.get_manifest_data_for_plan)
 		self.assertNotIn("idx_employee", source)
+
+
+class TestEachAppearanceGetsItsOwnManifestRow(FrappeTestCase):
+	"""AC5/AC10: an employee's manifest row is matched per trip and stop, never shared."""
+
+	def _row(self, name, trip, stop="CAMP", reliever=None, employee="E1"):
+		return frappe._dict(
+			name=name, employee=employee, stop_id=f"{stop}|OUTBOUND", stop_name=stop,
+			trip_id=trip, employee_action="Boarding", reliever_employee=reliever,
+		)
+
+	def _claim(self, indexes, claimed, trip, stop="CAMP", employee="E1"):
+		return _ts._claim_manifest_row(indexes, employee, stop, trip, False, claimed)
+
+	def test_two_trips_get_two_rows_and_the_replacement_stays_on_its_trip(self):
+		indexes = _ts._index_manifest_rows([
+			self._row("ROW-A", "TRIP-A", reliever="E9"), self._row("ROW-B", "TRIP-B"),
+		])
+		claimed = set()
+
+		on_a = self._claim(indexes, claimed, "TRIP-A")
+		on_b = self._claim(indexes, claimed, "TRIP-B")
+
+		self.assertEqual((on_a.name, on_b.name), ("ROW-A", "ROW-B"))
+		self.assertEqual(on_a.reliever_employee, "E9")
+		self.assertIsNone(on_b.reliever_employee)
+
+	def test_two_appearances_on_one_trip_and_stop_get_two_rows(self):
+		indexes = _ts._index_manifest_rows([
+			self._row("ROW-1", "TRIP-A"), self._row("ROW-2", "TRIP-A"),
+		])
+		claimed = set()
+
+		first = self._claim(indexes, claimed, "TRIP-A")
+		second = self._claim(indexes, claimed, "TRIP-A")
+
+		self.assertEqual((first.name, second.name), ("ROW-1", "ROW-2"))
+		self.assertIsNone(self._claim(indexes, claimed, "TRIP-A"))
+
+	def test_no_row_on_this_trip_matches_nothing(self):
+		indexes = _ts._index_manifest_rows([self._row("ROW-B", "TRIP-B")])
+
+		self.assertIsNone(self._claim(indexes, set(), "TRIP-A"))
+
+	def test_rows_without_a_stop_id_match_on_the_stop_name(self):
+		row = self._row("ROW-OLD", "TRIP-A")
+		row.stop_id = None
+		indexes = _ts._index_manifest_rows([row])
+
+		self.assertEqual(self._claim(indexes, set(), "TRIP-A").name, "ROW-OLD")
