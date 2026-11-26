@@ -5,8 +5,9 @@ from one_fm.one_fm.page.face_recognition.face_recognition import update_onboardi
 from datetime import timedelta
 from one_fm.utils import get_current_shift, is_holiday,get_holiday_today
 from one_fm.api.v1.utils import (
-    check_own_employee, not_own_employee_response, response, verify_via_face_recogniton_service, get_video_extension
+    check_own_employee, get_own_employee, not_own_employee_response, response, verify_via_face_recogniton_service, get_video_extension
 )
+from one_fm.legal.doctype.penalty_acknowledgement.penalty_acknowledgement import get_pending_penalty_notices
 from frappe.utils import add_days, cint, cstr, flt, getdate, now_datetime, strip_html
 from one_fm.api.doc_events import haversine
 from one_fm.overrides.employee import (
@@ -562,6 +563,8 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
                 result['log_type'] = log_type
                 facial_recognition_endpoint_state  = frappe.db.get_single_value("ONEFM General Setting", 'enable_face_recognition_endpoint')
                 result['endpoint_status'] = facial_recognition_endpoint_state
+                # The app blocks the IN/OUT button until these are acknowledged.
+                result['pending_penalties'] = get_pending_penalty_notices(employee.name)
                 return response("Success", 200, result)
 
             frappe.log_error(
@@ -632,6 +635,28 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
         frappe.db.commit()
         return response(_("Something Went Wrong"), 500, None,
                         strip_html(cstr(error)) or type(error).__name__)
+
+
+@frappe.whitelist(methods=["POST"])
+def acknowledge_penalties(names: str | list) -> dict:
+    """Acknowledge the caller's own pending penalty notices named by the app."""
+    employee = get_own_employee()
+    if not employee:
+        return not_own_employee_response()
+
+    names = frappe.parse_json(names) if isinstance(names, str) else names
+    if not isinstance(names, list):
+        names = [names]
+    names = [cstr(name) for name in names if name]
+    if not names:
+        return response("Success", 200, {"acknowledged": 0})
+
+    ack = frappe.qb.DocType("Penalty Acknowledgement")
+    condition = (ack.name.isin(names)) & (ack.employee == employee.name) & (ack.acknowledged == 0)
+    rows = frappe.qb.from_(ack).select(ack.name).where(condition).run()
+    if rows:
+        frappe.qb.update(ack).set(ack.acknowledged, 1).set(ack.acknowledged_on, now_datetime()).where(condition).run()
+    return response("Success", 200, {"acknowledged": len(rows)})
 
 
 def is_attendance_request_exists(employee, date):

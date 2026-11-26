@@ -1,0 +1,138 @@
+{
+ "actions": [],
+ "autoname": "format:{penalty_issuance}-{employee}",
+ "creation": "2026-11-26 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "penalty_issuance",
+  "employee",
+  "employee_name",
+  "issuing_employee",
+  "issuer_name",
+  "penalty_category",
+  "penalty_occurence_time",
+  "acknowledged",
+  "acknowledged_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "penalty_issuance",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Penalty Issuance",
+   "options": "Penalty Issuance",
+   "reqd": 1
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issuing_employee",
+   "fieldtype": "Link",
+   "label": "Issuing Employee",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "issuer_name",
+   "fieldtype": "Data",
+   "label": "Issuer Name"
+  },
+  {
+   "fieldname": "penalty_category",
+   "fieldtype": "Data",
+   "label": "Penalty Category"
+  },
+  {
+   "fieldname": "penalty_occurence_time",
+   "fieldtype": "Datetime",
+   "label": "Penalty Occurrence Time"
+  },
+  {
+   "default": "0",
+   "fieldname": "acknowledged",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Acknowledged",
+   "search_index": 1
+  },
+  {
+   "fieldname": "acknowledged_on",
+   "fieldtype": "Datetime",
+   "label": "Acknowledged On",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-26 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Legal",
+ "name": "Penalty Acknowledgement",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Legal Manager"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Penalty Issuer"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Shift Supervisor"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Site Supervisor"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "HR User"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "employee_name",
+ "track_changes": 1
+}
