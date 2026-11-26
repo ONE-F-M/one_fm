@@ -692,7 +692,9 @@ scheduler_events = {
 		'one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request.cancel_expired_visas',
 		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
 		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.deactivate_expired_shipments',
-		'one_fm.one_fm.doctype.transportation_manifest.manifest_compiler.compile_daily_manifests'
+		'one_fm.one_fm.doctype.transportation_manifest.manifest_compiler.compile_daily_manifests',
+		# WI-004748: tell HR to check each Employee record three days after it was created.
+		'one_fm.events.new_employee_notification.send_new_employee_id_notifications'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",

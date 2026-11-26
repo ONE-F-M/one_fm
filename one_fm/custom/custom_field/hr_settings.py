@@ -253,5 +253,12 @@ def get_hr_settings_custom_fields():
                 "options": "User",
                 "description": "Primary recipient of automated absence early-warning alerts (e.g. the 5th consecutive day of unexcused absence, and the 16th non-consecutive day of unexcused absence in the calendar year). Alerts are sent to this user's login email.",
             },
+            {
+                "fieldname": "new_employee_notification_emails",
+                "fieldtype": "Small Text",
+                "insert_after": "default_absence_investigation_hr_officer",
+                "label": "New Employee ID Notification Emails",
+                "description": "Who HR-checks a new Employee record: every address here (separated by commas or new lines - a group mailbox works) is emailed three days after an Employee is created. With nothing here the daily job sends nothing.",
+            },
         ]
     }
