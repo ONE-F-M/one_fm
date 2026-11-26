@@ -1126,33 +1126,16 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
         order_by="idx asc",
     )
 
-    # Flag which passengers are Rambo relievers (filling in for a shift) so the
-    # canvas detail panel can label regular staff vs replacements (MA3-12 AC6).
-    # Reliever status is a role-level attribute on the Employee master.
-    reliever_ids = set()
-    passenger_ids = list({row.employee_id for row in emp_rows if row.employee_id})
-    if passenger_ids:
-        reliever_ids = {
-            e.name
-            for e in frappe.get_all(
-                "Employee",
-                filters={"name": ["in", passenger_ids], "custom_is_rambo_reliever": 1},
-                fields=["name"],
-            )
-        }
-
     emps_by_ship = {}
     for row in emp_rows:
         emps_by_ship.setdefault(row.parent, []).append({
             "id": row.employee_id,
             "name": row.employee_name or row.employee_id,
             "mobile": row.cell_number or "",
-            # Two different facts share this badge, and both mean "not the usual rider".
-            # `custom_is_rambo_reliever` is a standing role - this person relieves for a
-            # living - while the row flag says they are standing in for somebody on THIS
-            # card today. The first was here before; adding the second is
-            # what lets a regular employee covering a colleague be badged at all.
-            "is_reliever": bool(row.is_reliever) or row.employee_id in reliever_ids,
+            # Only the row flag marks a reliever: they are standing in for somebody on THIS
+            # card today. The Rambo standing role (`custom_is_rambo_reliever`) no longer
+            # counts, so a regular employee is never badged on another trip's card.
+            "is_reliever": bool(row.is_reliever),
             # Only set when this rider is covering someone, and only for the day the card
             # was generated for - the drawer prints it as "Relieving X | ...".
             "relieving_employee": row.relieving_employee,
@@ -2040,11 +2023,24 @@ def get_manifest_data_for_plan(plan_name: str):
 		for r in frappe.get_all(
 			"Transportation Shipment Employee",
 			filters={"parent": ["in", ship_names], "parenttype": "Transportation Shipment"},
-			fields=["parent", "employee_id", "employee_name", "cell_number"],
+			fields=["parent", "employee_id", "employee_name", "cell_number",
+					"is_reliever", "relieving_employee_name", "absence_reason",
+					"leave_from", "leave_to"],
 			order_by="idx asc",
 		):
 			emps_by_ship.setdefault(r.parent, []).append(
-				{"id": r.employee_id, "name": r.employee_name or r.employee_id, "mobile": r.cell_number or ""}
+				{
+					"id": r.employee_id,
+					"name": r.employee_name or r.employee_id,
+					"mobile": r.cell_number or "",
+					# The cover details of THIS appearance, stamped on its own row, so a
+					# rider on two trips never shows one trip's cover on the other.
+					"is_reliever": bool(r.is_reliever),
+					"relieving_employee_name": r.relieving_employee_name,
+					"absence_reason": r.absence_reason,
+					"leave_from": str(r.leave_from) if r.leave_from else None,
+					"leave_to": str(r.leave_to) if r.leave_to else None,
+				}
 			)
 		for card_id, ship_name in shipment_by_card.items():
 			emps = emps_by_ship.get(ship_name, [])
@@ -2151,23 +2147,32 @@ def get_manifest_data_for_plan(plan_name: str):
 		):
 			reliever_info[_e.name] = _e
 
-	# Per manifest, built once: the first row for each lookup key, in row order, which is
-	# what the nested scans this replaces returned.
+	# Per manifest, built once: every row for each lookup key, in row order. A passenger can
+	# appear more than once under one key, so each appearance is handed its own row in
+	# turn (see _next_row) rather than all of them sharing the first.
 	_row_index_cache = {}
+	_claimed_rows = set()
 
 	def _row_indexes(vehicle_id, manifest_doc):
 		if vehicle_id not in _row_index_cache:
-			primary, by_stop_name, by_employee = {}, {}, {}
+			primary, by_stop_name = {}, {}
 			for r in manifest_doc.transportation_manifest_details:
 				primary.setdefault(
-					(r.employee, r.stop_id or "", r.trip_id or "", r.employee_action), r
-				)
+					(r.employee, r.stop_id or "", r.trip_id or "", r.employee_action), []
+				).append(r)
 				by_stop_name.setdefault(
-					(r.employee, r.stop_name or "", r.trip_id or "", r.employee_action), r
-				)
-				by_employee.setdefault(r.employee, r)
-			_row_index_cache[vehicle_id] = (primary, by_stop_name, by_employee)
+					(r.employee, r.stop_name or "", r.trip_id or "", r.employee_action), []
+				).append(r)
+			_row_index_cache[vehicle_id] = (primary, by_stop_name)
 		return _row_index_cache[vehicle_id]
+
+	def _next_row(index, key):
+		"""The first row under ``key`` not already given to an earlier appearance."""
+		for r in index.get(key, ()):
+			if id(r) not in _claimed_rows:
+				_claimed_rows.add(id(r))
+				return r
+		return None
 
 	def _acc_label(acc):
 		if not acc:
@@ -2185,24 +2190,24 @@ def get_manifest_data_for_plan(plan_name: str):
 		enriched = []
 		action = "Dropping Off" if is_return else "Boarding"
 		stop_location_normalized = stop_location or ""
-		idx_primary, idx_stop_name, idx_employee = _row_indexes(vehicle_id, manifest_doc)
+		idx_primary, idx_stop_name = _row_indexes(vehicle_id, manifest_doc)
 		direction = "RETURN" if is_return else "OUTBOUND"
 		stop_id_val = f"{stop_location_normalized}|{direction}"
 		
 		for emp in emp_list:
 			emp_id = emp.get("id")
-			matching_row = None
 			# Primary match: compound key using stop_id
-			matching_row = idx_primary.get((emp_id, stop_id_val, trip_id or "", action))
-			# Fallback: match by stop_name for rows created before stop_id was added
+			matching_row = _next_row(
+				idx_primary, (emp_id, stop_id_val, trip_id or "", action)
+			)
+			# Fallback: match by stop_name for rows created before stop_id was added.
+			# There is no employee-only fallback: a row from another trip or stop must
+			# never lend its attendance or replacement to this appearance.
 			if not matching_row:
-				matching_row = idx_stop_name.get(
-					(emp_id, stop_location_normalized, trip_id or "", action)
+				matching_row = _next_row(
+					idx_stop_name, (emp_id, stop_location_normalized, trip_id or "", action)
 				)
-			
-			if not matching_row:
-				matching_row = idx_employee.get(emp_id)
-						
+
 			emp_copy = dict(emp)
 			# Manifest link is stamped regardless of match so the page can wire the
 			# per-camp attendance-check trigger/lock to the right manifest (MA2-11).
