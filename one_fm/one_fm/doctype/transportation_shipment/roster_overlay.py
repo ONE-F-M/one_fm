@@ -82,7 +82,7 @@ def relieving_assignments(on_date=None, shift_names=None) -> dict:
 	rows = frappe.get_all(
 		"Employee Schedule",
 		filters=filters,
-		fields=["employee", "employee_name", "shift", "site",
+		fields=["employee", "employee_name", "shift",
 				"relieving_employee_schedule", "employee_availability"],
 	)
 	# Only somebody actually working is on the bus; a relieving row marked Day Off is a
@@ -101,7 +101,6 @@ def relieving_assignments(on_date=None, shift_names=None) -> dict:
 			continue
 		overlay[row.employee] = {
 			"shift": row.shift,
-			"site": row.site,
 			"relieving_employee": original.get("employee"),
 			"relieving_employee_name": original.get("employee_name"),
 			# Why the person being covered is away. Usually "Day Off"; a leave span, when
@@ -137,7 +136,7 @@ def _annual_leave_relievers(on_date, shift_names=None) -> dict:
 		r for r in frappe.get_all(
 			"Employee Schedule",
 			filters=filters,
-			fields=["employee", "employee_name", "shift", "site", "leave_application"],
+			fields=["employee", "employee_name", "shift", "leave_application"],
 		)
 		if r.shift and r.leave_application
 	]
@@ -166,7 +165,6 @@ def _annual_leave_relievers(on_date, shift_names=None) -> dict:
 			continue
 		result[row.employee] = {
 			"shift": row.shift,
-			"site": row.site,
 			"relieving_employee": app.employee,
 			"relieving_employee_name": app.employee_name,
 			"absence_reason": "Leave",
