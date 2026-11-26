@@ -255,3 +255,56 @@ class TestRelieverRamboChip(FrappeTestCase):
 		row = re.search(r"\.mfst-reliever-filter \{[^}]*\}", self.js)
 		self.assertIsNotNone(row, msg="chip row rule not found")
 		self.assertIn("flex-wrap: wrap", row.group(0))
+
+
+class TestChipShowsWhoARelieverCovers(FrappeTestCase):
+	"""WI-004956: a reliever's chip says who they cover, why, and the leave dates."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.js = _read(PAGE_JS)
+		chip = re.search(r"function empChipHtml\(.*?\n\t\}\n", cls.js, re.S)
+		cls.chip = chip.group(0) if chip else ""
+		note = re.search(r"// Reliever covering note.*?\n\t\t\}\n", cls.chip, re.S)
+		cls.note = note.group(0) if note else ""
+
+	def test_the_chip_function_and_covering_block_are_found(self):
+		self.assertTrue(self.chip, msg="empChipHtml not found")
+		self.assertTrue(self.note, msg="reliever covering block not found")
+
+	def test_the_chip_renders_the_covering_line(self):
+		self.assertIn('__("Covering {0}", [coveredName])', self.note)
+		self.assertIn("mfst-state-covering", self.note)
+		self.assertIn("mfst-chip-covering", self.note)
+		self.assertIn("coveringHtml", self.chip)
+
+	def test_an_unresolved_covered_name_reads_not_available(self):
+		self.assertIn('e.relieving_employee_name || __("Not available")', self.note)
+
+	def test_the_reason_and_leave_dates_are_printed_and_escaped(self):
+		self.assertIn("e.absence_reason", self.note)
+		self.assertIn("e.leave_from && e.leave_to", self.note)
+		self.assertIn("${e.leave_from} \u2192 ${e.leave_to}", self.note)
+		self.assertIn("esc(coveringParts.join(", self.note)
+
+	def test_the_covering_line_sits_under_the_struck_name(self):
+		self.assertIn(
+			'<span class="mfst-chip-original">${safeName}</span>${coveringHtml}${replacementHtml}',
+			self.chip,
+		)
+
+	def test_the_covering_markup_has_no_inline_style(self):
+		self.assertNotIn("style=", self.note)
+
+	def test_the_covering_classes_are_in_the_stylesheet(self):
+		self.assertRegex(self.js, r"\.mfst-emp-chip\.mfst-state-covering \{[^}]*\}")
+		self.assertRegex(self.js, r"\.mfst-chip-covering \{[^}]*\}")
+
+	def test_the_row_id_never_falls_back_to_the_employee_id(self):
+		self.assertIn('const rowId = isObj ? (e.row_id || "") : "";', self.chip)
+		self.assertNotIn("e.row_id || id", self.chip)
+		self.assertNotIn("e.id", self.chip)
+
+	def test_a_chip_without_a_row_is_not_interactive(self):
+		self.assertIn("interactive = !!interactive && !!rowId;", self.chip)
