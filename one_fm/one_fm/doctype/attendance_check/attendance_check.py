@@ -61,11 +61,14 @@ class AttendanceCheck(Document):
             self.shift_permission = shift_permission.name
             self.has_shift_permissions = 1
 
+        # Site of the Shift Assignment covering the date (None when there is none)
+        shift_site = self.get_shift_site()
+
         # Set site supervisor
-        self.fetch_and_set_site_supervisor()
+        self.fetch_and_set_site_supervisor(shift_site)
 
         # Set approver
-        self.set_attedance_check_approver()
+        self.set_attedance_check_approver(shift_site)
 
     def validate_duplicate(self):
         attendance_exist = frappe.db.get_value(
@@ -95,6 +98,32 @@ class AttendanceCheck(Document):
             ["name", "start_date", "start_datetime", "end_datetime"],
             as_dict=1
         )
+
+    def get_shift_site(self):
+        """Site of the Shift Assignment this check belongs to, or None.
+
+        Uses the linked Shift Assignment when set; otherwise the latest Active
+        Shift Assignment covering the check date (e.g. an overnight one that
+        started the day before).
+        """
+        if self.shift_assignment:
+            return frappe.db.get_value("Shift Assignment", self.shift_assignment, "site") or None
+
+        assignments = frappe.get_all(
+            "Shift Assignment",
+            filters={
+                "employee": self.employee,
+                "roster_type": self.roster_type,
+                "docstatus": 1,
+                "status": "Active",
+                "start_date": ["<=", self.date],
+                "end_date": [">=", self.date],
+            },
+            fields=["site"],
+            order_by="start_date desc",
+            limit=1,
+        )
+        return (assignments[0].site or None) if assignments else None
 
     def get_checkins_details(self):
         return frappe.db.sql(f"""
@@ -143,14 +172,21 @@ class AttendanceCheck(Document):
 
 
     
-    def get_approver(self,employee):
+    def get_approver_user(self, shift_site):
         '''
-            Method to get the line manager employee of an employee with the priority
+            Resolve the User who approves this Attendance Check.
             args:
-                employee: name of Employee object
-            return: employee reference of the line manager or None
-        '''
+                shift_site: site of the Shift Assignment for the check date, or None
+            return: user id (User name) of the approver or None
 
+            Order: reports_to, the employee (super-user role), the supervisor of the
+            Shift Assignment's Operations Site, the supervisor of the Employee's
+            default site, the shift supervisor, then the Project account manager
+            (shift working employees only).
+        '''
+        from one_fm.overrides.employee import get_site_supervisor_user
+
+        employee = self.employee
         if not frappe.db.exists("Employee", {'name':employee}):
             frappe.log_error(title="Employee does not exists", message=f"Employee {employee} does not exists")
             return None
@@ -158,49 +194,67 @@ class AttendanceCheck(Document):
         employee_field_list = ["user_id", "reports_to", "shift", "site", "shift_working", "employee_name"]
         employee_data = frappe.db.get_value('Employee', employee, employee_field_list, as_dict=1)
 
-        line_manager = employee_data.reports_to if employee_data.reports_to else None
+        if employee_data.reports_to:
+            return frappe.db.get_value("Employee", employee_data.reports_to, "user_id") or None
 
-        if not line_manager:
-            if employee_data.user_id and has_super_user_role(employee_data.user_id):
-                line_manager = employee
+        if employee_data.user_id and has_super_user_role(employee_data.user_id):
+            return employee_data.user_id
 
-        if not line_manager:
-            if employee_data.shift_working:
-                if employee_data.site:
-                    line_manager = frappe.db.get_value('Operations Site', employee_data.site, 'site_supervisor')
-                if not line_manager and employee_data.shift:
-                    line_manager = get_shift_supervisor(employee_data.shift,date=self.date)
-                if not line_manager:
-                    project = frappe.db.get_value('Operations Site', employee_data.site, 'project')
-                    if project:
-                        line_manager = frappe.db.get_value('Project', project, 'account_manager')
-                if line_manager:
-                    return line_manager
-                
+        check_name = self.name or f"{employee} {self.date}"
+
+        # 1. Supervisor of the Operations Site on the Shift Assignment
+        if shift_site:
+            site_supervisor = frappe.db.get_value("Operations Site", shift_site, "site_supervisor")
+            if not site_supervisor:
+                frappe.log_error(
+                    title="Attendance Check Approver",
+                    message=_("Operations Site {0} has no supervisor — used employee's default site supervisor").format(shift_site)
+                        + f"\nAttendance Check: {check_name}"
+                )
             else:
-                if employee_data.site:
-                    line_manager = frappe.db.get_value('Operations Site', employee_data.site, 'site_supervisor')
+                supervisor_user = frappe.db.get_value("Employee", site_supervisor, "user_id")
+                if supervisor_user:
+                    return supervisor_user
+                frappe.log_error(
+                    title="Attendance Check Approver",
+                    message=_("Site supervisor {0} has no user account linked").format(site_supervisor)
+                        + f"\nAttendance Check: {check_name}"
+                )
 
-                if not line_manager and employee_data.shift:
-                    line_manager = get_shift_supervisor(employee_data.shift,date=self.date)
+        # 2. Fallback: supervisor of the Employee's default site (resolved live)
+        if employee_data.site and employee_data.site != shift_site:
+            user = get_site_supervisor_user(employee_data.site)
+            if user:
+                return user
 
-                if not line_manager:
-                    frappe.log_error(title="Missing Data", message=f"Please ensure that the Reports To or Operations Site Supervisor is set for {employee_data.employee_name}, Since the employee is not shift working")
+        # 3. Shift supervisor, then Project account manager (shift working only)
+        approver_user = None
+        if employee_data.shift:
+            shift_supervisor = get_shift_supervisor(employee_data.shift, date=self.date)
+            if shift_supervisor:
+                approver_user = frappe.db.get_value("Employee", shift_supervisor, "user_id") or None
 
-        return line_manager
+        if not approver_user and employee_data.shift_working and employee_data.site:
+            project = frappe.db.get_value('Operations Site', employee_data.site, 'project')
+            if project:
+                account_manager = frappe.db.get_value('Project', project, 'account_manager')
+                if account_manager:
+                    approver_user = frappe.db.get_value("Employee", account_manager, "user_id") or None
 
-    def set_attedance_check_approver(self):
-        approver = self.get_approver(self.employee)
+        if not approver_user and not employee_data.shift_working:
+            frappe.log_error(title="Missing Data", message=f"Please ensure that the Reports To or Operations Site Supervisor is set for {employee_data.employee_name}, Since the employee is not shift working")
+
+        return approver_user
+
+    def set_attedance_check_approver(self, shift_site):
+        approver = self.get_approver_user(shift_site)
         if approver:
-            self.approver = frappe.db.get_value("Employee", approver, "user_id")
+            self.approver = approver
 
-    def fetch_and_set_site_supervisor(self):
-        site = None
-        
-        # 1. Try to get site from Shift Assignment
-        if self.shift_assignment:
-            site = frappe.db.get_value("Shift Assignment", self.shift_assignment, "site")
-        
+    def fetch_and_set_site_supervisor(self, shift_site):
+        # 1. Site from the Shift Assignment
+        site = shift_site
+
         # 2. Fallback to Employee Site Allocation
         if not site:
             site = frappe.db.get_value("Employee", self.employee, "site")
