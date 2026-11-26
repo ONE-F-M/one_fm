@@ -7,6 +7,8 @@ These tests run against existing site data: two Active Operations Sites and thre
 Active Employees with a user_id are picked in setUpClass and linked together with
 frappe.db.set_value. Everything is rolled back by FrappeTestCase.
 """
+import unittest
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
@@ -23,7 +25,7 @@ class TestAttendanceCheckApprover(FrappeTestCase):
 
         sites = frappe.get_all("Operations Site", filters={"status": "Active"}, pluck="name", limit=2)
         if len(sites) < 2:
-            raise cls.skipTest(cls, "Need two Active Operations Sites")
+            raise unittest.SkipTest("Need two Active Operations Sites")
         cls.site_a, cls.site_b = sites
 
         employees = frappe.get_all(
@@ -41,7 +43,7 @@ class TestAttendanceCheckApprover(FrappeTestCase):
             if len(picked) == 3:
                 break
         if len(picked) < 3:
-            raise cls.skipTest(cls, "Need three Active Employees with distinct non-super-user users")
+            raise unittest.SkipTest("Need three Active Employees with distinct non-super-user users")
 
         cls.employee, cls.sup_a, cls.sup_b = [p.name for p in picked]
         cls.user_a = picked[1].user_id
