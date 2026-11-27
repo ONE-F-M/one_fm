@@ -1061,6 +1061,9 @@ class TestTheScriptsRunAsAnIssuer(PenaltyFixtures):
 class TestNotifyPenalisedEmployees(PenaltyFixtures):
 	"""Needs the Penalty Acknowledgement DocType, so runs after migrate."""
 
+	def tearDown(self):
+		frappe.db.rollback()
+
 	def notify(self, issuance):
 		with patch("one_fm.processor.sendemail") as sendemail:
 			run_script(NOTIFY_PENALISED_EMPLOYEES, issuance)

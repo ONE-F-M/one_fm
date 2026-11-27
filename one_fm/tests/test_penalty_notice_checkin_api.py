@@ -22,6 +22,7 @@ class TestPenaltyNoticeCheckinApi(PenaltyFixtures):
 
 	def tearDown(self):
 		frappe.set_user("Administrator")
+		frappe.db.rollback()
 
 	def acknowledge_as_first(self, names):
 		frappe.local.response = frappe._dict()
@@ -41,6 +42,16 @@ class TestPenaltyNoticeCheckinApi(PenaltyFixtures):
 		self.assertEqual(own.acknowledged, 1)
 		self.assertTrue(own.acknowledged_on)
 		self.assertEqual(frappe.db.get_value("Penalty Acknowledgement", self.others.name, "acknowledged"), 0)
+
+	def test_a_plain_name_is_accepted(self):
+		frappe.local.response = frappe._dict()
+		frappe.set_user(self.first.user_id)
+		try:
+			acknowledge_penalties(names=self.own.name)
+		finally:
+			frappe.set_user("Administrator")
+
+		self.assertEqual(frappe.local.response.data, {"acknowledged": 1})
 
 	def test_a_second_call_acknowledges_nothing(self):
 		self.acknowledge_as_first([self.own.name])

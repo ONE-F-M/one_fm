@@ -644,7 +644,9 @@ def acknowledge_penalties(names: str | list) -> dict:
     if not employee:
         return not_own_employee_response()
 
-    names = frappe.parse_json(names) if isinstance(names, str) else names
+    if isinstance(names, str):
+        # A JSON list from the app, or one plain name.
+        names = frappe.parse_json(names) if names.lstrip().startswith("[") else [names]
     if not isinstance(names, list):
         names = [names]
     names = [cstr(name) for name in names if name]
