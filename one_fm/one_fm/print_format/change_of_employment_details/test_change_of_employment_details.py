@@ -6,12 +6,15 @@ Rendered through frappe.render_template with the real Jinja globals, from an uns
 request, and checked against the text of the approved Word template.
 """
 
+import io
 import json
 import re
+import shutil
+import unittest
+from unittest.mock import patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
-from frappe.utils import formatdate
 
 FORMAT = "Change of Employment Details"
 DOCTYPE = "Employee Record Update Request"
@@ -28,7 +31,8 @@ TEMPLATE_WORDING = (
 	"All other terms and conditions of your employment remain unchanged.",
 	"We wish you continued success in your new role.",
 	"Sincerely,",
-	"I acknowledge the Changes made to my Employment Terms.",
+	"Employee Acknowledgement:",
+	"acknowledge the Changes made to my Employment Terms at One Facilities Management.",
 	"Employee Signature:",
 )
 
@@ -37,8 +41,14 @@ def _definition():
 	return json.loads(frappe.read_file(frappe.get_app_path(*FORMAT_JSON)))
 
 
-def _render(doc):
-	return frappe.render_template(_definition()["html"], {"doc": doc})
+def _render(doc, get_all=None):
+	context = {"doc": doc}
+	if get_all:
+		from frappe.utils.safe_exec import get_safe_globals
+
+		context["frappe"] = frappe._dict(get_safe_globals()["frappe"])
+		context["frappe"].get_all = get_all
+	return frappe.render_template(_definition()["html"], context)
 
 
 def _text(html):
@@ -68,6 +78,65 @@ def _term(doc, name, old, new, new_doctype=None):
 	doc.append("employment_terms", {"terms": name, "old_value": old, "new_value": new, "new_value_doctype": new_doctype})
 
 
+COLUMNS = '<colgroup><col class="c-terms"><col class="c-current"><col class="c-new"></colgroup>'
+
+
+def _earning(component, formula=None, amount=0):
+	return frappe._dict(
+		salary_component=component, amount_based_on_formula=1 if formula else 0, formula=formula, amount=amount
+	)
+
+
+STRUCTURES = {
+	"Structure 70/30": [
+		_earning("Basic Salary", "base*0.7"),
+		_earning("Other Allowance", "base*0.3"),
+		_earning("Accomodation Allowance"),
+		_earning("Transportation Allowance"),
+		_earning("Food Allowance"),
+		_earning("Mobile Allowance"),
+	],
+	"Structure 70/0/20/10": [
+		_earning("Basic Salary", "base*0.7"),
+		_earning("Other Allowance"),
+		_earning("Accomodation Allowance", "base*0.2"),
+		_earning("Transportation Allowance", "base*0.1"),
+	],
+}
+
+
+_real_get_all = frappe.get_all
+
+
+def _structure_earnings(doctype, *args, **kwargs):
+	if doctype != "Salary Detail":
+		return _real_get_all(doctype, *args, **kwargs)
+	return STRUCTURES.get(kwargs["filters"]["parent"], [])
+
+
+def _full_request():
+	doc = _request(
+		term_changes_required=1, day_off_terms_required=1, benefits_changes_required=1, salary_update_required=1,
+		day_off_category_current_value="Monthly", day_off_category_new_value="Weekly",
+		number_of_days_off_current_value="4", number_of_days_off_new_value="1",
+		current_salary_structure="Structure 70/30", current_base_salary=125,
+		salary_new_value="Structure 70/0/20/10", base_new_value=400,
+	)
+	for component, amount in (("Basic Salary", 87.5), ("Other Allowance", 37.5)):
+		doc.append("salary_structure_components", {"salary_component": component, "amount": amount})
+	for name, old, new, new_doctype in (
+		("Designation", "Security Guard", "Site Supervisor", "Designation"),
+		("Project", "Riverside Project", "Harbour Project", "Project"),
+		("Site", "Riverside Gate 1", "Harbour Main Gate", "Operations Site"),
+		("Shift", "Morning 06:00-14:00", "Evening 14:00-22:00", "Operations Shift"),
+		("Employment Type", "Full-time", "Contract", "Employment Type"),
+	):
+		_term(doc, name, old, new, new_doctype)
+	for name in ("Health Insurance", "Accommodation", "Transportation", "Company Car"):
+		doc.append("benefit", {"terms": name, "description": "Provided by Company"})
+	return doc
+
+
 class TestTheFormatIsRegistered(FrappeTestCase):
 	def test_it_is_a_standard_english_jinja_format_for_the_request(self):
 		definition = _definition()
@@ -91,8 +160,8 @@ class TestTheFormatIsRegistered(FrappeTestCase):
 			"employee", "employee_name", "designation", "project_allocation", "effective_date_of_change",
 			"day_off_terms_required", "day_off_category_current_value", "day_off_category_new_value",
 			"number_of_days_off_current_value", "number_of_days_off_new_value", "benefits_changes_required",
-			"benefit", "salary_update_required", "current_salary_structure", "salary_new_value",
-			"current_base_salary", "base_new_value", "salary_structure_components",
+			"benefit", "salary_update_required", "salary_structure_components", "salary_new_value",
+			"current_base_salary", "base_new_value",
 		):
 			self.assertTrue(meta.has_field(fieldname), fieldname)
 		self.assertTrue(meta.has_field("properties") or meta.has_field("employment_terms"))
@@ -115,16 +184,28 @@ class TestTheLetter(FrappeTestCase):
 		self.assertIn("Employee Name: Layla Example", text)
 		self.assertIn("Designation: Site Supervisor", text)
 		self.assertIn("Project: Riverside Project", text)
-		self.assertIn("Date: " + formatdate("2026-03-15"), text)
+		self.assertIn("Date: 15-03-2026", text)
 		self.assertIn("Dear Layla Example,", text)
-		self.assertIn("effective " + formatdate("2026-04-01") + " in recognition", text)
+		self.assertIn("effective 01-04-2026 in recognition", text)
 
-	def test_it_is_english_only_with_no_logo(self):
+	def test_it_is_english_only_with_the_embedded_logo(self):
 		html = _render(_request())
 
 		self.assertIsNone(ARABIC.search(html))
-		self.assertNotIn("<img", html)
+		self.assertEqual(html.count("<img"), 1)
+		self.assertIn('<img src="data:image/png;base64,', html)
 		self.assertNotIn("None", _text(html))
+
+	def test_employee_lines_are_separate_paragraphs(self):
+		html = _render(_request())
+
+		self.assertEqual(html.count('<p class="dbl">'), 4)
+
+	def test_one_terms_table_with_three_columns(self):
+		html = _render(_full_request(), _structure_earnings)
+
+		self.assertEqual(html.count('<table class="terms">'), 1)
+		self.assertEqual(html.count(COLUMNS), 1)
 
 
 class TestHrManager(FrappeTestCase):
@@ -142,12 +223,12 @@ class TestHrManager(FrappeTestCase):
 		frappe.db.set_single_value("HR Settings", "custom_hr_manager", self.hr.user_id)
 		text = _text(_render(_request()))
 
-		self.assertIn("Sincerely, {0} {1} I acknowledge".format(self.hr.employee_name, self.hr.designation), text)
+		self.assertIn("Sincerely, {0} {1} Employee Acknowledgement:".format(self.hr.employee_name, self.hr.designation), text)
 
 	def test_no_hr_manager_prints_no_name(self):
 		frappe.db.set_single_value("HR Settings", "custom_hr_manager", None)
 
-		self.assertIn("Sincerely, I acknowledge", _text(_render(_request())))
+		self.assertIn("Sincerely, Employee Acknowledgement:", _text(_render(_request())))
 
 
 class TestEmploymentTerms(FrappeTestCase):
@@ -186,7 +267,8 @@ class TestEmploymentTerms(FrappeTestCase):
 		text = _text(_render(doc))
 
 		self.assertIn("Probation 3 months Confirmed", text)
-		self.assertIn("Company Car Provided by Company", text)
+		self.assertIn("Company Car : Provided by Company", text)
+		self.assertIn("Additional Benefits:", text)
 
 
 class TestDayOffTerms(FrappeTestCase):
@@ -209,15 +291,17 @@ class TestDayOffTerms(FrappeTestCase):
 
 
 class TestBenefits(FrappeTestCase):
-	def test_benefits_table_lists_every_benefit(self):
+	def test_benefits_are_label_colon_value_lines(self):
 		doc = _request(benefits_changes_required=1)
 		for name in ("Health Insurance", "Accommodation", "Transportation", "Company Car"):
 			doc.append("benefit", {"terms": name, "description": "Provided by Company"})
-		text = _text(_render(doc))
+		html = _render(doc)
+		text = _text(html)
 
-		self.assertIn("Benefits Benefit Description", text)
+		self.assertIn("Additional Benefits:", text)
+		self.assertNotIn("<table", html)
 		for name in ("Health Insurance", "Accommodation", "Transportation", "Company Car"):
-			self.assertIn(name + " Provided by Company", text)
+			self.assertIn(name + " : Provided by Company", text)
 
 	def test_no_benefits_section_when_not_required(self):
 		doc = _request(benefits_changes_required=0)
@@ -232,29 +316,63 @@ class TestBenefits(FrappeTestCase):
 class TestSalaryUpdate(FrappeTestCase):
 	def _salary_request(self):
 		doc = _request(
-			salary_update_required=1,
-			current_salary_structure="Structure Alpha", salary_new_value="Structure Beta",
-			current_base_salary="700", base_new_value=900,
+			salary_update_required=1, current_base_salary=125,
+			salary_new_value="Structure 70/0/20/10", base_new_value=400,
 		)
-		for component, amount in (("Basic Pay", 450), ("Housing Pay", 150), ("Transport Pay", 100)):
+		for component, amount in (("Basic Salary", 87.5), ("Other Allowance", 37.5), ("Food Allowance", 0)):
 			doc.append("salary_structure_components", {"salary_component": component, "amount": amount})
 		return doc
 
-	def test_structure_base_salary_and_components(self):
-		text = _text(_render(self._salary_request()))
+	def test_base_salary_row_then_salary_terms_row(self):
+		text = _text(_render(self._salary_request(), _structure_earnings))
 
-		self.assertIn("Salary Update Terms Current Details New Details", text)
-		self.assertIn("Salary Structure Structure Alpha Structure Beta", text)
-		self.assertRegex(text, r"Base Salary \D*700\.\d+ \D*900\.\d+")
-		self.assertIn("Component Current Details", text)
-		for component, amount in (("Basic Pay", "450"), ("Housing Pay", "150"), ("Transport Pay", "100")):
-			self.assertRegex(text, r"%s \D*%s" % (component, amount))
+		self.assertIn("Base Salary 125.000/- KD 400.000/- KD Salary Terms", text)
+		self.assertIn("Salary Terms Basic Salary: 87.500/- Other Allowance: 37.500/-", text)
+		self.assertIn(
+			"Basic Salary: 280.000/- Accomodation Allowance: 80.000/- Transportation Allowance: 40.000/- All other terms",
+			text,
+		)
+		self.assertNotIn("Food Allowance", text)
+		self.assertNotIn("Other Allowance: 0", text)
 
-	def test_no_salary_section_when_not_required(self):
+	def test_unreadable_formulas_do_not_break_the_letter(self):
+		earnings = {
+			"Odd": [
+				_earning("Basic Salary", "base*0.0.63"),
+				_earning("Other Allowance", "FOA*0.125"),
+				_earning("Fixed Bonus", amount=50),
+			]
+		}
+
+		def get_all(doctype, *args, **kwargs):
+			return earnings.get(kwargs["filters"]["parent"], [])
+
+		doc = self._salary_request()
+		doc.salary_new_value = "Odd"
+		text = _text(_render(doc, get_all))
+
+		self.assertIn("Fixed Bonus: 50.000/-", text)
+		self.assertNotIn("Other Allowance: 0", text)
+
+	def test_no_salary_rows_when_not_required(self):
 		doc = self._salary_request()
 		doc.salary_update_required = 0
-		text = _text(_render(doc))
+		text = _text(_render(doc, _structure_earnings))
 
-		self.assertNotIn("Salary Update", text)
-		self.assertNotIn("Structure Alpha", text)
-		self.assertNotIn("Basic Pay", text)
+		self.assertNotIn("Base Salary", text)
+		self.assertNotIn("Salary Terms", text)
+
+
+class TestOnePage(FrappeTestCase):
+	# The supplied layout puts the signature lines of a full request on a second page.
+	@unittest.expectedFailure
+	def test_a_full_request_prints_on_one_a4_page(self):
+		if not shutil.which("wkhtmltopdf"):
+			self.skipTest("wkhtmltopdf is not installed")
+		from pypdf import PdfReader
+
+		print_format = frappe.get_doc(_definition())
+		with patch("frappe.www.printview.get_print_format_doc", return_value=print_format):
+			pdf = frappe.get_print(DOCTYPE, doc=_full_request(), print_format=FORMAT, as_pdf=True)
+
+		self.assertEqual(len(PdfReader(io.BytesIO(pdf)).pages), 1)
