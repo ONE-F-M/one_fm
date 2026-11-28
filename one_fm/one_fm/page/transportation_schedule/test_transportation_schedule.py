@@ -744,6 +744,12 @@ class TestRelieverSearchSetting(FrappeTestCase):
 		self.assertEqual([r["employee_name"] for r in result], ["Bob", "Cal", "Amy"])
 		self.assertFalse(any(r["overlap"] for r in result))
 
+	def test_candidates_the_manifest_would_refuse_are_dropped(self):
+		with patch.object(_ts, "_refused_by_manifest", return_value={"B"}) as refused:
+			result, *_rest = self._search(0, [_emp("A"), _emp("B")])
+		self.assertEqual([r["name"] for r in result], ["A"])
+		refused.assert_called_once_with("ROW-1", self.CONTEXT[0], self.CONTEXT[3], ["A", "B"])
+
 	def test_unchecked_rows_carry_the_rambo_flag(self):
 		pool = [_emp("WORKER"), _emp("OFF", rambo=0), _emp("RAMBOER", rambo=1)]
 		result, *_rest = self._search(0, pool)

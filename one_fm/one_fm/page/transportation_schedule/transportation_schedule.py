@@ -2955,6 +2955,61 @@ def _build_reliever(employee, rows, date, shift_times, window):
     }
 
 
+def _refused_by_manifest(row_name, date, trip_times, candidates) -> set:
+    """Candidates TransportationManifest.validate_relievers would refuse for this row.
+
+    Covers its manifest checks: a passenger of the same manifest, someone Absent or
+    replaced on any manifest of the date, an approved leave, and an overlapping trip on
+    another manifest.
+    """
+    from frappe.query_builder import DocType
+
+    from one_fm.one_fm.doctype.transportation_manifest.transportation_manifest import booking_clashes
+
+    if not candidates:
+        return set()
+
+    manifest = frappe.db.get_value("Transportation Manifest Details", row_name, "parent")
+    refused = set(
+        frappe.get_all(
+            "Transportation Manifest Details",
+            filters={"parent": manifest, "employee": ["in", candidates]},
+            pluck="employee",
+        )
+    )
+
+    Manifest = DocType("Transportation Manifest")
+    Detail = DocType("Transportation Manifest Details")
+    refused.update(
+        row.employee
+        for row in (
+            frappe.qb.from_(Detail)
+            .join(Manifest).on(Detail.parent == Manifest.name)
+            .select(Detail.employee)
+            .where(Manifest.schedule_date == date)
+            .where(Detail.employee.isin(candidates))
+            .where((Detail.attendance_status == "Absent") | (Detail.requires_reliever == 1))
+        ).run(as_dict=True)
+    )
+
+    refused.update(
+        frappe.get_all(
+            "Leave Application",
+            filters={
+                "employee": ["in", candidates],
+                "workflow_state": "Approved",
+                "from_date": ["<=", date],
+                "to_date": [">=", date],
+            },
+            pluck="employee",
+        )
+    )
+
+    window = (min(trip_times), max(trip_times)) if trip_times else None
+    refused.update(booking_clashes(candidates, date, manifest, window))
+    return refused
+
+
 @frappe.whitelist()
 def get_available_rambo_relievers(shift_name: str = None, date: str = None, row_name: str = None):
     """
@@ -3013,6 +3068,9 @@ def get_available_rambo_relievers(shift_name: str = None, date: str = None, row_
     if not restrict_to_rambo:
         # Assigning a regular employee overwrites their own roster for the day.
         result = [r for r in result if not r["overlap"]]
+    if row_name:
+        refused = _refused_by_manifest(row_name, date, trip_times, [r["name"] for r in result])
+        result = [r for r in result if r["name"] not in refused]
     result.sort(key=lambda x: (x["overlap"], not x["has_roster"], x["employee_name"] or ""))
     return result
 

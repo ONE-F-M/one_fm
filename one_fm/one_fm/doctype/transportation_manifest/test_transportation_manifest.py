@@ -290,6 +290,43 @@ class TestTransportationManifest(FrappeTestCase):
 		})
 		self.assertRaises(frappe.ValidationError, doc2.save)
 
+	def _manifest_with_trips(self, vehicle, rows):
+		doc = frappe.new_doc("Transportation Manifest")
+		doc.vehicle_no = vehicle
+		doc.schedule_date = today()
+		for row in rows:
+			doc.append("transportation_manifest_details", {"stop_name": "Test Stop", **row})
+		return doc
+
+	def test_reliever_on_a_later_trip_of_another_vehicle_is_accepted(self):
+		# The reliever rides vehicle 1 at 20:00; that vehicle also runs an early trip, so
+		# its manifest spans the whole day.
+		self._manifest_with_trips(self.vehicle1, [
+			{"employee": self.employee1, "trip_id": "EARLY", "scheduled_time": "03:00:00"},
+			{"employee": self.reliever, "trip_id": "LATE", "scheduled_time": "20:00:00"},
+		]).save()
+
+		doc = self._manifest_with_trips(self.vehicle2, [
+			{"employee": self.employee2, "trip_id": "DAWN", "scheduled_time": "04:00:00",
+			 "attendance_status": "Absent", "reliever_employee": self.reliever},
+			{"employee": self.driver, "trip_id": "DAWN", "scheduled_time": "05:00:00"},
+			{"employee": self.driver, "trip_id": "NIGHT", "scheduled_time": "22:00:00"},
+		])
+		doc.save()
+		self.assertEqual(doc.transportation_manifest_details[0].reliever_employee, self.reliever)
+
+	def test_reliever_on_an_overlapping_trip_is_refused(self):
+		self._manifest_with_trips(self.vehicle1, [
+			{"employee": self.reliever, "trip_id": "A", "scheduled_time": "04:30:00"},
+		]).save()
+
+		doc = self._manifest_with_trips(self.vehicle2, [
+			{"employee": self.employee2, "trip_id": "B", "scheduled_time": "04:00:00",
+			 "attendance_status": "Absent", "reliever_employee": self.reliever},
+			{"employee": self.driver, "trip_id": "B", "scheduled_time": "05:00:00"},
+		])
+		self.assertRaises(frappe.ValidationError, doc.save)
+
 	def test_replaced_reliever_validation(self):
 		# Flag reliever as replaced by making them absent/replaced on another manifest on the same date
 		doc1 = frappe.new_doc("Transportation Manifest")
