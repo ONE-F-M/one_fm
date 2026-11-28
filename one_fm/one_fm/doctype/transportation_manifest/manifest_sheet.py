@@ -262,7 +262,7 @@ def trigger_attendance_check(manifest: str, stop_sequence, trip_id=None) -> dict
 
 
 @frappe.whitelist(methods=["POST"])
-def complete_stop(manifest: str, stop_sequence, trip_id=None) -> dict:
+def complete_stop(manifest: str, stop_sequence, trip_id=None, row_names: str | None = None) -> dict:
 	"""Mark this run's active stop complete and lock it read-only.
 
 	Advances that run's pointer past its active stop. This is how the final stop gets
@@ -279,10 +279,14 @@ def complete_stop(manifest: str, stop_sequence, trip_id=None) -> dict:
 			_("Only the active stop (Stop {0}) can be completed.").format(active or "—")
 		)
 
+	# ``row_names`` (comma separated) are the rows the stop card shows. Another leg of a
+	# mixed run can share the stop number, and its riders are checked on their own card.
+	card_rows = {name for name in (row_names or "").split(",") if name}
 	unchecked = [
 		row.employee_name or row.employee
 		for row in doc.transportation_manifest_details
 		if row.employee_action == "Boarding"
+		and (not card_rows or row.name in card_rows)
 		and int(row.stop_sequence or 1) == stop_sequence
 		and (trip_id is None or str(row.trip_id or "") == str(trip_id or ""))
 		and not row.attendance_status

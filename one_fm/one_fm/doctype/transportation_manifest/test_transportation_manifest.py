@@ -776,6 +776,32 @@ class TestTransportationManifest(FrappeTestCase):
 		doc.save()
 		self.assertEqual(complete_stop(doc.name, 1)["active_stop_sequence"], 2)
 
+	def test_complete_stop_checks_only_the_rows_on_the_card(self):
+		from one_fm.one_fm.doctype.transportation_manifest.manifest_sheet import (
+			trigger_attendance_check,
+			complete_stop,
+		)
+
+		doc = self._make_two_stop_manifest()
+		first = doc.transportation_manifest_details[0]
+		# Another leg of the run boarding at the same stop number.
+		doc.append("transportation_manifest_details", {
+			"employee": self.driver, "transportation_shipment": first.transportation_shipment,
+			"scheduled_time": "06:03:00",
+		})
+		for row in doc.transportation_manifest_details:
+			row.employee_action = "Boarding"
+		doc.save()
+		trigger_attendance_check(doc.name, 1)
+
+		doc.reload()
+		card_row = doc.transportation_manifest_details[0]
+		card_row.attendance_status = "Present"
+		doc.save()
+
+		self.assertRaises(frappe.ValidationError, complete_stop, doc.name, 1)
+		self.assertEqual(complete_stop(doc.name, 1, row_names=card_row.name)["active_stop_sequence"], 2)
+
 class TestTripTimeSync(FrappeTestCase):
 	"""sync_manifest_details stamps trip_time from the departure callable."""
 

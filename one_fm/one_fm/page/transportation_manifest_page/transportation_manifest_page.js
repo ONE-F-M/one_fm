@@ -428,10 +428,11 @@ function renderManifest($container, data, partial) {
 		});
 	};
 
-	window._mfst_completeStop = function (manifest, stopSeq, vehicleLabel, tripId) {
+	window._mfst_completeStop = function (manifest, stopSeq, vehicleLabel, tripId, rowNames) {
 		frappe.call({
 			method: "one_fm.one_fm.doctype.transportation_manifest.manifest_sheet.complete_stop",
-			args: { manifest: manifest, stop_sequence: stopSeq, trip_id: tripId || "" },
+			// The rows this card shows; other legs of the run can share its stop number.
+			args: { manifest: manifest, stop_sequence: stopSeq, trip_id: tripId || "", row_names: rowNames || "" },
 			freeze: true,
 			freeze_message: __("Locking stop…"),
 			callback: function (r) {
@@ -1802,7 +1803,8 @@ function renderManifest($container, data, partial) {
 			const pendingChecks = uncheckedRowIds(employees).length;
 			const lockState = pendingChecks
 				? ` disabled title="${escHtml(__("Check in every employee before locking this stop"))}"` : "";
-			actionBtn = `<button class="mfst-depart-btn complete"${lockState} onclick="window._mfst_completeStop('${manifestName}', ${seq}, '${safeVeh}', '${safeTrip}')">
+			const cardRows = escHtml(employees.map((e) => (e && e.row_id) || "").filter(Boolean).join(","));
+			actionBtn = `<button class="mfst-depart-btn complete"${lockState} onclick="window._mfst_completeStop('${manifestName}', ${seq}, '${safeVeh}', '${safeTrip}', '${cardRows}')">
 				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">lock</span> Complete &amp; Lock Stop ${seq}${lockSuffix}</button>`;
 		}
 
