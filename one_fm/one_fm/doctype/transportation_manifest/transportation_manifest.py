@@ -3,12 +3,79 @@ import json
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.query_builder import DocType
 from frappe.utils import cint, getdate, now_datetime
 
 
 # The key a row with no run of its own is filed under. A manifest compiled before trips
 # were named, or a stray row, still needs somewhere to keep its pointer.
 UNGROUPED_TRIP = ""
+
+def trip_time_windows(rows) -> dict:
+	"""``{trip_id: (start, end)}`` from ``(trip_id, scheduled_time)`` pairs.
+
+	Rows with no trip_id form one ungrouped trip.
+	"""
+	windows = {}
+	for trip_id, scheduled_time in rows:
+		if not scheduled_time:
+			continue
+		at = frappe.utils.to_timedelta(scheduled_time)
+		key = trip_id or UNGROUPED_TRIP
+		start, end = windows.get(key, (at, at))
+		windows[key] = (min(start, at), max(end, at))
+	return windows
+
+
+def booking_clashes(employees, schedule_date, exclude_manifest, window) -> dict:
+	"""``{employee: {manifest, vehicle_no, start, end}}`` for employees who ride or relieve a
+	trip of another manifest on ``schedule_date`` that overlaps ``window`` (start, end).
+
+	Compares trips, not whole manifests: a vehicle runs all day, so its manifest span
+	overlaps almost every trip.
+	"""
+	employees = [e for e in employees if e]
+	if not employees or not window:
+		return {}
+
+	Manifest = DocType("Transportation Manifest")
+	Detail = DocType("Transportation Manifest Details")
+	booked = (
+		frappe.qb.from_(Detail)
+		.join(Manifest).on(Detail.parent == Manifest.name)
+		.select(Detail.parent, Manifest.vehicle_no, Detail.trip_id, Detail.employee, Detail.reliever_employee)
+		.where(Manifest.schedule_date == schedule_date)
+		.where(Manifest.name != (exclude_manifest or ""))
+		.where(Detail.employee.isin(employees) | Detail.reliever_employee.isin(employees))
+	).run(as_dict=True)
+	if not booked:
+		return {}
+
+	parents = list({b.parent for b in booked})
+	windows = {}
+	for parent in parents:
+		windows[parent] = trip_time_windows(
+			frappe.get_all(
+				"Transportation Manifest Details",
+				filters={"parent": parent},
+				fields=["trip_id", "scheduled_time"],
+				as_list=True,
+			)
+		)
+
+	start, end = (frappe.utils.to_timedelta(t) for t in window)
+	clashes = {}
+	for b in booked:
+		other = windows[b.parent].get(b.trip_id or UNGROUPED_TRIP)
+		if not other or not (start < other[1] and other[0] < end):
+			continue
+		for employee in (b.employee, b.reliever_employee):
+			if employee in employees and employee not in clashes:
+				clashes[employee] = frappe._dict(
+					manifest=b.parent, vehicle_no=b.vehicle_no, start=other[0], end=other[1]
+				)
+	return clashes
+
 
 class TransportationManifest(Document):
 	def validate(self):
@@ -337,18 +404,12 @@ class TransportationManifest(Document):
 
 		schedule_date = getdate(self.schedule_date)
 		
-		# Compute the current manifest's route time window (from min to max scheduled_time)
-		# Normalize to timedelta — new rows may have str values, DB rows have timedelta
-		current_times = [
-			frappe.utils.to_timedelta(row.scheduled_time)
-			for row in self.transportation_manifest_details
-			if row.scheduled_time
-		]
-		if not current_times:
+		# Each trip's window runs from its first to its last scheduled_time.
+		trip_windows = trip_time_windows(
+			(row.trip_id, row.scheduled_time) for row in self.transportation_manifest_details
+		)
+		if not trip_windows:
 			return
-		
-		current_start = min(current_times)
-		current_end = max(current_times)
 
 		# Build sets of passengers and assigned relievers in the current manifest
 		manifest_employees = {row.employee for row in self.transportation_manifest_details if row.employee}
@@ -456,46 +517,16 @@ class TransportationManifest(Document):
 						)
 					)
 
-				# 2. Check if reliever is committed to an overlapping manifest vehicle on the same date
-				# Query other manifest rows for this employee (either as employee or reliever_employee)
-				other_bookings = frappe.db.sql(
-					"""
-					SELECT parent.name as manifest, parent.vehicle_no, child.name as row_name
-					FROM `tabTransportation Manifest Details` child
-					JOIN `tabTransportation Manifest` parent ON child.parent = parent.name
-					WHERE parent.schedule_date = %s
-					  AND parent.name != %s
-					  AND (child.employee = %s OR child.reliever_employee = %s)
-					""",
-					(schedule_date, self.name or "", reliever, reliever),
-					as_dict=1
-				)
-
-				for booking in other_bookings:
-					# Fetch times for that other manifest
-					other_times = [
-						frappe.utils.to_timedelta(t[0]) for t in frappe.db.get_values(
-							"Transportation Manifest Details",
-							{"parent": booking.manifest, "scheduled_time": ["is", "set"]},
-							"scheduled_time"
-						) if t[0] is not None
-					]
-					if other_times:
-						other_start = min(other_times)
-						other_end = max(other_times)
-						
-						# Convert current times to timedeltas to ensure exact type match
-						c_start_td = frappe.utils.to_timedelta(current_start)
-						c_end_td = frappe.utils.to_timedelta(current_end)
-
-						# Overlap check: start1 < end2 and start2 < end1
-						if c_start_td < other_end and other_start < c_end_td:
-							frappe.throw(
-								_("Employee {emp} is actively committed to overlapping manifest vehicle {vehicle} ({manifest}) from {start} to {end}").format(
-									emp=reliever,
-									vehicle=booking.vehicle_no,
-									manifest=booking.manifest,
-									start=str(other_start),
-									end=str(other_end)
-								)
-							)
+				# 2. Check if reliever rides or relieves an overlapping trip on another manifest
+				window = trip_windows.get(row.trip_id or UNGROUPED_TRIP)
+				clash = booking_clashes([reliever], schedule_date, self.name or "", window).get(reliever)
+				if clash:
+					frappe.throw(
+						_("Employee {emp} is actively committed to overlapping manifest vehicle {vehicle} ({manifest}) from {start} to {end}").format(
+							emp=reliever,
+							vehicle=clash.vehicle_no,
+							manifest=clash.manifest,
+							start=str(clash.start),
+							end=str(clash.end),
+						)
+					)

@@ -308,6 +308,89 @@ class TestAPlacedCardTheRosterNoLongerProduces(ReconcileCase):
 		self.assertEqual(self._riders(pool), ["E2"])
 
 
+class TestACoveredNameIsNeverBlank(ReconcileCase):
+	"""AC6: a reliever whose covered person is unknown is still marked."""
+
+	def _rows(self, name):
+		return frappe.get_all(
+			"Transportation Shipment Employee",
+			filters={"parent": name, "parenttype": "Transportation Shipment"},
+			fields=["employee_id", "is_reliever", "relieving_employee", "relieving_employee_name",
+					"absence_reason", "leave_from", "leave_to"],
+			order_by="idx asc",
+		)
+
+	def _refresh(self, name, roster, relievers):
+		real_get_doc = frappe.get_doc
+
+		def lenient(*args, **kwargs):
+			doc = real_get_doc(*args, **kwargs)
+			doc.flags.ignore_links = True
+			doc.flags.ignore_mandatory = True
+			return doc
+
+		with patch.object(gen.frappe, "get_doc", side_effect=lenient):
+			return gen._refresh_assigned_roster(name, DEMAND, roster, relievers)
+
+	def test_an_empty_covered_name_reads_not_available(self):
+		doc = frappe.new_doc("Transportation Shipment")
+		cover = {"relieving_employee": None, "relieving_employee_name": None,
+				 "absence_reason": "Day Off"}
+
+		gen._write_roster(doc, DEMAND, _roster("E1", "E2"), {"E1": cover})
+
+		first, second = doc.transportation_shipment_employee
+		self.assertEqual(first.relieving_employee_name, frappe._("Not available"))
+		self.assertEqual(first.is_reliever, 1)
+		self.assertFalse(second.is_reliever)
+		self.assertFalse(second.relieving_employee_name)
+
+	def test_a_named_cover_keeps_its_name_reason_and_dates(self):
+		doc = frappe.new_doc("Transportation Shipment")
+		cover = {"relieving_employee": "E9", "relieving_employee_name": "Covered Person",
+				 "absence_reason": "Leave", "leave_from": "2026-01-01", "leave_to": "2026-01-05"}
+
+		gen._write_roster(doc, DEMAND, _roster("E1"), {"E1": cover})
+
+		row = doc.transportation_shipment_employee[0]
+		self.assertEqual(row.relieving_employee_name, "Covered Person")
+		self.assertEqual(row.absence_reason, "Leave")
+		self.assertEqual(str(row.leave_to), "2026-01-05")
+
+	def test_a_refresh_with_nothing_new_does_not_save_again(self):
+		card = self._card(_key("N"), ["E1"])
+		cover = {"relieving_employee": None, "relieving_employee_name": None,
+				 "absence_reason": "Day Off"}
+
+		self.assertTrue(self._refresh(card, _roster("E1"), {"E1": cover}))
+		self.assertEqual(self._rows(card)[0].relieving_employee_name, frappe._("Not available"))
+
+		# The stored default and the default computed for the compare must agree.
+		self.assertFalse(self._refresh(card, _roster("E1"), {"E1": cover}))
+
+	def test_a_changed_reason_or_date_is_a_change(self):
+		card = self._card(_key("M"), ["E1"])
+		cover = {"relieving_employee": None, "relieving_employee_name": "Covered Person",
+				 "absence_reason": "Day Off"}
+		self._refresh(card, _roster("E1"), {"E1": cover})
+
+		leave = dict(cover, absence_reason="Leave", leave_from="2026-01-01", leave_to="2026-01-05")
+
+		self.assertTrue(self._refresh(card, _roster("E1"), {"E1": leave}))
+		row = self._rows(card)[0]
+		self.assertEqual(row.absence_reason, "Leave")
+		self.assertEqual(str(row.leave_from), "2026-01-01")
+
+	def test_only_the_leave_end_moving_is_a_change(self):
+		card = self._card(_key("L"), ["E1"])
+		cover = {"relieving_employee": None, "relieving_employee_name": "Covered Person",
+				 "absence_reason": "Annual Leave", "leave_from": "2026-01-01", "leave_to": "2026-01-05"}
+		self._refresh(card, _roster("E1"), {"E1": cover})
+
+		self.assertTrue(self._refresh(card, _roster("E1"), {"E1": dict(cover, leave_to="2026-01-09")}))
+		self.assertEqual(str(self._rows(card)[0].leave_to), "2026-01-09")
+
+
 class TestTheSeatCheck(FrappeTestCase):
 	def test_it_finds_the_most_that_fit_and_puts_the_count_back(self):
 		card = frappe.new_doc("Transportation Shipment")

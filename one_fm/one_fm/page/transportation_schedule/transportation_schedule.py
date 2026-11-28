@@ -1126,33 +1126,15 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
         order_by="idx asc",
     )
 
-    # Flag which passengers are Rambo relievers (filling in for a shift) so the
-    # canvas detail panel can label regular staff vs replacements (MA3-12 AC6).
-    # Reliever status is a role-level attribute on the Employee master.
-    reliever_ids = set()
-    passenger_ids = list({row.employee_id for row in emp_rows if row.employee_id})
-    if passenger_ids:
-        reliever_ids = {
-            e.name
-            for e in frappe.get_all(
-                "Employee",
-                filters={"name": ["in", passenger_ids], "custom_is_rambo_reliever": 1},
-                fields=["name"],
-            )
-        }
-
     emps_by_ship = {}
     for row in emp_rows:
         emps_by_ship.setdefault(row.parent, []).append({
             "id": row.employee_id,
             "name": row.employee_name or row.employee_id,
             "mobile": row.cell_number or "",
-            # Two different facts share this badge, and both mean "not the usual rider".
-            # `custom_is_rambo_reliever` is a standing role - this person relieves for a
-            # living - while the row flag says they are standing in for somebody on THIS
-            # card today. The first was here before; adding the second is
-            # what lets a regular employee covering a colleague be badged at all.
-            "is_reliever": bool(row.is_reliever) or row.employee_id in reliever_ids,
+            # Only the row flag marks a reliever: they are standing in for somebody on THIS
+            # card today. The standing Rambo role on Employee does not count.
+            "is_reliever": bool(row.is_reliever),
             # Only set when this rider is covering someone, and only for the day the card
             # was generated for - the drawer prints it as "Relieving X | ...".
             "relieving_employee": row.relieving_employee,
@@ -1925,9 +1907,49 @@ def _rebase_stamp(stamp, departure):
 		return stamp
 
 
+def _index_manifest_rows(rows) -> tuple:
+	"""Manifest detail rows keyed by (employee, stop_id, trip_id, action) and by
+	(employee, stop_name, trip_id, action), every row kept in row order."""
+	primary, by_stop_name = {}, {}
+	for r in rows:
+		primary.setdefault(
+			(r.employee, r.stop_id or "", r.trip_id or "", r.employee_action), []
+		).append(r)
+		by_stop_name.setdefault(
+			(r.employee, r.stop_name or "", r.trip_id or "", r.employee_action), []
+		).append(r)
+	return primary, by_stop_name
+
+
+def _claim_manifest_row(indexes, employee, stop_location, trip_id, is_return, claimed: set):
+	"""The manifest row for one appearance of ``employee``, or None.
+
+	Matches on stop_id, then on stop_name for rows made before stop_id existed, always on
+	the same trip and action. There is no employee-only fallback, so a row from another
+	trip never lends its attendance or replacement. A row is handed out once (``claimed``).
+	"""
+	primary, by_stop_name = indexes
+	action = "Dropping Off" if is_return else "Boarding"
+	direction = "RETURN" if is_return else "OUTBOUND"
+	stop_location = stop_location or ""
+	keys = (
+		(primary, (employee, f"{stop_location}|{direction}", trip_id or "", action)),
+		(by_stop_name, (employee, stop_location, trip_id or "", action)),
+	)
+	for index, key in keys:
+		for r in index.get(key, ()):
+			if id(r) not in claimed:
+				claimed.add(id(r))
+				return r
+	return None
+
+
 @frappe.whitelist()
-def get_manifest_data_for_plan(plan_name: str):
+def get_manifest_data_for_plan(plan_name: str, vehicles: str | None = None):
 	"""Build manifest ROUTE_DATA from a saved Route Plan.
+
+	``vehicles`` (JSON list) narrows the build to those vehicles, so the page can draw
+	one departure slot before the whole day has loaded.
 
 	This is the server-side equivalent of the client-side buildManifestData().
 	It reconstructs the manifest JSON from the plan's saved assignments and
@@ -1943,7 +1965,8 @@ def get_manifest_data_for_plan(plan_name: str):
 	frappe.has_permission("Route Plan", "read", plan_name, throw=True)
 	# In the order the plan lists them (idx, then creation): the rows of each vehicle
 	# keep the trip order they were saved in.
-	assignments = get_plan_rows(plan_name)
+	vehicles = frappe.parse_json(vehicles) if vehicles else None
+	assignments = get_plan_rows(plan_name, vehicles=vehicles)
 
 	# A camp leg describes a stop the bus makes; no card is filed against it and it
 	# carries no roster, so the manifest is compiled from the rows that stand for one.
@@ -1977,20 +2000,10 @@ def get_manifest_data_for_plan(plan_name: str):
 	if vehicle_ids:
 		for v in frappe.get_all("Vehicle",
 			filters={"name": ["in", vehicle_ids]},
-			fields=["name", "license_plate", "location", "seats",
+			fields=["name", "license_plate", "location", "seats", "custom_max_passenger_capacity",
 					"one_fm_vehicle_type", "make", "model", "employee"]
 		):
 			vehicle_map[v.name] = v
-
-	# Batch-fetch driver names
-	emp_ids_for_drivers = [v.employee for v in vehicle_map.values() if v.employee]
-	driver_map = {}
-	if emp_ids_for_drivers:
-		for row in frappe.get_all("Employee",
-			filters={"name": ["in", emp_ids_for_drivers]},
-			fields=["name", "employee_name"]
-		):
-			driver_map[row.name] = row.employee_name
 
 	# Batch-fetch accommodation labels for vehicle locations
 	veh_locations = list({v.location for v in vehicle_map.values() if v.location})
@@ -2040,11 +2053,24 @@ def get_manifest_data_for_plan(plan_name: str):
 		for r in frappe.get_all(
 			"Transportation Shipment Employee",
 			filters={"parent": ["in", ship_names], "parenttype": "Transportation Shipment"},
-			fields=["parent", "employee_id", "employee_name", "cell_number"],
+			fields=["parent", "employee_id", "employee_name", "cell_number",
+					"is_reliever", "relieving_employee_name", "absence_reason",
+					"leave_from", "leave_to"],
 			order_by="idx asc",
 		):
 			emps_by_ship.setdefault(r.parent, []).append(
-				{"id": r.employee_id, "name": r.employee_name or r.employee_id, "mobile": r.cell_number or ""}
+				{
+					"id": r.employee_id,
+					"name": r.employee_name or r.employee_id,
+					"mobile": r.cell_number or "",
+					# The cover details of THIS appearance, stamped on its own row, so a
+					# rider on two trips never shows one trip's cover on the other.
+					"is_reliever": bool(r.is_reliever),
+					"relieving_employee_name": r.relieving_employee_name,
+					"absence_reason": r.absence_reason,
+					"leave_from": str(r.leave_from) if r.leave_from else None,
+					"leave_to": str(r.leave_to) if r.leave_to else None,
+				}
 			)
 		for card_id, ship_name in shipment_by_card.items():
 			emps = emps_by_ship.get(ship_name, [])
@@ -2095,7 +2121,19 @@ def get_manifest_data_for_plan(plan_name: str):
 
 		# Always sync rows — handles both new and existing manifests
 		v_rows = [row for row in rows if row.vehicle == v_id]
-		rows_changed = sync_manifest_details(manifest_doc, v_rows, card_emp_map)
+		run_departure = _run_departures(v_rows, leg_rows.get(v_id, []))
+
+		# trip_time: when the bus leaves this row's camp, else when its run leaves.
+		def departure_of(a_row, run_departure=run_departure):
+			stamp = (
+				camp_departure.get((a_row.trip_group, a_row.origin_location))
+				or camp_departure.get(a_row.trip_group)
+				or run_departure.get(a_row.trip_group or f"\0{a_row.card_id}")
+			)
+			clock = _time_field(_local_seconds(stamp))
+			return clock[:5] if clock else None
+
+		rows_changed = sync_manifest_details(manifest_doc, v_rows, card_emp_map, departure_of=departure_of)
 
 		# The manifest header inherits the run's direction and, for a merged run, its
 		# shared group key. Read from the assignment rows rather than passed
@@ -2125,6 +2163,19 @@ def get_manifest_data_for_plan(plan_name: str):
 
 		manifests[v_id] = manifest_doc
 
+	# Trip header driver: the manifest's driver, else the vehicle's.
+	driver_of = {
+		vid: (m.driver_name if m else None) or (vehicle_map.get(vid) or {}).get("employee")
+		for vid, m in ((vid, manifests.get(vid)) for vid in vehicle_ids)
+	}
+	driver_map = {}
+	if any(driver_of.values()):
+		for row in frappe.get_all("Employee",
+			filters={"name": ["in", list({d for d in driver_of.values() if d})]},
+			fields=["name", "employee_name", "cell_number"]
+		):
+			driver_map[row.name] = row
+
 	# Resolve Accommodation display labels once (collapsing Mahboula sub-camps),
 	# so the manifest page can group boarding staff camp-by-camp (MA2-11).
 	acc_label_cache = {}
@@ -2151,22 +2202,16 @@ def get_manifest_data_for_plan(plan_name: str):
 		):
 			reliever_info[_e.name] = _e
 
-	# Per manifest, built once: the first row for each lookup key, in row order, which is
-	# what the nested scans this replaces returned.
+	# Per manifest, built once. Rows handed out are remembered so two appearances under
+	# one key get two rows (see _claim_manifest_row).
 	_row_index_cache = {}
+	_claimed_rows = set()
 
 	def _row_indexes(vehicle_id, manifest_doc):
 		if vehicle_id not in _row_index_cache:
-			primary, by_stop_name, by_employee = {}, {}, {}
-			for r in manifest_doc.transportation_manifest_details:
-				primary.setdefault(
-					(r.employee, r.stop_id or "", r.trip_id or "", r.employee_action), r
-				)
-				by_stop_name.setdefault(
-					(r.employee, r.stop_name or "", r.trip_id or "", r.employee_action), r
-				)
-				by_employee.setdefault(r.employee, r)
-			_row_index_cache[vehicle_id] = (primary, by_stop_name, by_employee)
+			_row_index_cache[vehicle_id] = _index_manifest_rows(
+				manifest_doc.transportation_manifest_details
+			)
 		return _row_index_cache[vehicle_id]
 
 	def _acc_label(acc):
@@ -2183,26 +2228,13 @@ def get_manifest_data_for_plan(plan_name: str):
 			return emp_list
 			
 		enriched = []
-		action = "Dropping Off" if is_return else "Boarding"
-		stop_location_normalized = stop_location or ""
-		idx_primary, idx_stop_name, idx_employee = _row_indexes(vehicle_id, manifest_doc)
-		direction = "RETURN" if is_return else "OUTBOUND"
-		stop_id_val = f"{stop_location_normalized}|{direction}"
-		
+		indexes = _row_indexes(vehicle_id, manifest_doc)
+
 		for emp in emp_list:
-			emp_id = emp.get("id")
-			matching_row = None
-			# Primary match: compound key using stop_id
-			matching_row = idx_primary.get((emp_id, stop_id_val, trip_id or "", action))
-			# Fallback: match by stop_name for rows created before stop_id was added
-			if not matching_row:
-				matching_row = idx_stop_name.get(
-					(emp_id, stop_location_normalized, trip_id or "", action)
-				)
-			
-			if not matching_row:
-				matching_row = idx_employee.get(emp_id)
-						
+			matching_row = _claim_manifest_row(
+				indexes, emp.get("id"), stop_location, trip_id, is_return, _claimed_rows
+			)
+
 			emp_copy = dict(emp)
 			# Manifest link is stamped regardless of match so the page can wire the
 			# per-camp attendance-check trigger/lock to the right manifest (MA2-11).
@@ -2219,6 +2251,8 @@ def get_manifest_data_for_plan(plan_name: str):
 				emp_copy["pickup_accommodation"] = matching_row.pickup_accommodation
 				emp_copy["pickup_camp_label"] = _acc_label(matching_row.pickup_accommodation)
 				emp_copy["stop_sequence"] = matching_row.stop_sequence or 1
+				emp_copy["trip_time"] = matching_row.trip_time
+				emp_copy["employee_action"] = matching_row.employee_action
 				emp_copy["operations_shift"] = matching_row.operations_shift
 				emp_copy["operations_site"] = matching_row.operations_site
 				emp_copy["operations_role"] = matching_row.operations_role
@@ -2317,7 +2351,9 @@ def get_manifest_data_for_plan(plan_name: str):
 	for vi, vid in enumerate(vehicle_order):
 		v_doc = vehicle_map.get(vid, {})
 		v_label = vid
-		driver_name = driver_map.get(v_doc.get("employee"), "\u2014") if v_doc.get("employee") else "\u2014"
+		driver_id = driver_of.get(vid)
+		driver = driver_map.get(driver_id) or {}
+		driver_name = driver.get("employee_name") or driver_id or "\u2014"
 		acc_label = veh_acc_map.get(v_doc.get("location"), v_doc.get("location", ""))
 		if acc_label in MAHBOULA_LABELS:
 			acc_label = "Mahboula Camp"
@@ -2327,7 +2363,10 @@ def get_manifest_data_for_plan(plan_name: str):
 		v_meta[v_label] = {
 			"accommodation": acc_label,
 			"driver": driver_name,
+			"driver_id": driver_id or "",
+			"driver_mobile": driver.get("cell_number") or "",
 			"seats": v_doc.get("seats") or 0,
+			"capacity": v_doc.get("custom_max_passenger_capacity") or 0,
 			"location": v_doc.get("location", ""),
 			"license_plate": v_doc.get("license_plate", ""),
 			"make": v_doc.get("make", ""),
@@ -2916,6 +2955,61 @@ def _build_reliever(employee, rows, date, shift_times, window):
     }
 
 
+def _refused_by_manifest(row_name, date, trip_times, candidates) -> set:
+    """Candidates TransportationManifest.validate_relievers would refuse for this row.
+
+    Covers its manifest checks: a passenger of the same manifest, someone Absent or
+    replaced on any manifest of the date, an approved leave, and an overlapping trip on
+    another manifest.
+    """
+    from frappe.query_builder import DocType
+
+    from one_fm.one_fm.doctype.transportation_manifest.transportation_manifest import booking_clashes
+
+    if not candidates:
+        return set()
+
+    manifest = frappe.db.get_value("Transportation Manifest Details", row_name, "parent")
+    refused = set(
+        frappe.get_all(
+            "Transportation Manifest Details",
+            filters={"parent": manifest, "employee": ["in", candidates]},
+            pluck="employee",
+        )
+    )
+
+    Manifest = DocType("Transportation Manifest")
+    Detail = DocType("Transportation Manifest Details")
+    refused.update(
+        row.employee
+        for row in (
+            frappe.qb.from_(Detail)
+            .join(Manifest).on(Detail.parent == Manifest.name)
+            .select(Detail.employee)
+            .where(Manifest.schedule_date == date)
+            .where(Detail.employee.isin(candidates))
+            .where((Detail.attendance_status == "Absent") | (Detail.requires_reliever == 1))
+        ).run(as_dict=True)
+    )
+
+    refused.update(
+        frappe.get_all(
+            "Leave Application",
+            filters={
+                "employee": ["in", candidates],
+                "workflow_state": "Approved",
+                "from_date": ["<=", date],
+                "to_date": [">=", date],
+            },
+            pluck="employee",
+        )
+    )
+
+    window = (min(trip_times), max(trip_times)) if trip_times else None
+    refused.update(booking_clashes(candidates, date, manifest, window))
+    return refused
+
+
 @frappe.whitelist()
 def get_available_rambo_relievers(shift_name: str = None, date: str = None, row_name: str = None):
     """
@@ -2974,6 +3068,9 @@ def get_available_rambo_relievers(shift_name: str = None, date: str = None, row_
     if not restrict_to_rambo:
         # Assigning a regular employee overwrites their own roster for the day.
         result = [r for r in result if not r["overlap"]]
+    if row_name:
+        refused = _refused_by_manifest(row_name, date, trip_times, [r["name"] for r in result])
+        result = [r for r in result if r["name"] not in refused]
     result.sort(key=lambda x: (x["overlap"], not x["has_roster"], x["employee_name"] or ""))
     return result
 
