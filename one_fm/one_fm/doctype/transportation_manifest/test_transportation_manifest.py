@@ -308,7 +308,7 @@ class TestTransportationManifest(FrappeTestCase):
 
 		doc = self._manifest_with_trips(self.vehicle2, [
 			{"employee": self.employee2, "trip_id": "DAWN", "scheduled_time": "04:00:00",
-			 "attendance_status": "Absent", "reliever_employee": self.reliever},
+			 "attendance_status": "Absent", "requires_reliever": 1, "reliever_employee": self.reliever},
 			{"employee": self.driver, "trip_id": "DAWN", "scheduled_time": "05:00:00"},
 			{"employee": self.driver, "trip_id": "NIGHT", "scheduled_time": "22:00:00"},
 		])
@@ -322,7 +322,7 @@ class TestTransportationManifest(FrappeTestCase):
 
 		doc = self._manifest_with_trips(self.vehicle2, [
 			{"employee": self.employee2, "trip_id": "B", "scheduled_time": "04:00:00",
-			 "attendance_status": "Absent", "reliever_employee": self.reliever},
+			 "attendance_status": "Absent", "requires_reliever": 1, "reliever_employee": self.reliever},
 			{"employee": self.driver, "trip_id": "B", "scheduled_time": "05:00:00"},
 		])
 		self.assertRaises(frappe.ValidationError, doc.save)
