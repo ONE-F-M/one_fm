@@ -430,6 +430,60 @@ if doc.different_location and legal_email:
     )
 '''
 
+NOTIFY_PENALISED_EMPLOYEES = '''# One Penalty Acknowledgement per employee on the issuance, shown on the mobile check-in
+# screen until dismissed, and an email to every employee with a user.
+from frappe.utils import format_datetime, get_link_to_form
+from one_fm.processor import sendemail
+
+for emp_row in doc.get("employees") or []:
+    employee_id = emp_row.get("employee_id")
+    if not employee_id:
+        continue
+    employee_name = emp_row.get("employee_name")
+    user_id = frappe.db.get_value("Employee", employee_id, "user_id")
+
+    if not frappe.db.exists("Penalty Acknowledgement", f"{doc.name}-{employee_id}"):
+        ack = frappe.new_doc("Penalty Acknowledgement")
+        ack.penalty_issuance = doc.name
+        ack.employee = employee_id
+        ack.employee_name = employee_name
+        ack.issuing_employee = doc.issuing_employee
+        ack.issuer_name = doc.employee_name
+        ack.penalty_category = doc.penalty_category
+        ack.penalty_occurence_time = doc.penalty_occurence_time
+        ack.acknowledged = 0
+        ack.insert()
+
+    if user_id:
+        violations = []
+        for row in doc.get("penalty_issuance_details") or []:
+            if row.get("penalty_type"):
+                violations.append(row.get("penalty_type"))
+        violation_text = ", ".join(violations) if violations else frappe._("See reference")
+
+        message = frappe._(
+            "A penalty has been raised against you by {0} on {1}.<br><br>"
+            "<b>Category:</b> {2}<br>"
+            "<b>Violation(s):</b> {3}<br><br>"
+            "An enquiry or investigation will take place and you will be "
+            "notified of the outcome.<br><br>"
+            "Reference: {4}"
+        ).format(
+            doc.employee_name,
+            format_datetime(doc.penalty_occurence_time),
+            doc.penalty_category,
+            violation_text,
+            get_link_to_form(doc.doctype, doc.name)
+        )
+        sendemail(
+            recipients=[user_id],
+            subject=frappe._("Penalty Issued - {0}").format(doc.name),
+            message=message,
+            reference_doctype=doc.doctype,
+            reference_name=doc.name,
+        )
+'''
+
 VALIDATE_INVESTIGATION_LEAD = '''# The Investigation Lead cannot be a party to the investigation.
 # Sets result["lead_valid"]; on False the process reopens Set Up Investigation.
 parties = {row.employee_id for row in doc.legal_investigation_employees}
@@ -454,6 +508,7 @@ SCRIPTS = (
 		NOTIFY_LEGAL_OF_MANUAL_LOCATION,
 	),
 	("Validate Penalty Issuance", PENALTY_ISSUANCE_PROCESS, "script_validate_issuance", VALIDATE_PENALTY_ISSUANCE),
+	("Notify Penalised Employees", PENALTY_ISSUANCE_PROCESS, "Activity_08v3ndx", NOTIFY_PENALISED_EMPLOYEES),
 	("Query Employee Salary", PENALTY_ISSUANCE_PROCESS, "Activity_1nwkxsy", QUERY_EMPLOYEE_SALARY),
 	("Create HR Enquiry", PENALTY_ISSUANCE_PROCESS, "Activity_1ksq2wv", CREATE_HR_ENQUIRY),
 	("Create Legal Investigation", PENALTY_ISSUANCE_PROCESS, "Activity_0jv6zqu", CREATE_LEGAL_INVESTIGATION),
@@ -1001,3 +1056,66 @@ class TestTheScriptsRunAsAnIssuer(PenaltyFixtures):
 		self.assertEqual(frappe.db.count("HR Enquiry", {"penalty_issuance": issuance.name}), 2)
 		self.assertTrue(frappe.db.exists("Legal Investigation", {"penalty_issuance": issuance.name}))
 		self.assertTrue(frappe.db.exists("Penalty", {"hr_enquiry": enquiry.name}))
+
+
+class TestNotifyPenalisedEmployees(PenaltyFixtures):
+	"""Needs the Penalty Acknowledgement DocType, so runs after migrate."""
+
+	def tearDown(self):
+		frappe.db.rollback()
+
+	def notify(self, issuance):
+		with patch("one_fm.processor.sendemail") as sendemail:
+			run_script(NOTIFY_PENALISED_EMPLOYEES, issuance)
+		return sendemail
+
+	def test_one_acknowledgement_per_employee_with_the_issuance_details(self):
+		issuance = self.make_penalty_issuance()
+		self.notify(issuance)
+
+		for employee in (self.first, self.second):
+			with self.subTest(employee=employee.name):
+				ack = frappe.get_doc("Penalty Acknowledgement", f"{issuance.name}-{employee.name}")
+				self.assertEqual(ack.penalty_issuance, issuance.name)
+				self.assertEqual(ack.employee_name, employee.employee_name)
+				self.assertEqual(ack.issuing_employee, issuance.issuing_employee)
+				self.assertEqual(ack.issuer_name, issuance.employee_name)
+				self.assertEqual(ack.penalty_category, issuance.penalty_category)
+				self.assertEqual(str(ack.penalty_occurence_time), str(issuance.penalty_occurence_time))
+				self.assertEqual(ack.acknowledged, 0)
+
+	def test_a_second_run_creates_no_duplicate(self):
+		issuance = self.make_penalty_issuance()
+		self.notify(issuance)
+		self.notify(issuance)
+
+		self.assertEqual(frappe.db.count("Penalty Acknowledgement", {"penalty_issuance": issuance.name}), 2)
+
+	def test_one_email_per_employee_naming_issuer_category_and_violations(self):
+		issuance = self.make_penalty_issuance()
+		sendemail = self.notify(issuance)
+
+		self.assertEqual(
+			sorted(c.kwargs["recipients"][0] for c in sendemail.call_args_list),
+			sorted([self.first.user_id, self.second.user_id]),
+		)
+		message = sendemail.call_args.kwargs["message"]
+		for expected in (issuance.employee_name, issuance.penalty_category, self.penalty_type):
+			self.assertIn(expected, message)
+
+	def test_no_email_without_a_user_but_the_acknowledgement_is_created(self):
+		issuance = self.make_penalty_issuance(employees=[self.first])
+		frappe.db.set_value("Employee", self.first.name, "user_id", None)
+		sendemail = self.notify(issuance)
+
+		sendemail.assert_not_called()
+		self.assertTrue(frappe.db.exists("Penalty Acknowledgement", f"{issuance.name}-{self.first.name}"))
+
+	def test_a_row_without_an_employee_is_skipped(self):
+		issuance = self.make_penalty_issuance(employees=[self.first])
+		doc = frappe._dict(issuance.as_dict())
+		doc.employees = [frappe._dict(employee_id=None)]
+		sendemail = self.notify(doc)
+
+		sendemail.assert_not_called()
+		self.assertEqual(frappe.db.count("Penalty Acknowledgement", {"penalty_issuance": issuance.name}), 0)
